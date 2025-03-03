@@ -3,10 +3,10 @@
 import { Button } from '@/components/ui/button';
 import { useAgent } from '@/interactive/hooks/useAgent';
 import deepMerge from '@/lib/objects';
+import log from '@/next-log/log';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useCallback, useMemo } from 'react';
 import OAuth2Login from 'react-simple-oauth2-login';
-import log from '../../../AGInterface/components/jrg/next-log/log';
 import providers from './OAuthProviders';
 
 export type OAuthProps = {

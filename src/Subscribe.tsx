@@ -5,7 +5,7 @@ import { getCookie } from 'cookies-next';
 import Link from 'next/link';
 import React, { Suspense } from 'react';
 import { useAuthentication } from './Router';
-import PricingTable from './stripe/PricingTable';
+import PricingTable from './Stripe/PricingTable';
 
 export type SubscribeProps = { redirectTo?: string };
 

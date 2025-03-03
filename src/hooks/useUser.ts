@@ -1,10 +1,10 @@
 import { chainMutations, createGraphQLClient } from '@/interactive/hooks/lib';
+import log from '@/next-log/log';
 import '@/zod2gql/zod2gql';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import useSWR, { SWRResponse } from 'swr';
 import { z } from 'zod';
-import log from '../../next-log/log';
 
 export const CompanySchema = z.object({
   agents: z.array(

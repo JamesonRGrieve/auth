@@ -1,7 +1,7 @@
 import { createGraphQLClient } from '@/interactive/hooks/lib';
+import log from '@/next-log/log';
 import useSWR, { SWRResponse } from 'swr';
 import { z } from 'zod';
-import log from '../../next-log/log';
 
 export const InvitationSchema = z.object({
   id: z.string().uuid(),

@@ -3,12 +3,12 @@ import { useAssertion } from '@/components/jrg/assert/assert';
 import { Button } from '@/components/ui/button';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 import { validateURI } from '@/lib/validation';
+import log from '@/next-log/log';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import useSWR from 'swr';
-import log from '../../../AGInterface/components/jrg/next-log/log';
 import { useAuthentication } from '../Router';
 import { Profile } from './Profile';
 
