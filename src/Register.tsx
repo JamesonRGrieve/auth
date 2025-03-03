@@ -1,18 +1,18 @@
 'use client';
+import { useAssertion } from '@/components/jrg/assert/assert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toTitleCase } from '@/dynamic-form/DynamicForm';
+import { validateURI } from '@/lib/validation';
 import axios, { AxiosError } from 'axios';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import React, { FormEvent, ReactNode, useEffect, useState, useRef } from 'react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
-import { useAuthentication } from './Router';
 import AuthCard from './AuthCard';
-import { toTitleCase } from '@/components/jrg/dynamic-form/DynamicForm';
-import { useAssertion } from '@/components/jrg/assert/assert';
-import { validateURI } from '@/lib/validation';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import OAuth from './oauth2/OAuth';
+import { useAuthentication } from './Router';
 
 export type RegisterProps = {
   additionalFields?: string[];

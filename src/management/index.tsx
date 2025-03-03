@@ -1,7 +1,7 @@
 'use client';
 import { useAssertion } from '@/components/jrg/assert/assert';
-import { DynamicFormFieldValueTypes } from '@/components/jrg/dynamic-form/DynamicForm';
 import { Button } from '@/components/ui/button';
+import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 import { validateURI } from '@/lib/validation';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';

@@ -1,9 +1,9 @@
 'use client';
 
-import DynamicForm from '@/components/jrg/dynamic-form/DynamicForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import DynamicForm from '@/dynamic-form/DynamicForm';
 import axios from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
 import Link from 'next/link';
