@@ -1,13 +1,13 @@
 'use client';
 
-import axios from 'axios';
-import { LuCheckCircle, LuKey } from 'react-icons/lu';
-import React, { useEffect, useState } from 'react';
-import QRCode from 'react-qr-code';
-import { deleteCookie, getCookie } from 'cookies-next';
 import Field from '@/components/jrg/ui/styled/FormControl/Field';
-import log from '@/components/jrg/next-log/log';
 import { Button } from '@/components/ui/button';
+import log from '@/next-log/log';
+import axios from 'axios';
+import { deleteCookie, getCookie } from 'cookies-next';
+import { useEffect, useState } from 'react';
+import { LuCheckCircle, LuKey } from 'react-icons/lu';
+import QRCode from 'react-qr-code';
 
 export type RegisterFormProps = object;
 export default function VerifyAuthenticator({ verifiedCallback }: { verifiedCallback: any }): JSX.Element {

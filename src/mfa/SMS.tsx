@@ -1,9 +1,9 @@
 'use client';
 
+import log from '@/next-log/log';
 import axios from 'axios';
-import React, { useState } from 'react';
 import { getCookie } from 'cookies-next';
-import log from '@/components/jrg/next-log/log';
+import { useState } from 'react';
 
 export type RegisterFormProps = object;
 export default function VerifySMS({ verifiedCallback }: { verifiedCallback: any }): JSX.Element {

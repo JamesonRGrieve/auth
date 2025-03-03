@@ -1,12 +1,12 @@
 'use client';
 
-import axios from 'axios';
-import React, { useState } from 'react';
-import { getCookie } from 'cookies-next';
-import { LuCheckCircle, LuKey } from 'react-icons/lu';
 import Field from '@/components/jrg/ui/styled/FormControl/Field';
-import log from '@/components/jrg/next-log/log';
 import { Button } from '@/components/ui/button';
+import log from '@/next-log/log';
+import axios from 'axios';
+import { getCookie } from 'cookies-next';
+import { useState } from 'react';
+import { LuCheckCircle, LuKey } from 'react-icons/lu';
 
 export type RegisterFormProps = object;
 export default function VerifyEmail({ verifiedCallback }: { verifiedCallback: any }): JSX.Element {
