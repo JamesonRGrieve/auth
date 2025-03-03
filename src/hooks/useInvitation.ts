@@ -1,4 +1,4 @@
-import { createGraphQLClient } from '@/components/interactive/hooks/lib';
+import { createGraphQLClient } from '@/interactive/hooks/lib';
 import useSWR, { SWRResponse } from 'swr';
 import { z } from 'zod';
 import log from '../../next-log/log';

@@ -1,7 +1,7 @@
 'use client';
 
-import { useAgent } from '@/components/interactive/hooks/useAgent';
 import { Button } from '@/components/ui/button';
+import { useAgent } from '@/interactive/hooks/useAgent';
 import deepMerge from '@/lib/objects';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useCallback, useMemo } from 'react';

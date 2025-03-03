@@ -14,17 +14,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { useOldActiveCompany, useOldCompanies, useOldInvitations } from '@/components/interactive/hooks/hooks.old';
 import { DataTable } from '@/components/jrg/wais/data/data-table';
 import { DataTableColumnHeader } from '@/components/jrg/wais/data/data-table-column-header';
+import { useOldActiveCompany, useOldCompanies, useOldInvitations } from '@/interactive/hooks/hooks.old';
 
 interface User {
   email: string;
