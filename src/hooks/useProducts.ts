@@ -7,9 +7,9 @@ export default function useProducts() {
   return useSWR(
     '/products',
     async () =>
-      process.env.STRIPE_PUBLISHABLE_KEY
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
         ? (
-            await axios.get(`${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/products`, {
+            await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/products`, {
               headers: {
                 Authorization: getCookie('jwt'),
               },

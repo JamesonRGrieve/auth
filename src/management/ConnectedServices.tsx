@@ -1,14 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
-import OAuth2Login from 'react-simple-oauth2-login';
+import { useEffect, useState } from 'react';
 import { LuPlus as Plus, LuUnlink as Unlink } from 'react-icons/lu';
+import OAuth2Login from 'react-simple-oauth2-login';
 import oAuth2Providers from '../oauth2/OAuthProviders';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ConnectedService {
   provider: string;
@@ -22,6 +21,8 @@ const providerDescriptions = {
     'Link your Microsoft account to enable AI management of Outlook emails and calendar. Your agents can help schedule meetings, respond to emails, and keep your calendar organized.',
   GitHub:
     'Connect to GitHub to enable AI assistance with repository management. Agents can help analyze codebases, create pull requests, review code changes, and manage issues.',
+  Tesla:
+    'Link your Tesla account to enable AI control of your vehicle. Agents can help manage charging, climate control, and other vehicle settings.',
 };
 
 export const ConnectedServices = () => {
@@ -39,7 +40,7 @@ export const ConnectedServices = () => {
   const fetchConnections = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/oauth2`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/oauth2`, {
         headers: {
           Authorization: getCookie('jwt'),
         },
@@ -68,7 +69,7 @@ export const ConnectedServices = () => {
 
   const handleDisconnect = async (provider: string) => {
     try {
-      await axios.delete(`${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/oauth2/${provider.toLowerCase()}`, {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/oauth2/${provider.toLowerCase()}`, {
         headers: {
           Authorization: getCookie('jwt'),
         },
@@ -96,10 +97,10 @@ export const ConnectedServices = () => {
       }
 
       const result = await axios.post(
-        `${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/oauth2/${provider}`,
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/oauth2/${provider}`,
         {
           code: response.code,
-          referrer: `${process.env.NEXT_PUBLIC_AUTH_WEB}/close/${provider}`,
+          referrer: `${process.env.NEXT_PUBLIC_AUTH_URI}/close/${provider}`,
         },
         {
           headers: {
@@ -124,16 +125,7 @@ export const ConnectedServices = () => {
   };
 
   return (
-    <div className='space-y-6'>
-      <div>
-        <h3 className='text-lg font-medium'>Manage Extensions</h3>
-        <p className='text-sm text-muted-foreground'>
-          Manage your connected third-party extensions that grant your agent additional capabilities through commands.
-        </p>
-      </div>
-
-      <Separator />
-
+    <>
       {error && (
         <Alert variant='destructive'>
           <AlertDescription>{error}</AlertDescription>
@@ -175,7 +167,7 @@ export const ConnectedServices = () => {
                     responseType='code'
                     clientId={provider.client_id}
                     state={getCookie('jwt')}
-                    redirectUri={`${process.env.NEXT_PUBLIC_AUTH_WEB}/close/${service.provider.toLowerCase()}`}
+                    redirectUri={`${process.env.NEXT_PUBLIC_AUTH_URI}/close/${service.provider.toLowerCase()}`}
                     scope={provider.scope}
                     onSuccess={onSuccess}
                     onFailure={onSuccess}
@@ -222,6 +214,6 @@ export const ConnectedServices = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };

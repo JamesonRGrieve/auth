@@ -7,11 +7,11 @@ export const AuthMode = {
 };
 export const getAuthMode = (): number => {
   let authMode = AuthMode.None;
-  if (process.env.NEXT_PUBLIC_AUTH_WEB && process.env.NEXT_PUBLIC_AGIXT_SERVER) {
-    if (process.env.APP_URI && process.env.NEXT_PUBLIC_AUTH_WEB.startsWith(process.env.APP_URI)) {
+  if (process.env.NEXT_PUBLIC_AUTH_URI && process.env.NEXT_PUBLIC_API_URI) {
+    if (process.env.APP_URI && process.env.NEXT_PUBLIC_AUTH_URI.startsWith(process.env.APP_URI)) {
       authMode = AuthMode.MagicalAuth;
-      if (!process.env.NEXT_PUBLIC_AUTH_WEB.endsWith('/user')) {
-        throw new Error('Invalid AUTH_WEB. For Magical Auth implementations, AUTH_WEB must point to APP_URI/user.');
+      if (!process.env.NEXT_PUBLIC_AUTH_URI.endsWith('/user')) {
+        throw new Error('Invalid AUTH_URI. For Magical Auth implementations, AUTH_URI must point to APP_URI/user.');
       }
     } else {
       authMode = AuthMode.GTAuth;
@@ -35,9 +35,36 @@ export const getQueryParams = (req: NextRequest): any =>
 
 export const getRequestedURI = (req: NextRequest): string => {
   console.log(`Processing: ${req.url}`);
-  return req.url
-    .split('?')[0]
-    .replace(/localhost:\d+/, (process.env.APP_URI || '').replace('https://', '').replace('http://', ''));
+
+  const appUri = process.env.APP_URI || '';
+  const singleWordDomainRegex = /^[a-zA-Z\d-]+$/; // Match single word domains (no TLD)
+
+  // Parse the URL
+  const url = new URL(req.url);
+
+  // Match the protocol, domain, and optional port
+  const processedUrl = url.origin.replace(/https?:\/\/([a-zA-Z\d.-]+)(?::\d+)?/, (match, domain) => {
+    // If the domain is a single word (like localhost or 0f86ff25b193), replace it with APP_URI
+    if (singleWordDomainRegex.test(domain)) {
+      // Remove trailing slash from appUri if it exists
+      const cleanAppUri = appUri.replace(/\/$/, '');
+
+      // Get the path without leading slash
+      const path = url.pathname.replace(/^\//, '');
+
+      // Check if the path is already included in the APP_URI
+      if (cleanAppUri.endsWith(path)) {
+        return cleanAppUri;
+      }
+
+      // Rebuild the URL with the APP_URI and path
+      return `${cleanAppUri}/${path}`;
+    }
+    return match; // Return the match as is if the domain is not a single word
+  });
+
+  // Combine the processed URL with the original path and search params
+  return `${processedUrl}${url.search}`;
 };
 
 export const getJWT = (req: NextRequest) => {
@@ -48,13 +75,15 @@ export const getJWT = (req: NextRequest) => {
   return jwt;
 };
 export const verifyJWT = async (jwt: string): Promise<Response> => {
-  if (!process.env.SERVERSIDE_AGIXT_SERVER) {
-    process.env.SERVERSIDE_AGIXT_SERVER = ['agixt', 'localhost', 'back-end', 'boilerplate', 'back-end-image'].join(',');
-    console.log('Initialized container names: ', process.env.SERVERSIDE_AGIXT_SERVER);
+  if (!process.env.SERVERSIDE_API_URI) {
+    process.env.SERVERSIDE_API_URI = ['aginfrastructure', 'localhost', 'back-end', 'boilerplate', 'back-end-image'].join(
+      ',',
+    );
+    console.log('Initialized container names: ', process.env.SERVERSIDE_API_URI);
   }
-  const containerNames = process.env.SERVERSIDE_AGIXT_SERVER.split(',');
+  const containerNames = process.env.SERVERSIDE_API_URI.split(',');
   const responses = {} as any;
-  const authEndpoint = `${process.env.AGIXT_SERVER}/v1/user`;
+  const authEndpoint = `${process.env.API_URI}/v1/user`;
   let response;
   for (const containerName of containerNames) {
     const testEndpoint = authEndpoint.replace('localhost', containerName);
@@ -79,8 +108,8 @@ export const verifyJWT = async (jwt: string): Promise<Response> => {
               return 0;
             }
           });
-          process.env.SERVERSIDE_AGIXT_SERVER = containerNames.join(',');
-          console.log('New container names: ', process.env.SERVERSIDE_AGIXT_SERVER);
+          process.env.SERVERSIDE_API_URI = containerNames.join(',');
+          console.log('New container names: ', process.env.SERVERSIDE_API_URI);
         }
         return response;
       } else {

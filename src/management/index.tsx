@@ -1,15 +1,16 @@
 'use client';
+import { useAssertion } from '@/components/jrg/assert/assert';
+import { DynamicFormFieldValueTypes } from '@/components/jrg/dynamic-form/DynamicForm';
+import { Button } from '@/components/ui/button';
+import { validateURI } from '@/lib/validation';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
+import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import useSWR from 'swr';
-import { useRouter } from 'next/navigation';
+import log from '../../../AGInterface/components/jrg/next-log/log';
 import { useAuthentication } from '../Router';
 import { Profile } from './Profile';
-import { DynamicFormFieldValueTypes } from '@/components/jrg/dynamic-form/DynamicForm';
-import { validateURI } from '@/lib/validation';
-import { useAssertion } from '@/components/jrg/assert/assert';
-import { Button } from '@/components/ui/button';
 
 export type ManageProps = {
   userDataSWRKey?: string;
@@ -63,7 +64,7 @@ export default function Manage({
 
   return (
     <div className='w-full'>
-      <main className='flex min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-transparent p-4 md:gap-8 md:p-10'>
+      <main className='flex min-h-[calc(100vh-(--spacing(16)))] flex-1 flex-col gap-4 bg-transparent p-4 md:gap-8 md:p-10'>
         <div className='flex justify-between w-full max-w-6xl gap-2 mx-auto'>
           {authConfig.manage.heading && <h2 className='text-3xl font-semibold'>{authConfig.manage.heading}</h2>}
           <Button

@@ -1,10 +1,6 @@
 'use client';
-import React, { useState } from 'react';
-import axios from 'axios';
-import { getCookie, setCookie } from 'cookies-next';
-import { LuPencil, LuCheck, LuPlus } from 'react-icons/lu';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -14,7 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCompany, useCompanies } from '@/components/interactive/hooks';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import axios from 'axios';
+import { getCookie } from 'cookies-next';
+import { useState } from 'react';
+import { LuCheck, LuPencil, LuPlus } from 'react-icons/lu';
+import { useCompanies, useCompany } from '../hooks/useUser';
 
 const ROLES = [
   { id: 2, name: 'Admin' },
@@ -33,12 +34,12 @@ export const Team = () => {
   const { data: companyData } = useCompanies();
   const { data: activeCompany, mutate } = useCompany();
   const [responseMessage, setResponseMessage] = useState('');
+  console.log(activeCompany);
   const handleConfirm = async () => {
     if (renaming) {
       try {
-        const companyId = getCookie('agixt-company-id');
         await axios.put(
-          `${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/companies/${companyId}`,
+          `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeCompany?.id}`,
           { name: newName },
           {
             headers: {
@@ -56,7 +57,7 @@ export const Team = () => {
     } else {
       try {
         const newResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/companies`,
+          `${process.env.NEXT_PUBLIC_API_URI}/v1/companies`,
           { name: newName, agent_name: newName + ' Agent', ...(newParent ? { parent_company_id: newParent } : {}) },
           {
             headers: {
@@ -65,9 +66,6 @@ export const Team = () => {
             },
           },
         );
-        setCookie('agixt-company-id', newResponse.data.id, {
-          domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN,
-        });
         mutate();
         setResponseMessage('Company created successfully!');
       } catch (error) {
@@ -85,11 +83,11 @@ export const Team = () => {
     }
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_AGIXT_SERVER}/v1/invitations`,
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
         {
           email: email,
           role_id: parseInt(roleId),
-          company_id: getCookie('agixt-company-id'),
+          company_id: companyData?.id,
         },
         {
           headers: {
@@ -145,38 +143,58 @@ export const Team = () => {
             )}
           </>
         ) : (
-          <h3>{activeCompany.name}</h3>
+          <h3 className='text-lg font-medium'>{activeCompany?.name}</h3>
         )}
-        <Button
-          onClick={() => {
-            if (renaming) {
-              handleConfirm();
-            } else {
-              setRenaming(true);
-              setNewName(activeCompany.name);
-            }
-          }}
-          disabled={creating}
-          size='icon'
-          variant='ghost'
-        >
-          {renaming ? <LuCheck className='h-4 w-4' /> : <LuPencil className='h-4 w-4' />}
-        </Button>
-        <Button
-          onClick={() => {
-            if (creating) {
-              handleConfirm();
-            } else {
-              setCreating(true);
-              setNewName('');
-            }
-          }}
-          disabled={renaming}
-          size='icon'
-          variant='ghost'
-        >
-          {creating ? <LuCheck className='h-4 w-4' /> : <LuPlus className='h-4 w-4' />}
-        </Button>
+
+        <TooltipProvider>
+          <div className='flex gap-2'>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => {
+                    if (renaming) {
+                      handleConfirm();
+                    } else {
+                      setRenaming(true);
+                      setNewName(activeCompany?.name);
+                    }
+                  }}
+                  disabled={creating}
+                  size='icon'
+                  variant='ghost'
+                >
+                  {renaming ? <LuCheck className='h-4 w-4' /> : <LuPencil className='h-4 w-4' />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{renaming ? 'Confirm rename' : 'Rename'}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => {
+                    if (creating) {
+                      handleConfirm();
+                    } else {
+                      setCreating(true);
+                      setNewName('');
+                    }
+                  }}
+                  disabled={renaming}
+                  size='icon'
+                  variant='ghost'
+                >
+                  {creating ? <LuCheck className='h-4 w-4' /> : <LuPlus className='h-4 w-4' />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{creating ? 'Confirm create' : 'Create new'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       </div>
     </div>
   );

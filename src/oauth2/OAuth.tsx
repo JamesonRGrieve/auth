@@ -1,14 +1,13 @@
 'use client';
 
-import React, { ReactNode, useCallback, useMemo } from 'react';
-import OAuth2Login from 'react-simple-oauth2-login';
-
-import { useRouter } from 'next/navigation';
-
-import providers from './OAuthProviders';
-import deepMerge from '@/lib/objects';
+import { useAgent } from '@/components/interactive/hooks/useAgent';
 import { Button } from '@/components/ui/button';
-import log from '../../next-log/log';
+import deepMerge from '@/lib/objects';
+import { useRouter } from 'next/navigation';
+import { ReactNode, useCallback, useMemo } from 'react';
+import OAuth2Login from 'react-simple-oauth2-login';
+import log from '../../../AGInterface/components/jrg/next-log/log';
+import providers from './OAuthProviders';
 
 export type OAuthProps = {
   overrides?: any;
@@ -16,10 +15,13 @@ export type OAuthProps = {
 export default function OAuth({ overrides }: OAuthProps): ReactNode {
   const router = useRouter();
   const oAuthProviders = useMemo(() => deepMerge(providers, overrides) as typeof providers, [providers, overrides]);
+  const { mutate } = useAgent();
   log(['OAuth Providers: ', oAuthProviders], { client: 3 });
   const onOAuth2 = useCallback(
     (response: any) => {
-      document.location.href = `${process.env.NEXT_PUBLIC_APP_URI}`; // This should be fixed properly just low priority.
+      mutate();
+      document.location.href = `${process.env.NEXT_PUBLIC_APP_URI}/chat`; // This should be fixed properly just low priority.
+
       // const redirect = getCookie('href') ?? '/';
       // deleteCookie('href');
       // router.push(redirect);
@@ -47,7 +49,7 @@ export default function OAuth({ overrides }: OAuthProps): ReactNode {
               responseType='code'
               clientId={provider.client_id}
               scope={provider.scope}
-              redirectUri={`${process.env.NEXT_PUBLIC_AUTH_WEB}/close/${key.replaceAll('.', '-').replaceAll(' ', '-').replaceAll('_', '-').toLowerCase()}`}
+              redirectUri={`${process.env.NEXT_PUBLIC_AUTH_URI}/close/${key.replaceAll('.', '-').replaceAll(' ', '-').replaceAll('_', '-').toLowerCase()}`}
               onSuccess={onOAuth2}
               onFailure={onOAuth2}
               extraParams={provider.params}
