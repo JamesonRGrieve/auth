@@ -14,17 +14,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
 import { DataTable } from '@/components/jrg/wais/data/data-table';
 import { DataTableColumnHeader } from '@/components/jrg/wais/data/data-table-column-header';
-import { useOldActiveCompany, useOldCompanies, useOldInvitations } from '@/interactive/hooks/hooks.old';
+import { useOldCompanies, useOldInvitations } from '@/interactive/hooks/hooks.old';
+import { useCompany } from '../hooks/useUser';
 
 interface User {
   email: string;
@@ -61,9 +62,12 @@ export const Team = () => {
   const [newName, setNewName] = useState('');
   const { data: invitationsData, mutate: mutateInvitations } = useOldInvitations();
   const { data: companyData } = useOldCompanies();
-  const { data: activeCompany, mutate } = useOldActiveCompany();
+  console.log('COMPANIES', companyData);
+  const { data: activeCompany, mutate } = useCompany();
+  console.log('ACTIVE COMPANY', activeCompany);
   const [responseMessage, setResponseMessage] = useState('');
-  console.log('USERS', activeCompany);
+  const users = companyData.find((c) => c.id === activeCompany.id)?.users;
+  console.log('USERS', users);
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -430,7 +434,7 @@ export const Team = () => {
   return (
     <div className='space-y-6'>
       <h4 className='text-md font-medium'>{activeCompany?.name} Current Users</h4>
-      <DataTable data={activeCompany?.users || []} columns={users_columns} />
+      <DataTable data={users || []} columns={users_columns} />
       <form onSubmit={handleSubmit} className='space-y-4'>
         <h4 className='text-md font-medium'>Invite Users to {activeCompany?.name}</h4>
         <div className='space-y-2'>
