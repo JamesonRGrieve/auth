@@ -15,7 +15,7 @@ import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { useState } from 'react';
 import { LuCheck, LuPencil, LuPlus } from 'react-icons/lu';
-import { useCompanies, useCompany } from '../hooks/useUser';
+import { useTeam, useTeams } from '../hooks/useUser';
 
 const ROLES = [
   { id: 2, name: 'Admin' },
@@ -31,8 +31,8 @@ export const Team = () => {
   const [creating, setCreating] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
-  const { data: companyData } = useCompanies();
-  const { data: activeCompany, mutate } = useCompany();
+  const { data: companyData } = useTeams();
+  const { data: activeCompany, mutate } = useTeam();
   const [responseMessage, setResponseMessage] = useState('');
   console.log(activeCompany);
   const handleConfirm = async () => {

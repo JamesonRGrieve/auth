@@ -25,7 +25,7 @@ import {
 import { DataTable } from '@/components/jrg/wais/data/data-table';
 import { DataTableColumnHeader } from '@/components/jrg/wais/data/data-table-column-header';
 import { useOldCompanies, useOldInvitations } from '@/interactive/hooks/hooks.old';
-import { useCompany } from '../hooks/useUser';
+import { useTeam } from '../hooks/useUser';
 
 interface User {
   email: string;
@@ -63,7 +63,7 @@ export const Team = () => {
   const { data: invitationsData, mutate: mutateInvitations } = useOldInvitations();
   const { data: companyData } = useOldCompanies();
   console.log('COMPANIES', companyData);
-  const { data: activeCompany, mutate } = useCompany();
+  const { data: activeCompany, mutate } = useTeam();
   console.log('ACTIVE COMPANY', activeCompany);
   const [responseMessage, setResponseMessage] = useState('');
   const users = companyData.find((c) => c.id === activeCompany.id)?.users;
