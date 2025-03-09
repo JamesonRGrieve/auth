@@ -13,14 +13,14 @@ export const TeamSchema = z.object({
   agentName: z.string().optional().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().optional().nullable(),
-  companyId: z.union([z.string().uuid(), z.null()]).optional(),
+  teamId: z.union([z.string().uuid(), z.null()]).optional(),
   primary: z.boolean().optional(),
   roleId: z.number().int().positive().optional(),
   agents: z.array(
     z.object({
       id: z.string().uuid(),
       name: z.string().min(1),
-      companyId: z.string().uuid(),
+      teamId: z.string().uuid(),
       default: z.boolean(),
       status: z.union([z.boolean(), z.literal(null)]),
     }),
@@ -39,14 +39,16 @@ export const TeamSchema = z.object({
 export const UserTeamSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  companyId: z.string(),
+  teamId: z.string(),
   roleId: z.number().int(),
   enabled: z.boolean(),
   createdAt: z.string().datetime(),
 });
+
 export type Team = z.infer<typeof TeamSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type UserTeam = z.infer<typeof UserTeamSchema>;
+
 export const UserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
