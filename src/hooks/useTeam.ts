@@ -1,7 +1,7 @@
 import { chainMutations } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
 import '@/zod2gql/zod2gql';
-import { getCookie } from 'cookies-next';
+import { getCookie, setCookie } from 'cookies-next';
 import useSWR, { SWRResponse } from 'swr';
 import { useUser } from './useUser';
 import { Team } from './z';
@@ -12,7 +12,9 @@ import { Team } from './z';
  */
 const extractTeams = (user: any): Team[] => {
   if (!user || !user.userTeams) return [];
-
+  if (!getCookie('auth-team') || !user.userTeams.some((userTeam: any) => userTeam.team.id === getCookie('auth-team'))) {
+    setCookie('auth-team', user.userTeams[0].team.id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+  }
   return user.userTeams.map((userTeam: any) => ({
     id: userTeam.team.id,
     name: userTeam.team.name,
