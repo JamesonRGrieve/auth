@@ -25,7 +25,7 @@ import {
 import { DataTable } from '@/components/jrg/wais/data/data-table';
 import { DataTableColumnHeader } from '@/components/jrg/wais/data/data-table-column-header';
 import { useOldCompanies, useOldInvitations } from '@/interactive/hooks/hooks.old';
-import { useTeam } from '../hooks/useUser';
+import { useTeam } from '../hooks/useTeam';
 
 interface User {
   email: string;
