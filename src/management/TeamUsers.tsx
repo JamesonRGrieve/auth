@@ -49,7 +49,7 @@ interface Invitation {
   inviter_id: string;
   role_id: number;
   is_accepted: boolean;
-  created_at: string;
+  createdAt: string;
   invitation_link: string;
 }
 
@@ -283,10 +283,10 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'created_at',
+      accessorKey: 'createdAt',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Sent Date' />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue('created_at'));
+        const date = new Date(row.getValue('createdAt'));
         const formattedDate = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',

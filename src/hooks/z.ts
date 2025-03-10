@@ -103,7 +103,7 @@ export const NotificationSchema = z.object({
   conversationName: z.string(),
   message: z.string(),
   messageId: z.string(),
-  timestamp: z.string(),
+  createdAt: z.string(),
   role: z.string(),
 });
 const InviteeSchema = z.object({
