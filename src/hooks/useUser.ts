@@ -4,7 +4,6 @@ import '@/zod2gql/zod2gql';
 import { getCookie } from 'cookies-next';
 import useSWR, { SWRResponse } from 'swr';
 import { User, UserSchema } from './z';
-
 /**
  * Hook to fetch and manage current user data
  * @returns SWR response containing user data
@@ -31,21 +30,23 @@ export function useUser(): SWRResponse<User | null> {
           client: 1,
         });
         return {
-          teams: [],
+          id: '',
           email: '',
           firstName: '',
-          id: '',
           lastName: '',
+          userTeams: [],
+          agents: [],
         };
       }
     },
     {
       fallbackData: {
-        teams: [],
+        id: '',
         email: '',
         firstName: '',
-        id: '',
         lastName: '',
+        userTeams: [],
+        agents: [],
       },
     },
   );

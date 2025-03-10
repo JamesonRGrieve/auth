@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import axios from 'axios';
-import { getCookie } from 'cookies-next';
-import { useState } from 'react';
+import { getCookie, setCookie } from 'cookies-next';
+import { useEffect, useState } from 'react';
 import { LuCheck, LuPencil, LuPlus } from 'react-icons/lu';
 import { useTeam, useTeams } from '../hooks/useTeam';
 
@@ -31,15 +31,16 @@ export const Team = () => {
   const [creating, setCreating] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
-  const { data: companyData } = useTeams();
-  const { data: activeCompany, mutate } = useTeam();
+  const { data: teamData } = useTeams();
+  console.log('ALL TEAMS', teamData);
+  const { data: activeTeam, mutate } = useTeam();
   const [responseMessage, setResponseMessage] = useState('');
-  console.log(activeCompany);
+  console.log(activeTeam);
   const handleConfirm = async () => {
     if (renaming) {
       try {
         await axios.put(
-          `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeCompany?.id}`,
+          `${process.env.NEXT_PUBLIC_API_URI}/v1/teams/${activeTeam?.id}`,
           { name: newName },
           {
             headers: {
@@ -50,14 +51,14 @@ export const Team = () => {
         );
         setRenaming(false);
         mutate();
-        setResponseMessage('Company name updated successfully!');
+        setResponseMessage('Team name updated successfully!');
       } catch (error) {
-        setResponseMessage(error.response?.data?.detail || 'Failed to update company name');
+        setResponseMessage(error.response?.data?.detail || 'Failed to update team name');
       }
     } else {
       try {
         const newResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URI}/v1/companies`,
+          `${process.env.NEXT_PUBLIC_API_URI}/v1/teams`,
           { name: newName, agent_name: newName + ' Agent', ...(newParent ? { parent_company_id: newParent } : {}) },
           {
             headers: {
@@ -67,9 +68,9 @@ export const Team = () => {
           },
         );
         mutate();
-        setResponseMessage('Company created successfully!');
+        setResponseMessage('Team created successfully!');
       } catch (error) {
-        setResponseMessage(error.response?.data?.detail || 'Failed to create company');
+        setResponseMessage(error.response?.data?.detail || 'Failed to create team');
       }
       setCreating(false);
     }
@@ -87,7 +88,7 @@ export const Team = () => {
         {
           email: email,
           role_id: parseInt(roleId),
-          company_id: companyData?.id,
+          team_id: teamData?.id,
         },
         {
           headers: {
@@ -111,7 +112,10 @@ export const Team = () => {
       setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
     }
   };
-
+  const [selectedTeam, setSelectedTeam] = useState('');
+  useEffect(() => {
+    setSelectedTeam(getCookie('auth-team'));
+  }, [getCookie('auth-team')]);
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-start'>
@@ -126,13 +130,13 @@ export const Team = () => {
             {creating && (
               <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
                 <SelectTrigger className='w-64'>
-                  <SelectValue placeholder='(Optional) Select a Parent Company' />
+                  <SelectValue placeholder='(Optional) Select a Parent Team' />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Parent Company</SelectLabel>
+                    <SelectLabel>Parent Team</SelectLabel>
                     <SelectItem value='-'>[NONE]</SelectItem>
-                    {companyData?.map((child: any) => (
+                    {teamData?.map((child: any) => (
                       <SelectItem key={child.id} value={child.id}>
                         {child.name}
                       </SelectItem>
@@ -143,7 +147,28 @@ export const Team = () => {
             )}
           </>
         ) : (
-          <h3 className='text-lg font-medium'>{activeCompany?.name}</h3>
+          <Select
+            value={selectedTeam}
+            onValueChange={(value) => {
+              setCookie('auth-team', value, {
+                domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN,
+              });
+              mutate();
+            }}
+          >
+            <SelectTrigger className='w-64'>
+              <SelectValue placeholder='Select a Team' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {teamData?.map((team: any) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         )}
 
         <TooltipProvider>
@@ -156,7 +181,7 @@ export const Team = () => {
                       handleConfirm();
                     } else {
                       setRenaming(true);
-                      setNewName(activeCompany?.name);
+                      setNewName(activeTeam?.name);
                     }
                   }}
                   disabled={creating}

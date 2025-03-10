@@ -1,20 +1,37 @@
 import { chainMutations } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
 import '@/zod2gql/zod2gql';
-import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import useSWR, { SWRResponse } from 'swr';
 import { useUser } from './useUser';
 import { Team } from './z';
 /**
- * Hook to fetch and manage company data
- * @returns SWR response containing array of companies
+ * Transform userTeams to teams array
+ * @param user - Current user data
+ * @returns Array of teams
+ */
+const extractTeams = (user: any): Team[] => {
+  if (!user || !user.userTeams) return [];
+
+  return user.userTeams.map((userTeam: any) => ({
+    id: userTeam.team.id,
+    name: userTeam.team.name,
+    agents: userTeam.team.agents || [],
+    // Include userTeams data from the team
+    userTeams: userTeam.team.userTeams || [],
+    // Add any additional properties needed for the Team type
+  }));
+};
+
+/**
+ * Hook to fetch and manage team data
+ * @returns SWR response containing array of teams
  */
 export function useTeams(): SWRResponse<Team[]> {
   const userHook = useUser();
   const { data: user } = userHook;
 
-  const swrHook = useSWR<Team[]>(['/teams', user], () => user?.teams || [], { fallbackData: [] });
+  const swrHook = useSWR<Team[]>(['/teams', user], () => extractTeams(user), { fallbackData: [] });
 
   const originalMutate = swrHook.mutate;
   swrHook.mutate = chainMutations(userHook, originalMutate);
@@ -23,50 +40,22 @@ export function useTeams(): SWRResponse<Team[]> {
 }
 
 /**
- * Hook to fetch and manage specific company data
- * @param id - Optional company ID to fetch
- * @returns SWR response containing company data or null
+ * Hook to fetch and manage specific team data
+ * @param id - Optional team ID to fetch
+ * @returns SWR response containing team data or null
  */
 export function useTeam(id?: string): SWRResponse<Team | null> {
-  const companiesHook = useTeams();
-  const { data: companies } = companiesHook;
-  console.log('COMPANY THING');
+  const teamsHook = useTeams();
+  const { data: teams } = teamsHook;
+  if (!id) id = getCookie('auth-team');
   const swrHook = useSWR<Team | null>(
-    [`/company?id=${id}`, companies, getCookie('jwt')],
+    [`/team?id=${id}`, teams, getCookie('jwt')],
     async (): Promise<Team | null> => {
       if (!getCookie('jwt')) return null;
       try {
+        // If an ID is explicitly provided, use that
         if (id) {
-          return companies?.find((c) => c.id === id) || null;
-        } else {
-          log(['GQL useTeam() Teams', companies], {
-            client: 1,
-          });
-          const agentName = getCookie('aginteractive-agent');
-          log(['GQL useTeam() AgentName', agentName], {
-            client: 1,
-          });
-          const targetTeam =
-            companies?.find((c) => (agentName ? c.agents.some((a) => a.name === agentName) : c.primary)) || null;
-          log(['GQL useTeam() Team', targetTeam], {
-            client: 1,
-          });
-          if (!targetTeam) return null;
-          targetTeam.extensions = (
-            await axios.get(
-              `${process.env.NEXT_PUBLIC_API_URI}/v1/teams/${targetTeam.id}/extensions`,
-
-              {
-                headers: {
-                  Authorization: getCookie('jwt'),
-                },
-              },
-            )
-          ).data.extensions;
-          log(['GQL useTeam() Team With Extensions', targetTeam], {
-            client: 3,
-          });
-          return targetTeam;
+          return teams?.find((t) => t.id === id) || null;
         }
       } catch (error) {
         log(['GQL useTeam() Error', error], {
@@ -79,7 +68,7 @@ export function useTeam(id?: string): SWRResponse<Team | null> {
   );
 
   const originalMutate = swrHook.mutate;
-  swrHook.mutate = chainMutations(companiesHook, originalMutate);
+  swrHook.mutate = chainMutations(teamsHook, originalMutate);
 
   return swrHook;
 }
