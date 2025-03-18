@@ -1,8 +1,8 @@
 'use client';
 
-import usePathname from '@/auth/hooks/usePathname';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import usePathname from '../../../auth/src/hooks/usePathname';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../../components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../../../components/ui/tooltip';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { useTeams } from '../hooks/useTeam';
