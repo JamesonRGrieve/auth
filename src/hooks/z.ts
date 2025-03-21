@@ -31,7 +31,7 @@ const SimpleTeamSchema = z.object({
       z.object({
         id: z.string(),
         user: SimpleUserSchema,
-        roleId: z.number().int(),
+        roleId: z.string(),
         enabled: z.boolean(),
         createdAt: z.string(),
       }),
@@ -44,7 +44,7 @@ export const UserTeamSchema = z.object({
   id: z.string(),
   userId: z.string(),
   teamId: z.string(),
-  roleId: z.number().int(),
+  roleId: z.string(),
   enabled: z.boolean(),
   createdAt: z.string(),
   // Add nested team reference
