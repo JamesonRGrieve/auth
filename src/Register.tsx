@@ -125,7 +125,15 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
             additionalFields.map((field) => (
               <div key={field} className='space-y-1'>
                 <Label htmlFor={field}>{toTitleCase(field)}</Label>
-                <Input key={field} id={field} name={field} type='text' required placeholder={toTitleCase(field)} />
+                <Input
+                  key={field}
+                  id={field}
+                  name={field}
+                  type='text'
+                  autoFocus={field === 'first_name'}
+                  required
+                  placeholder={toTitleCase(field)}
+                />
               </div>
             ))}
           {authConfig.recaptchaSiteKey && (

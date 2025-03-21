@@ -98,7 +98,13 @@ export default function Login({
           </>
         )}
         <Label htmlFor='token'>Multi-Factor Code</Label>
-        <Input id='token' placeholder='Enter your 6 digit code' name='token' autoComplete='one-time-code' />
+        <Input
+          id='token'
+          placeholder='Enter your 6 digit code'
+          autoFocus={!authConfig.authModes.basic}
+          name='token'
+          autoComplete='one-time-code'
+        />
         <MissingAuthenticator />
         {authConfig.recaptchaSiteKey && (
           <div className='my-3'>
