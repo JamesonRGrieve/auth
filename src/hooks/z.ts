@@ -47,7 +47,6 @@ export const UserTeamSchema = z.object({
   roleId: z.string(),
   enabled: z.boolean(),
   createdAt: z.string(),
-  // Add nested team reference
   team: SimpleTeamSchema,
 });
 

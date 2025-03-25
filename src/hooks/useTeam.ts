@@ -1,43 +1,38 @@
-import { chainMutations } from '@/interactive/hooks/lib';
+import { useToast } from '@/hooks/useToast';
+import { chainMutations, createGraphQLClient } from '@/interactive/hooks/lib';
+import { useInteractiveConfig } from '@/interactive/InteractiveConfigContext';
 import log from '@/next-log/log';
 import '@/zod2gql/zod2gql';
-import { getCookie, setCookie } from 'cookies-next';
+import { getCookie } from 'cookies-next';
+import { useRouter } from 'next/navigation';
 import useSWR, { SWRResponse } from 'swr';
-import { useUser } from './useUser';
 import { Team } from './z';
-/**
- * Transform userTeams to teams array
- * @param user - Current user data
- * @returns Array of teams
- */
-const extractTeams = (user: any): Team[] => {
-  if (!user || !user.userTeams) return [];
-  if (!getCookie('auth-team') || !user.userTeams.some((userTeam: any) => userTeam.team.id === getCookie('auth-team'))) {
-    setCookie('auth-team', user.userTeams[0].team.id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
-  }
-  return user.userTeams.map((userTeam: any) => ({
-    id: userTeam.team.id,
-    name: userTeam.team.name,
-    agents: userTeam.team.agents || [],
-    // Include userTeams data from the team
-    userTeams: userTeam.team.userTeams || [],
-    // Add any additional properties needed for the Team type
-  }));
-};
-
 /**
  * Hook to fetch and manage team data
  * @returns SWR response containing array of teams
  */
 export function useTeams(): SWRResponse<Team[]> {
-  const userHook = useUser();
-  const { data: user } = userHook;
+  const client = createGraphQLClient();
+  const { toast } = useToast();
+  const { sdk: sdk } = useInteractiveConfig();
+  const router = useRouter();
 
-  const swrHook = useSWR<Team[]>(['/teams', user], () => extractTeams(user), { fallbackData: [] });
-
-  const originalMutate = swrHook.mutate;
-  swrHook.mutate = chainMutations(userHook, originalMutate);
-
+  const swrHook = useSWR<Team[]>(
+    '/prompts',
+    async (): Promise<Team[]> => {
+      try {
+        const query = TeamSchema.toGQL('query', 'GetTeams');
+        const response = await client.request(query);
+        return response.teams || [];
+      } catch (error) {
+        log(['GQL useTeams() Error', error], {
+          client: 1,
+        });
+        return [];
+      }
+    },
+    { fallbackData: [] },
+  );
   return swrHook;
 }
 
@@ -57,7 +52,7 @@ export function useTeam(id?: string): SWRResponse<Team | null> {
       try {
         // If an ID is explicitly provided, use that
         if (id) {
-          return teams?.find((t) => t.id === id) || null;
+          return teams?.find((team) => team.id === id) || null;
         }
       } catch (error) {
         log(['GQL useTeam() Error', error], {
