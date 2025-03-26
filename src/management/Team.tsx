@@ -16,6 +16,7 @@ import { getCookie, setCookie } from 'cookies-next';
 import { useEffect, useState } from 'react';
 import { LuCheck, LuPencil, LuPlus } from 'react-icons/lu';
 import { useTeam, useTeams } from '../hooks/useTeam';
+import { useToast } from '@/hooks/useToast';
 
 const ROLES = [
   { id: 2, name: 'Admin' },
@@ -31,8 +32,8 @@ export const Team = () => {
   const [creating, setCreating] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
-  const [responseMessage, setResponseMessage] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
+  const { toast } = useToast();
 
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam();
@@ -52,9 +53,16 @@ export const Team = () => {
         );
         setRenaming(false);
         mutate();
-        setResponseMessage('Team name updated successfully!');
+        toast({
+          title: 'Success',
+          description: 'Team name updated successfully!',
+        });
       } catch (error) {
-        setResponseMessage(error.response?.data?.detail || 'Failed to update team name');
+        toast({
+          title: 'Error',
+          description: error.response?.data?.detail || 'Failed to update team name',
+          variant: 'destructive',
+        });
       }
     } else {
       try {
@@ -73,9 +81,16 @@ export const Team = () => {
           },
         );
         mutate();
-        setResponseMessage('Team created successfully!');
+        toast({
+          title: 'Success',
+          description: 'Team created successfully!',
+        });
       } catch (error) {
-        setResponseMessage(error.response?.data?.detail || 'Failed to create team');
+        toast({
+          title: 'Error',
+          description: error.response?.data?.detail || 'Failed to create team',
+          variant: 'destructive',
+        });
       }
       setCreating(false);
     }
@@ -85,7 +100,11 @@ export const Team = () => {
     e.preventDefault();
 
     if (!email) {
-      setResponseMessage('Please enter an email to invite.');
+      toast({
+        title: 'Error',
+        description: 'Please enter an email to invite.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -107,16 +126,24 @@ export const Team = () => {
 
       if (response.status === 200) {
         if (response.data?.id) {
-          setResponseMessage(
-            `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
-          );
+          toast({
+            title: 'Success',
+            description: `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
+          });
         } else {
-          setResponseMessage('Invitation sent successfully!');
+          toast({
+            title: 'Success',
+            description: 'Invitation sent successfully!',
+          });
         }
         setEmail('');
       }
     } catch (error) {
-      setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to send invitation',
+        variant: 'destructive',
+      });
     }
   };
 
