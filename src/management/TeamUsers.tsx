@@ -37,14 +37,14 @@ interface User {
 }
 
 const ROLES = [
-  { id: 2, name: 'Admin' },
-  { id: 3, name: 'User' },
+  { id: 'FFFFFFFF-FFFF-FFFF-AAAA-FFFFFFFFFFFF', name: 'Admin' },
+  { id: 'FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF', name: 'User' },
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
 interface Invitation {
   id: string;
-  company_id: string;
+  team_id: string;
   email: string;
   inviter_id: string;
   role_id: number;
@@ -360,11 +360,13 @@ export const Team = () => {
     }
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitation`,
         {
-          email: email,
-          role_id: parseInt(roleId),
-          company_id: activeTeam?.id,
+          invitation: {
+            email: email,
+            role_id: roleId,
+            team_id: activeTeam?.id,
+          },
         },
         {
           headers: {
