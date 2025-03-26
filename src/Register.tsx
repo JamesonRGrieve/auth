@@ -99,12 +99,24 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       formRef.current.requestSubmit();
     }
   }, []);
+
   const [invite, setInvite] = useState<string | null>(null);
+
+  const registerHeader = {
+    title: 'Sign Up',
+    description: 'Welcome, please complete your registration.',
+  };
+
+  const inviteHeader = {
+    title: 'Accept Invitation',
+    description: `You've been invited to join ${invite?.replaceAll('+', ' ') || 'Team'}. Please complete your registration to join the team.`,
+  };
+
   return (
     <div className={additionalFields.length === 0 && authConfig.authModes.magical ? ' invisible' : ''}>
       <AuthCard
-        title={invite !== null ? 'Accept Invitation to ' + (invite.replaceAll('+', ' ') || 'Team') : 'Sign Up'}
-        description={`Welcome, please complete your registration. ${invite !== null ? 'You are ' : ''}${invite ? ' to ' + invite.replaceAll('+', ' ') + '.' : ''}${invite !== null ? '.' : ''}`}
+        title={invite !== null ? inviteHeader.title : registerHeader.title}
+        description={invite !== null ? inviteHeader.description : registerHeader.description}
         showBackButton
       >
         <form onSubmit={submitForm} className='flex flex-col gap-4' ref={formRef}>
