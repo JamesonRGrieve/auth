@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipBasic } from '@/components/ui/tooltip';
 import axios from 'axios';
 import { getCookie, setCookie } from 'cookies-next';
 import { useEffect, useState } from 'react';
@@ -31,9 +31,12 @@ export const Team = () => {
   const [creating, setCreating] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
+  const [responseMessage, setResponseMessage] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('');
+
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam();
-  const [responseMessage, setResponseMessage] = useState('');
+
   const handleConfirm = async () => {
     if (renaming) {
       try {
@@ -57,7 +60,11 @@ export const Team = () => {
       try {
         const newResponse = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URI}/v1/teams`,
-          { name: newName, agent_name: newName + ' Agent', ...(newParent ? { parent_company_id: newParent } : {}) },
+          {
+            name: newName,
+            agent_name: newName + ' Agent',
+            ...(newParent ? { parent_company_id: newParent } : {}),
+          },
           {
             headers: {
               Authorization: getCookie('jwt'),
@@ -74,19 +81,21 @@ export const Team = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email) {
       setResponseMessage('Please enter an email to invite.');
       return;
     }
+
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
         {
           email: email,
           role_id: parseInt(roleId),
-          team_id: teamData?.id,
+          team_id: teamData?.[0]?.id,
         },
         {
           headers: {
@@ -110,10 +119,11 @@ export const Team = () => {
       setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
     }
   };
-  const [selectedTeam, setSelectedTeam] = useState('');
+
   useEffect(() => {
     setSelectedTeam(getCookie('auth-team'));
   }, [getCookie('auth-team')]);
+
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-start'>
@@ -169,55 +179,43 @@ export const Team = () => {
           </Select>
         )}
 
-        <TooltipProvider>
-          <div className='flex gap-2'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => {
-                    if (renaming) {
-                      handleConfirm();
-                    } else {
-                      setRenaming(true);
-                      setNewName(activeTeam?.name);
-                    }
-                  }}
-                  disabled={creating}
-                  size='icon'
-                  variant='ghost'
-                >
-                  {renaming ? <LuCheck className='h-4 w-4' /> : <LuPencil className='h-4 w-4' />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{renaming ? 'Confirm rename' : 'Rename'}</p>
-              </TooltipContent>
-            </Tooltip>
+        <div className='flex gap-2'>
+          <TooltipBasic title={renaming ? 'Confirm rename' : 'Rename'}>
+            <Button
+              onClick={() => {
+                if (renaming) {
+                  handleConfirm();
+                } else {
+                  setRenaming(true);
+                  setNewName(activeTeam?.name);
+                }
+              }}
+              disabled={creating}
+              size='icon'
+              variant='ghost'
+            >
+              {renaming ? <LuCheck className='w-4 h-4' /> : <LuPencil className='w-4 h-4' />}
+            </Button>
+          </TooltipBasic>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => {
-                    if (creating) {
-                      handleConfirm();
-                    } else {
-                      setCreating(true);
-                      setNewName('');
-                    }
-                  }}
-                  disabled={renaming}
-                  size='icon'
-                  variant='ghost'
-                >
-                  {creating ? <LuCheck className='h-4 w-4' /> : <LuPlus className='h-4 w-4' />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{creating ? 'Confirm create' : 'Create new'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+          <TooltipBasic title={creating ? 'Confirm create' : 'Create new'}>
+            <Button
+              onClick={() => {
+                if (creating) {
+                  handleConfirm();
+                } else {
+                  setCreating(true);
+                  setNewName('');
+                }
+              }}
+              disabled={renaming}
+              size='icon'
+              variant='ghost'
+            >
+              {creating ? <LuCheck className='w-4 h-4' /> : <LuPlus className='w-4 h-4' />}
+            </Button>
+          </TooltipBasic>
+        </div>
       </div>
     </div>
   );
