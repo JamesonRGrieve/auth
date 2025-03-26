@@ -370,12 +370,38 @@ export const Team = () => {
     },
   ];
 
-  const handleSubmit = async (e) => {
+  log(['Invitations Data', invitationsData], { client: 3 });
+
+  return (
+    <div className='space-y-6'>
+      <h4 className='font-medium text-md'>{activeTeam?.name} Current Users</h4>
+      <DataTable data={users || []} columns={users_columns} />
+      <InviteUsers />
+      {invitationsData.length > 0 && (
+        <>
+          <h4 className='font-medium text-md'>Pending Invitations</h4>
+          <DataTable data={invitationsData || []} columns={invitations_columns} />
+        </>
+      )}
+    </div>
+  );
+};
+
+export function InviteUsers() {
+  const [email, setEmail] = useState('');
+  const [roleId, setRoleId] = useState('3');
+  const [responseMessage, setResponseMessage] = useState('');
+  const { data: activeTeam } = useTeam();
+  const { mutate: mutateInvitations } = useInvitations(activeTeam?.id);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) {
       setResponseMessage('Please enter an email to invite.');
       return;
     }
+
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URI}/v1/invitation`,
@@ -393,7 +419,9 @@ export const Team = () => {
           },
         },
       );
+
       mutateInvitations();
+
       if (response.status === 200) {
         toast({
           title: 'Invitation sent',
@@ -417,53 +445,43 @@ export const Team = () => {
       setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
     }
   };
-  log(['Invitations Data', invitationsData], { client: 3 });
+
   return (
-    <div className='space-y-6'>
-      <h4 className='font-medium text-md'>{activeTeam?.name} Current Users</h4>
-      <DataTable data={users || []} columns={users_columns} />
-      <form onSubmit={handleSubmit} className='space-y-4'>
-        <h4 className='font-medium text-md'>Invite Users to {activeTeam?.name}</h4>
-        <div className='space-y-2'>
-          <Label htmlFor='email'>Email Address</Label>
-          <Input
-            id='email'
-            type='email'
-            placeholder='user@example.com'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className='w-full'
-          />
-        </div>
+    <form onSubmit={handleSubmit} className='space-y-4'>
+      <h4 className='font-medium text-md'>Invite Users to {activeTeam?.name}</h4>
+      <div className='space-y-2'>
+        <Label htmlFor='email'>Email Address</Label>
+        <Input
+          id='email'
+          type='email'
+          placeholder='user@example.com'
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className='w-full'
+        />
+      </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor='role'>Role</Label>
-          <Select value={roleId} onValueChange={setRoleId}>
-            <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Select a role' />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((role) => (
-                <SelectItem key={role.id} value={role.id.toString()}>
-                  {role.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className='space-y-2'>
+        <Label htmlFor='role'>Role</Label>
+        <Select value={roleId} onValueChange={setRoleId}>
+          <SelectTrigger className='w-full'>
+            <SelectValue placeholder='Select a role' />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLES.map((role) => (
+              <SelectItem key={role.id} value={role.id.toString()}>
+                {role.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <Button type='submit' className='w-full' disabled={!email}>
-          Send Invitation
-        </Button>
-      </form>
-      {invitationsData.length > 0 && (
-        <>
-          <h4 className='font-medium text-md'>Pending Invitations</h4>
-          <DataTable data={invitationsData || []} columns={invitations_columns} />
-        </>
-      )}
-    </div>
+      <Button type='submit' className='w-full' disabled={!email}>
+        Send Invitation
+      </Button>
+    </form>
   );
-};
+}
 
 export default Team;
