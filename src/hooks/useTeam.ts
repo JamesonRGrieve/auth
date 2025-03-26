@@ -6,7 +6,7 @@ import '@/zod2gql/zod2gql';
 import { getCookie, setCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import useSWR, { SWRResponse } from 'swr';
-import { Team } from './z';
+import { Team, TeamSchema } from './z';
 /**
  * Hook to fetch and manage team data
  * @returns SWR response containing array of teams
@@ -18,8 +18,9 @@ export function useTeams(): SWRResponse<Team[]> {
   const router = useRouter();
 
   const swrHook = useSWR<Team[]>(
-    '/prompts',
+    '/teams',
     async (): Promise<Team[]> => {
+      console.log('GETTING TEAMS');
       try {
         const query = TeamSchema.toGQL('query', 'GetTeams');
         const response = await client.request(query);
