@@ -9,6 +9,7 @@ import { getCookie } from 'cookies-next';
 import { Check, Mail, MoreHorizontal, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useToast } from '@/hooks/useToast';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,7 @@ export const Team = () => {
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
   const [responseMessage, setResponseMessage] = useState('');
   const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);
+  const { toast } = useToast();
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -174,16 +176,29 @@ export const Team = () => {
               <DropdownMenuItem onSelect={() => router.push(`/users/${row.original.id}`)}>View Details</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={(e) => {
-                  axios.delete(
-                    `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeTeam?.id}/users/${row.original.id}`,
-                    {
-                      headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: getCookie('jwt'),
+                onClick={async (e) => {
+                  try {
+                    await axios.delete(
+                      `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeTeam?.id}/users/${row.original.id}`,
+                      {
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: getCookie('jwt'),
+                        },
                       },
-                    },
-                  );
+                    );
+                    toast({
+                      title: 'User deleted',
+                      description: 'The user has been removed from the team.',
+                    });
+                    mutate();
+                  } catch (error) {
+                    toast({
+                      title: 'Error deleting user',
+                      description: 'Failed to remove the user from the team.',
+                      variant: 'destructive',
+                    });
+                  }
                 }}
                 className='p-0'
               >
@@ -306,7 +321,10 @@ export const Team = () => {
 
         const copyInviteLink = (link: string) => {
           navigator.clipboard.writeText(link);
-          // You might want to add a toast notification here
+          toast({
+            title: 'Link copied',
+            description: 'The invitation link has been copied to your clipboard.',
+          });
         };
 
         return (
@@ -377,6 +395,10 @@ export const Team = () => {
       );
       mutateInvitations();
       if (response.status === 200) {
+        toast({
+          title: 'Invitation sent',
+          description: 'The invitation has been sent successfully.',
+        });
         if (response.data?.id) {
           setResponseMessage(
             `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
@@ -387,16 +409,21 @@ export const Team = () => {
         setEmail('');
       }
     } catch (error) {
+      toast({
+        title: 'Error sending invitation',
+        description: error.response?.data?.detail || 'Failed to send invitation',
+        variant: 'destructive',
+      });
       setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
     }
   };
   log(['Invitations Data', invitationsData], { client: 3 });
   return (
     <div className='space-y-6'>
-      <h4 className='text-md font-medium'>{activeTeam?.name} Current Users</h4>
+      <h4 className='font-medium text-md'>{activeTeam?.name} Current Users</h4>
       <DataTable data={users || []} columns={users_columns} />
       <form onSubmit={handleSubmit} className='space-y-4'>
-        <h4 className='text-md font-medium'>Invite Users to {activeTeam?.name}</h4>
+        <h4 className='font-medium text-md'>Invite Users to {activeTeam?.name}</h4>
         <div className='space-y-2'>
           <Label htmlFor='email'>Email Address</Label>
           <Input
@@ -431,7 +458,7 @@ export const Team = () => {
       </form>
       {invitationsData.length > 0 && (
         <>
-          <h4 className='text-md font-medium'>Pending Invitations</h4>
+          <h4 className='font-medium text-md'>Pending Invitations</h4>
           <DataTable data={invitationsData || []} columns={invitations_columns} />
         </>
       )}
