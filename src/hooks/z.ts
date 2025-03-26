@@ -42,12 +42,11 @@ const SimpleTeamSchema = z.object({
 // Update UserTeamSchema to include relations
 export const UserTeamSchema = z.object({
   id: z.string(),
-  userId: z.string(),
-  teamId: z.string(),
-  roleId: z.string(),
-  enabled: z.boolean(),
-  createdAt: z.string(),
-  team: SimpleTeamSchema,
+  // userId: z.string(),
+  // teamId: z.string(),
+  // roleId: z.string(),
+  // createdAt: z.string(),
+  // team: SimpleTeamSchema,
 });
 
 export const TeamSchema = z.object({
@@ -58,8 +57,8 @@ export const TeamSchema = z.object({
   token: z.string().optional().nullable(),
   trainingData: z.string().optional().nullable(),
   agentName: z.string().optional().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string().optional().nullable(),
+  // createdAt: z.string(),
+  // updatedAt: z.string().optional().nullable(),
   teamId: z.union([z.string().uuid(), z.null()]).optional(),
   primary: z.boolean().optional(),
   roleId: z.number().int().positive().optional(),
