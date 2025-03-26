@@ -62,13 +62,10 @@ export const Team = () => {
   const [newName, setNewName] = useState('');
 
   const { data: teamData } = useTeams();
-  console.log('COMPANIES', teamData);
   const { data: activeTeam, mutate } = useTeam();
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
-  console.log('ACTIVE COMPANY', activeTeam);
   const [responseMessage, setResponseMessage] = useState('');
   const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);
-  console.log('USERS', users);
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',

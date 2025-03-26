@@ -32,10 +32,8 @@ export const Team = () => {
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
   const { data: teamData } = useTeams();
-  console.log('ALL TEAMS', teamData);
   const { data: activeTeam, mutate } = useTeam();
   const [responseMessage, setResponseMessage] = useState('');
-  console.log(activeTeam);
   const handleConfirm = async () => {
     if (renaming) {
       try {

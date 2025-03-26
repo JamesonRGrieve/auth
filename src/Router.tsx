@@ -114,7 +114,7 @@ export default function AuthRouter({
 }) {
   corePagesConfig = deepMerge(pageConfigDefaults, corePagesConfig);
 
-  console.log('Core Pages Config', corePagesConfig);
+  // console.log('Core Pages Config', corePagesConfig);
   const pages = {
     [corePagesConfig.identify.path]: <User {...corePagesConfig.identify.props} />,
     [corePagesConfig.login.path]: <Login searchParams={searchParams} {...corePagesConfig.login.props} />,

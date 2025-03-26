@@ -20,7 +20,6 @@ export function useTeams(): SWRResponse<Team[]> {
   const swrHook = useSWR<Team[]>(
     '/teams',
     async (): Promise<Team[]> => {
-      console.log('GETTING TEAMS');
       try {
         const query = TeamSchema.toGQL('query', 'GetTeams');
         const response = await client.request(query);
