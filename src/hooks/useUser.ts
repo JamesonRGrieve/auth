@@ -14,7 +14,9 @@ export function useUser(): SWRResponse<User | null> {
   return useSWR<User | null>(
     ['/user', getCookie('jwt')],
     async (): Promise<User | null> => {
-      if (!getCookie('jwt')) return null;
+      if (!getCookie('jwt')) {
+        return null;
+      }
       try {
         const query = UserSchema.toGQL('query', 'GetUser');
         log(['GQL useUser() Query', query], {

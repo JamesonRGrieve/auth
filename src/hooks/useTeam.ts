@@ -17,7 +17,7 @@ export function useTeams(): SWRResponse<Team[]> {
   const { sdk: sdk } = useInteractiveConfig();
   const router = useRouter();
 
-  const swrHook = useSWR<Team[]>(
+  return useSWR<Team[]>(
     '/teams',
     async (): Promise<Team[]> => {
       try {
@@ -38,7 +38,6 @@ export function useTeams(): SWRResponse<Team[]> {
     },
     { fallbackData: [] },
   );
-  return swrHook;
 }
 
 /**
@@ -49,11 +48,15 @@ export function useTeams(): SWRResponse<Team[]> {
 export function useTeam(id?: string): SWRResponse<Team | null> {
   const teamsHook = useTeams();
   const { data: teams } = teamsHook;
-  if (!id) id = getCookie('auth-team');
+  if (!id) {
+    id = getCookie('auth-team');
+  }
   const swrHook = useSWR<Team | null>(
     [`/team?id=${id}`, teams, getCookie('jwt')],
     async (): Promise<Team | null> => {
-      if (!getCookie('jwt')) return null;
+      if (!getCookie('jwt')) {
+        return null;
+      }
       try {
         // If an ID is explicitly provided, use that
         if (id) {

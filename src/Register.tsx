@@ -38,9 +38,15 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     }
     const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
     if (authConfig.authModes.basic) {
-      if (!formData['password']) setResponseMessage('Please enter a password.');
-      if (!formData['password-again']) setResponseMessage('Please enter your password again.');
-      if (formData['password'] !== formData['password-again']) setResponseMessage('Passwords do not match.');
+      if (!formData['password']) {
+        setResponseMessage('Please enter a password.');
+      }
+      if (!formData['password-again']) {
+        setResponseMessage('Please enter your password again.');
+      }
+      if (formData['password'] !== formData['password-again']) {
+        setResponseMessage('Passwords do not match.');
+      }
     }
     if (getCookie('invitation')) {
       formData['invitation_id'] = getCookie('invitation') ?? ''.toString();

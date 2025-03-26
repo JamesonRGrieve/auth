@@ -2,8 +2,8 @@
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { FormEvent } from 'react';
-import PasswordField from '@/components/jrg/ui/styled/Input/PasswordField';
 import { Separator } from '@/components/ui/separator';
+import PasswordField from '@/components/jrg/ui/styled/Input/PasswordField';
 
 export const Account = ({
   authConfig,
@@ -28,9 +28,15 @@ export const Account = ({
           onSubmit={async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
 
-            if (!formData['password']) setResponseMessage('Please enter a password.');
-            if (!formData['password-again']) setResponseMessage('Please enter your password again.');
-            if (formData['password'] !== formData['password-again']) setResponseMessage('Passwords do not match.');
+            if (!formData['password']) {
+              setResponseMessage('Please enter a password.');
+            }
+            if (!formData['password-again']) {
+              setResponseMessage('Please enter your password again.');
+            }
+            if (formData['password'] !== formData['password-again']) {
+              setResponseMessage('Passwords do not match.');
+            }
             const passwordResetResponse = await axios
               .put(
                 `${authConfig.authServer}${userPasswordChangeEndpoint}`,

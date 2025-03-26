@@ -10,15 +10,15 @@ import { ReactNode } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { LuUser } from 'react-icons/lu';
 import { z } from 'zod';
-import AuthCard from './AuthCard';
-import OAuth from './oauth2/OAuth';
-import { useAuthentication } from './Router';
 
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useAuthentication } from './Router';
+import OAuth from './oauth2/OAuth';
+import AuthCard from './AuthCard';
 
 const schema = z.object({
   email: z.string().email({ message: 'Please enter a valid E-Mail address.' }),

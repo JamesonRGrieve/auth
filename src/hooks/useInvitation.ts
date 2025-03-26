@@ -26,9 +26,7 @@ export function useInvitations(teamId?: string): SWRResponse<Invitation[]> {
         }
 
         // Parse and validate the response
-        const invitations = response.invitations.map((invitation) => InvitationSchema.parse(invitation));
-
-        return invitations;
+        return response.invitations.map((invitation) => InvitationSchema.parse(invitation));
       } catch (error) {
         log(['GQL useInvitations() Error', error], {
           client: 1,

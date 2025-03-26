@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { LuCheck as CheckIcon, LuMinus as MinusIcon } from 'react-icons/lu';
 // import { Label } from '@/components/ui/label';
 // import { Switch } from '@/components/ui/switch';
-import useProducts from '@/auth/hooks/useProducts';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
+import useProducts from '@/auth/hooks/useProducts';
 // const defaultPricingData = [
 //   {
 //     name: 'Free',
