@@ -1,7 +1,7 @@
 'use client';
 
 import { useAssertion } from '@/components/jrg/assert/assert';
-import { validateURI } from '@/lib/validation';
+import { validateURI } from '@/src/lib/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosError } from 'axios';
 import { setCookie } from 'cookies-next';
@@ -16,9 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import AuthCard from './AuthCard';
 import { useAuthentication } from './Router';
 import OAuth from './oauth2/OAuth';
-import AuthCard from './AuthCard';
 
 const schema = z.object({
   email: z.string().email({ message: 'Please enter a valid E-Mail address.' }),

@@ -28,13 +28,7 @@ const SimpleTeamSchema = z.object({
   agents: z.array(AgentSchema),
   userTeams: z.array(
     z.lazy(() =>
-      z.object({
-        id: z.string(),
-        user: SimpleUserSchema,
-        roleId: z.string(),
-        enabled: z.boolean(),
-        createdAt: z.string(),
-      }),
+      z.object({ id: z.string(), user: SimpleUserSchema, roleId: z.string(), enabled: z.boolean(), createdAt: z.string() }),
     ),
   ),
 });
@@ -57,8 +51,8 @@ export const TeamSchema = z.object({
   // token: z.string().optional().nullable(),
   // trainingData: z.string().optional().nullable(),
   // agentName: z.string().optional().nullable(),
-  // createdAt: z.string(),
-  // updatedAt: z.string().optional().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional().nullable(),
   parentId: z.union([z.string().uuid(), z.null()]).optional(),
   // primary: z.boolean().optional(),
   // roleId: z.number().int().positive().optional(),

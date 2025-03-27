@@ -4,7 +4,7 @@ import { useAssertion } from '@/components/jrg/assert/assert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { validateURI } from '@/lib/validation';
+import { validateURI } from '@/src/lib/validation';
 import axios, { AxiosError } from 'axios';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';

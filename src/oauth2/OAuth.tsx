@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { useAgent } from '@/interface/hooks/useAgent';
-import deepMerge from '@/lib/objects';
 import log from '@/next-log/log';
+import deepMerge from '@/src/lib/objects';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useCallback, useMemo } from 'react';
 import OAuth2Login from 'react-simple-oauth2-login';

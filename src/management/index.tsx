@@ -2,8 +2,8 @@
 import { useAssertion } from '@/components/jrg/assert/assert';
 import { Button } from '@/components/ui/button';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
-import { validateURI } from '@/lib/validation';
 import log from '@/next-log/log';
+import { validateURI } from '@/src/lib/validation';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
