@@ -1,14 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import Field from '@/components/ui/styled/FormControl/Field';
+import { useToast } from '@/hooks/useToast';
 import log from '@/next-log/log';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
+import { CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { LuKey } from 'react-icons/lu';
-import { CheckCircle } from 'lucide-react';
-import Field from '@/components/jrg/ui/styled/FormControl/Field';
-import { useToast } from '@/hooks/useToast';
 
 export type RegisterFormProps = object;
 

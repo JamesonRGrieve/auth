@@ -1,9 +1,9 @@
 'use client';
+import { Separator } from '@/components/ui/separator';
+import PasswordField from '@/components/ui/styled/Input/PasswordField';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { FormEvent } from 'react';
-import { Separator } from '@/components/ui/separator';
-import PasswordField from '@/components/jrg/ui/styled/Input/PasswordField';
 
 export const Account = ({
   authConfig,

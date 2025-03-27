@@ -1,7 +1,7 @@
 'use client';
 
-import { useAssertion } from '@/components/jrg/assert/assert';
-import { validateURI } from '@/src/lib/validation';
+import { useAssertion } from '@/components/assert/assert';
+import { validateURI } from '@/lib/validation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosError } from 'axios';
 import { setCookie } from 'cookies-next';

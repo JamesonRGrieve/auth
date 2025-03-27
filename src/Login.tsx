@@ -1,10 +1,10 @@
 'use client';
 
-import { useAssertion } from '@/components/jrg/assert/assert';
+import { useAssertion } from '@/components/assert/assert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { validateURI } from '@/src/lib/validation';
+import { validateURI } from '@/lib/validation';
 import axios, { AxiosError } from 'axios';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';

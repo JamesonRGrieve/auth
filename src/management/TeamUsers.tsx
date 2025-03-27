@@ -2,6 +2,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/useToast';
 import log from '@/next-log/log';
 import { ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
@@ -9,7 +10,6 @@ import { getCookie } from 'cookies-next';
 import { Check, Mail, MoreHorizontal, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useToast } from '@/hooks/useToast';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { DataTable } from '@/components/jrg/wais/data/data-table';
-import { DataTableColumnHeader } from '@/components/jrg/wais/data/data-table-column-header';
+import { DataTable } from '@/components/wais/data/data-table';
+import { DataTableColumnHeader } from '@/components/wais/data/data-table-column-header';
 import { useInvitations } from '../hooks/useInvitation';
 import { useTeam, useTeams } from '../hooks/useTeam';
 
