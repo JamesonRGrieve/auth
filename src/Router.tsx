@@ -1,7 +1,8 @@
 'use client';
+
 import assert from '@/components/assert/assert';
 import deepMerge from '@/lib/objects';
-import { notFound } from 'next/navigation';
+import { notFound, useSearchParams } from 'next/navigation';
 import { ReactNode, useContext } from 'react';
 import { AuthenticationContext } from './AuthenticationContext';
 import ErrorPage, { ErrorPageProps } from './ErrorPage';
@@ -101,6 +102,23 @@ const pageConfigDefaults: AuthenticationConfig = {
   enableOU: false,
 };
 
+// Async function to retrieve search params
+async function getSearchParamsAsync() {
+  // In a real implementation, you might fetch data based on search params
+  // This is just a placeholder to demonstrate the pattern
+  return new Promise<Record<string, string>>((resolve) => {
+    // Simulating async operation
+    setTimeout(() => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const params: Record<string, string> = {};
+      searchParams.forEach((value, key) => {
+        params[key] = value;
+      });
+      resolve(params);
+    }, 0);
+  });
+}
+
 export default function AuthRouter({
   params,
   searchParams,
@@ -108,36 +126,83 @@ export default function AuthRouter({
   additionalPages = {},
 }: {
   params: { slug?: string[] };
-  searchParams: any;
-  corePagesConfig?: AuthenticationConfig;
-  additionalPages: { [key: string]: ReactNode };
+  searchParams?: Record<string, string> | URLSearchParams;
+  corePagesConfig?: Partial<AuthenticationConfig>;
+  additionalPages?: { [key: string]: ReactNode };
 }) {
-  corePagesConfig = deepMerge(pageConfigDefaults, corePagesConfig);
+  // Use Next.js 15 hooks for search params if not provided directly
+  const routeSearchParams = useSearchParams();
 
-  // console.log('Core Pages Config', corePagesConfig);
+  // Convert searchParams to a regular object
+  const searchParamsObject: Record<string, string> = {};
+
+  if (searchParams instanceof URLSearchParams || routeSearchParams) {
+    const paramsToUse = searchParams instanceof URLSearchParams ? searchParams : routeSearchParams;
+    paramsToUse?.forEach((value, key) => {
+      searchParamsObject[key] = value;
+    });
+  } else if (searchParams && typeof searchParams === 'object') {
+    Object.assign(searchParamsObject, searchParams);
+  }
+
+  console.log('AuthRouter searchParams:', searchParamsObject);
+  console.log('AuthRouter params:', params);
+
+  // Merge configs - ensure deep merge works with partial config
+  const mergedConfig = deepMerge(pageConfigDefaults, corePagesConfig || {});
+
+  // Define pages with components
   const pages = {
-    [corePagesConfig.identify.path]: <User {...corePagesConfig.identify.props} />,
-    [corePagesConfig.login.path]: <Login searchParams={searchParams} {...corePagesConfig.login.props} />,
-    [corePagesConfig.manage.path]: <Manage {...corePagesConfig.manage.props} />,
-    [corePagesConfig.register.path]: <Register {...corePagesConfig.register.props} />,
-    [corePagesConfig.close.path]: <Close {...corePagesConfig.close.props} />,
-    [corePagesConfig.subscribe.path]: <Subscribe searchParams={searchParams} {...corePagesConfig.subscribe.props} />,
-    [corePagesConfig.logout.path]: <Logout {...corePagesConfig.logout.props} />,
-    ...(corePagesConfig.enableOU
-      ? { [corePagesConfig.ou.path]: <OrganizationalUnit searchParams={searchParams} {...corePagesConfig.ou.props} /> }
+    [mergedConfig.identify.path]: <User {...mergedConfig.identify.props} />,
+    [mergedConfig.login.path]: <Login searchParams={searchParamsObject} {...mergedConfig.login.props} />,
+    [mergedConfig.manage.path]: <Manage {...mergedConfig.manage.props} />,
+    [mergedConfig.register.path]: <Register searchParams={searchParamsObject} {...mergedConfig.register.props} />,
+    [mergedConfig.close.path]: <Close searchParams={searchParamsObject} {...mergedConfig.close.props} />,
+    [mergedConfig.subscribe.path]: <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />,
+    [mergedConfig.logout.path]: <Logout searchParams={searchParamsObject} {...mergedConfig.logout.props} />,
+    ...(mergedConfig.enableOU
+      ? { [mergedConfig.ou.path]: <OrganizationalUnit searchParams={searchParamsObject} {...mergedConfig.ou.props} /> }
       : {}),
-    [corePagesConfig.error.path]: <ErrorPage {...corePagesConfig.error.props} />,
+    [mergedConfig.error.path]: <ErrorPage searchParams={searchParamsObject} {...mergedConfig.error.props} />,
     ...additionalPages,
   };
 
-  const path = params.slug ? `/${params.slug.join('/')}` : '/';
-  if (path in pages || path.startsWith(corePagesConfig.close.path)) {
+  // Determine current path from slug
+  let path = '/';
+
+  // Safely handle slug arrays, ensuring we don't directly access properties
+  // that might be undefined or pending promises
+  if (params && 'slug' in params) {
+    const slug = params.slug;
+    if (Array.isArray(slug) && slug.length > 0) {
+      path = `/${slug.join('/')}`;
+    } else if (typeof slug === 'string') {
+      path = `/${slug}`;
+    }
+  }
+
+  console.log('Raw path from params:', path);
+  console.log('Parsed params:', params);
+
+  // Special handling for register path
+  if (path === '/register' || path.endsWith('/register')) {
+    path = mergedConfig.register.path;
+  }
+
+  console.log('Final path to render:', path);
+  console.log('Available paths in router:', Object.keys(pages));
+
+  // Render appropriate component based on path
+  if (path in pages || path.startsWith(mergedConfig.close.path)) {
+    console.log('Rendering component for path:', path);
     return (
-      <AuthenticationContext.Provider value={{ ...pageConfigDefaults, ...corePagesConfig }}>
-        {path.startsWith(corePagesConfig.close.path) ? pages[corePagesConfig.close.path] : pages[path.toString()]}
+      <AuthenticationContext.Provider value={mergedConfig}>
+        {path.startsWith(mergedConfig.close.path) ? pages[mergedConfig.close.path] : pages[path]}
       </AuthenticationContext.Provider>
     );
   } else {
+    console.log('Path not found in pages, returning 404. Path:', path);
+    console.log('Available paths:', Object.keys(pages));
     return notFound();
   }
 }
