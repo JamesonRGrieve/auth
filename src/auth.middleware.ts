@@ -193,7 +193,12 @@ export const useAuth: MiddlewareHook = async (req) => {
           `Detected unauthenticated user attempting to visit non-auth page, redirecting to authentication at ${process.env.AUTH_URI}...`,
         );
         toReturn.response = NextResponse.redirect(new URL(process.env.AUTH_URI as string), {
-          headers: { 'Set-Cookie': generateCookieString('href', requestedURI, (86400).toString()) },
+          headers: { 
+            'Set-Cookie': [
+              generateCookieString('jwt', '', '0'),
+              generateCookieString('href', requestedURI, (86400).toString())
+            ] 
+          },
         });
         toReturn.activated = true;
       }
