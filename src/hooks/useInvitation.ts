@@ -1,6 +1,6 @@
 import { createGraphQLClient } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
-import '@/zod2gql/zod2gql';
+import '@/zod2gql';
 import useSWR, { SWRResponse } from 'swr';
 import { Invitation, InvitationSchema } from './z';
 /**

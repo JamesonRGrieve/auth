@@ -1,6 +1,6 @@
 import { createGraphQLClient } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
-import '@/zod2gql/zod2gql';
+import '@/zod2gql';
 import { getCookie } from 'cookies-next';
 import useSWR, { SWRResponse } from 'swr';
 import { User, UserSchema } from './z';
