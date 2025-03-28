@@ -3,6 +3,7 @@ import { chainMutations, createGraphQLClient } from '@/interactive/hooks/lib';
 import { useInteractiveConfig } from '@/interactive/InteractiveConfigContext';
 import log from '@/next-log/log';
 import '@/zod2gql';
+import z, { GQLType } from '@/zod2gql';
 import { getCookie, setCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import useSWR, { SWRResponse } from 'swr';
@@ -21,7 +22,7 @@ export function useTeams(): SWRResponse<Team[]> {
     '/teams',
     async (): Promise<Team[]> => {
       try {
-        const query = TeamSchema.toGQL('query', 'GetTeams');
+        const query = z.array(TeamSchema).toGQL(GQLType.Query);
         const response = await client.request(query);
         if (response.teams) {
           if (!getCookie('auth-team') || !response.teams.some((team: any) => team.id === getCookie('auth-team'))) {
