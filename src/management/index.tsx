@@ -1,5 +1,5 @@
 'use client';
-import { useAssertion } from '@/components/jrg/assert/assert';
+import { useAssertion } from '@/components/assert/assert';
 import { Button } from '@/components/ui/button';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 import { validateURI } from '@/lib/validation';
@@ -121,7 +121,6 @@ export default function Manage({
 
 // const Nav = ({ active, setActive }: { active: ActivePage; setActive: (page: ActivePage) => void }) => {
 //   const { data } = useTeam();
-//   console.log('DATA', data);
 //   return (
 //     <nav className='flex flex-col space-y-1'>
 //       {MENU_ITEMS.map((label) => (

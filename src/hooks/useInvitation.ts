@@ -1,6 +1,6 @@
 import { createGraphQLClient } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
-import '@/zod2gql/zod2gql';
+import '@/zod2gql';
 import useSWR, { SWRResponse } from 'swr';
 import { Invitation, InvitationSchema } from './z';
 /**
@@ -26,9 +26,7 @@ export function useInvitations(teamId?: string): SWRResponse<Invitation[]> {
         }
 
         // Parse and validate the response
-        const invitations = response.invitations.map((invitation) => InvitationSchema.parse(invitation));
-
-        return invitations;
+        return response.invitations.map((invitation) => InvitationSchema.parse(invitation));
       } catch (error) {
         log(['GQL useInvitations() Error', error], {
           client: 1,

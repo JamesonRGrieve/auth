@@ -1,5 +1,5 @@
 'use client';
-import { useAssertion } from '@/components/jrg/assert/assert';
+import { useAssertion } from '@/components/assert/assert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,33 +38,33 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     }
     const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
     if (authConfig.authModes.basic) {
-      if (!formData['password']) setResponseMessage('Please enter a password.');
-      if (!formData['password-again']) setResponseMessage('Please enter your password again.');
-      if (formData['password'] !== formData['password-again']) setResponseMessage('Passwords do not match.');
+      if (!formData['password']) {
+        setResponseMessage('Please enter a password.');
+      }
+      if (!formData['password-again']) {
+        setResponseMessage('Please enter your password again.');
+      }
+      if (formData['password'] !== formData['password-again']) {
+        setResponseMessage('Passwords do not match.');
+      }
     }
     if (getCookie('invitation')) {
       formData['invitation_id'] = getCookie('invitation') ?? ''.toString();
     }
     let registerResponse;
     let registerResponseData;
-    console.log('AUTH PROCESS START');
     try {
-      // TODO fix the stupid double submission.
-      console.log('AUTH SENDING REQUEST');
       registerResponse = await axios
         .post(`${authConfig.authServer}${userRegisterEndpoint}`, {
           ...formData,
         })
         .catch((exception: AxiosError) => {
-          console.log('AUTH REQUEST ERROR');
-          console.log(exception);
+          console.error(exception);
           return exception.response;
         });
-      console.log('AUTH REQUEST SUCCESS');
       registerResponseData = registerResponse?.data;
     } catch (exception) {
-      console.log('ERROR OCCURRED DURING AUTH PROCESS');
-      console.log(exception);
+      console.error(exception);
       registerResponse = null;
     }
 
@@ -81,10 +81,8 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       loginParams.push(`verify_sms=true`);
     }
     if ([200, 201].includes(registerResponse?.status || 500)) {
-      console.log('AUTH PUSHING TO LOGIN');
       router.push(loginParams.length > 0 ? `/user/login?${loginParams.join('&')}` : '/user/login');
     } else {
-      console.log('AUTH NO WORK HELP');
     }
   };
   useEffect(() => {
@@ -92,7 +90,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   }, [additionalFields]);
   useEffect(() => {
     if (getCookie('invitation')) {
-      setInvite(getCookie('company') || '');
+      setInvite(getCookie('team_id') || '');
     }
   }, []);
   useEffect(() => {
@@ -101,12 +99,24 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       formRef.current.requestSubmit();
     }
   }, []);
+
   const [invite, setInvite] = useState<string | null>(null);
+
+  const registerHeader = {
+    title: 'Sign Up',
+    description: 'Welcome, please complete your registration.',
+  };
+
+  const inviteHeader = {
+    title: 'Accept Invitation',
+    description: `You've been invited to join ${invite?.replaceAll('+', ' ') || 'Team'}. Please complete your registration to join the team.`,
+  };
+
   return (
     <div className={additionalFields.length === 0 && authConfig.authModes.magical ? ' invisible' : ''}>
       <AuthCard
-        title={invite !== null ? 'Accept Invitation to ' + (invite.replaceAll('+', ' ') || 'Company') : 'Sign Up'}
-        description={`Welcome, please complete your registration. ${invite !== null ? 'You are ' : ''}${invite ? ' to ' + invite.replaceAll('+', ' ') + '.' : ''}${invite !== null ? '.' : ''}`}
+        title={invite !== null ? inviteHeader.title : registerHeader.title}
+        description={invite !== null ? inviteHeader.description : registerHeader.description}
         showBackButton
       >
         <form onSubmit={submitForm} className='flex flex-col gap-4' ref={formRef}>
@@ -125,7 +135,15 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
             additionalFields.map((field) => (
               <div key={field} className='space-y-1'>
                 <Label htmlFor={field}>{toTitleCase(field)}</Label>
-                <Input key={field} id={field} name={field} type='text' required placeholder={toTitleCase(field)} />
+                <Input
+                  key={field}
+                  id={field}
+                  name={field}
+                  type='text'
+                  autoFocus={field === 'first_name'}
+                  required
+                  placeholder={toTitleCase(field)}
+                />
               </div>
             ))}
           {authConfig.recaptchaSiteKey && (

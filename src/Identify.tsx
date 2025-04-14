@@ -1,24 +1,24 @@
 'use client';
 
+import { useAssertion } from '@/components/assert/assert';
+import { validateURI } from '@/lib/validation';
+import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosError } from 'axios';
+import { setCookie } from 'cookies-next';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { setCookie } from 'cookies-next';
 import { LuUser } from 'react-icons/lu';
-import OAuth from './oauth2/OAuth';
-import { useAuthentication } from './Router';
-import AuthCard from './AuthCard';
-import { useAssertion } from '@/components/jrg/assert/assert';
-import { validateURI } from '@/lib/validation';
+import { z } from 'zod';
 
-import { Separator } from '@/components/ui/separator';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import AuthCard from './AuthCard';
+import { useAuthentication } from './Router';
+import OAuth from './oauth2/OAuth';
 
 const schema = z.object({
   email: z.string().email({ message: 'Please enter a valid E-Mail address.' }),
@@ -43,10 +43,7 @@ export default function Identify({
   const router = useRouter();
   const authConfig = useAuthentication();
   const pathname = usePathname();
-  // console.log('TEST');
-  // if (redirectToOnNotExists === '/register' && authConfig.authModes.magical) {
-  //   redirectToOnNotExists = '/login';
-  // }
+
   useAssertion(validateURI(authConfig.authServer + identifyEndpoint), 'Invalid identify endpoint.', [
     authConfig.authServer,
     identifyEndpoint,
@@ -88,7 +85,7 @@ export default function Identify({
         {showEmail && (
           <>
             <Label htmlFor='E-Mail Address'>E-Mail Address</Label>
-            <Input id='email' autoComplete='username' placeholder='your@example.com' {...register('email')} />
+            <Input id='email' autoComplete='username' placeholder='your@example.com' autoFocus {...register('email')} />
             {errors.email?.message && <Alert variant='destructive'>{errors.email?.message}</Alert>}
 
             <Button variant='default' disabled={isSubmitting} className='w-full space-x-1'>

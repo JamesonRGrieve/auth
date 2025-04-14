@@ -2,6 +2,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/useToast';
 import log from '@/next-log/log';
 import { ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
@@ -22,8 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { DataTable } from '@/components/jrg/wais/data/data-table';
-import { DataTableColumnHeader } from '@/components/jrg/wais/data/data-table-column-header';
+import { DataTable } from '@/components/wais/data/data-table';
+import { DataTableColumnHeader } from '@/components/wais/data/data-table-column-header';
 import { useInvitations } from '../hooks/useInvitation';
 import { useTeam, useTeams } from '../hooks/useTeam';
 
@@ -37,14 +38,14 @@ interface User {
 }
 
 const ROLES = [
-  { id: 2, name: 'Admin' },
-  { id: 3, name: 'User' },
+  { id: 'FFFFFFFF-FFFF-FFFF-AAAA-FFFFFFFFFFFF', name: 'Admin' },
+  { id: 'FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF', name: 'User' },
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
 interface Invitation {
   id: string;
-  company_id: string;
+  team_id: string;
   email: string;
   inviter_id: string;
   role_id: number;
@@ -62,13 +63,11 @@ export const Team = () => {
   const [newName, setNewName] = useState('');
 
   const { data: teamData } = useTeams();
-  console.log('COMPANIES', teamData);
   const { data: activeTeam, mutate } = useTeam();
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
-  console.log('ACTIVE COMPANY', activeTeam);
   const [responseMessage, setResponseMessage] = useState('');
   const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);
-  console.log('USERS', users);
+  const { toast } = useToast();
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -177,16 +176,29 @@ export const Team = () => {
               <DropdownMenuItem onSelect={() => router.push(`/users/${row.original.id}`)}>View Details</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={(e) => {
-                  axios.delete(
-                    `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeTeam?.id}/users/${row.original.id}`,
-                    {
-                      headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: getCookie('jwt'),
+                onClick={async (e) => {
+                  try {
+                    await axios.delete(
+                      `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeTeam?.id}/users/${row.original.id}`,
+                      {
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: getCookie('jwt'),
+                        },
                       },
-                    },
-                  );
+                    );
+                    toast({
+                      title: 'User deleted',
+                      description: 'The user has been removed from the team.',
+                    });
+                    mutate();
+                  } catch (error) {
+                    toast({
+                      title: 'Error deleting user',
+                      description: 'Failed to remove the user from the team.',
+                      variant: 'destructive',
+                    });
+                  }
                 }}
                 className='p-0'
               >
@@ -309,7 +321,10 @@ export const Team = () => {
 
         const copyInviteLink = (link: string) => {
           navigator.clipboard.writeText(link);
-          // You might want to add a toast notification here
+          toast({
+            title: 'Link copied',
+            description: 'The invitation link has been copied to your clipboard.',
+          });
         };
 
         return (
@@ -355,19 +370,47 @@ export const Team = () => {
     },
   ];
 
-  const handleSubmit = async (e) => {
+  log(['Invitations Data', invitationsData], { client: 3 });
+
+  return (
+    <div className='space-y-6'>
+      <h4 className='font-medium text-md'>{activeTeam?.name} Current Users</h4>
+      <DataTable data={users || []} columns={users_columns} />
+      <InviteUsers />
+      {invitationsData.length > 0 && (
+        <>
+          <h4 className='font-medium text-md'>Pending Invitations</h4>
+          <DataTable data={invitationsData || []} columns={invitations_columns} />
+        </>
+      )}
+    </div>
+  );
+};
+
+export function InviteUsers() {
+  const [email, setEmail] = useState('');
+  const [roleId, setRoleId] = useState('3');
+  const [responseMessage, setResponseMessage] = useState('');
+  const { data: activeTeam } = useTeam();
+  const { mutate: mutateInvitations } = useInvitations(activeTeam?.id);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) {
       setResponseMessage('Please enter an email to invite.');
       return;
     }
+
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitation`,
         {
-          email: email,
-          role_id: parseInt(roleId),
-          company_id: activeTeam?.id,
+          invitation: {
+            email: email,
+            role_id: roleId,
+            team_id: activeTeam?.id,
+          },
         },
         {
           headers: {
@@ -376,8 +419,14 @@ export const Team = () => {
           },
         },
       );
+
       mutateInvitations();
+
       if (response.status === 200) {
+        toast({
+          title: 'Invitation sent',
+          description: 'The invitation has been sent successfully.',
+        });
         if (response.data?.id) {
           setResponseMessage(
             `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
@@ -388,56 +437,51 @@ export const Team = () => {
         setEmail('');
       }
     } catch (error) {
+      toast({
+        title: 'Error sending invitation',
+        description: error.response?.data?.detail || 'Failed to send invitation',
+        variant: 'destructive',
+      });
       setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
     }
   };
-  log(['Invitations Data', invitationsData], { client: 3 });
+
   return (
-    <div className='space-y-6'>
-      <h4 className='text-md font-medium'>{activeTeam?.name} Current Users</h4>
-      <DataTable data={users || []} columns={users_columns} />
-      <form onSubmit={handleSubmit} className='space-y-4'>
-        <h4 className='text-md font-medium'>Invite Users to {activeTeam?.name}</h4>
-        <div className='space-y-2'>
-          <Label htmlFor='email'>Email Address</Label>
-          <Input
-            id='email'
-            type='email'
-            placeholder='user@example.com'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className='w-full'
-          />
-        </div>
+    <form onSubmit={handleSubmit} className='space-y-4'>
+      <h4 className='font-medium text-md'>Invite Users to {activeTeam?.name}</h4>
+      <div className='space-y-2'>
+        <Label htmlFor='email'>Email Address</Label>
+        <Input
+          id='email'
+          type='email'
+          placeholder='user@example.com'
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className='w-full'
+        />
+      </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor='role'>Role</Label>
-          <Select value={roleId} onValueChange={setRoleId}>
-            <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Select a role' />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((role) => (
-                <SelectItem key={role.id} value={role.id.toString()}>
-                  {role.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className='space-y-2'>
+        <Label htmlFor='role'>Role</Label>
+        <Select value={roleId} onValueChange={setRoleId}>
+          <SelectTrigger className='w-full'>
+            <SelectValue placeholder='Select a role' />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLES.map((role) => (
+              <SelectItem key={role.id} value={role.id.toString()}>
+                {role.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <Button type='submit' className='w-full' disabled={!email}>
-          Send Invitation
-        </Button>
-      </form>
-      {invitationsData.length > 0 && (
-        <>
-          <h4 className='text-md font-medium'>Pending Invitations</h4>
-          <DataTable data={invitationsData || []} columns={invitations_columns} />
-        </>
-      )}
-    </div>
+      <Button type='submit' className='w-full' disabled={!email}>
+        Send Invitation
+      </Button>
+    </form>
   );
-};
+}
 
 export default Team;

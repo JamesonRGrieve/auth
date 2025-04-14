@@ -1,6 +1,6 @@
 import { createGraphQLClient } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
-import '@/zod2gql/zod2gql';
+import '@/zod2gql';
 import { getCookie } from 'cookies-next';
 import useSWR, { SWRResponse } from 'swr';
 import { User, UserSchema } from './z';
@@ -14,7 +14,9 @@ export function useUser(): SWRResponse<User | null> {
   return useSWR<User | null>(
     ['/user', getCookie('jwt')],
     async (): Promise<User | null> => {
-      if (!getCookie('jwt')) return null;
+      if (!getCookie('jwt')) {
+        return null;
+      }
       try {
         const query = UserSchema.toGQL('query', 'GetUser');
         log(['GQL useUser() Query', query], {
