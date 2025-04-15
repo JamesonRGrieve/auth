@@ -60,12 +60,24 @@ export default function Identify({
 
   const onSubmit: SubmitHandler<FormData> = async (formData) => {
     try {
-      const existsResponse = await axios.get(`${authConfig.authServer}${identifyEndpoint}?email=${formData.email}`);
+      const response = await axios.post(`${authConfig.authServer}/v1/user`, {
+        username: formData.email,
+      });
       setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
-      router.push(`${pathname}${existsResponse.data ? redirectToOnExists : redirectToOnNotExists}`);
+      router.push(`${pathname}${redirectToOnNotExists}`);
     } catch (exception) {
       const axiosError = exception as AxiosError;
-      setError('email', { type: 'server', message: axiosError.message });
+      if (axiosError.response?.status === 409) {
+        // User exists
+        setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+        router.push(`${pathname}${redirectToOnExists}`);
+      } else if (axiosError.response?.status === 422) {
+        // User doesn't exist
+        setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+        router.push(`${pathname}${redirectToOnNotExists}`);
+      } else {
+        setError('email', { type: 'server', message: axiosError.message });
+      }
     }
   };
 
@@ -75,13 +87,6 @@ export default function Identify({
   return (
     <AuthCard title='Welcome' description='Please choose an authentication method.'>
       <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
-        {/* <div className='text-center'>
-          {authConfig.identify.heading && <h2 className='text-3xl font-bold'>{authConfig.identify.heading}</h2>}
-          {showEmail && showOAuth && (
-            <p className='my-2 text-balance text-muted-foreground'>Please choose from one of the following</p>
-          )}
-        </div> */}
-
         {showEmail && (
           <>
             <Label htmlFor='E-Mail Address'>E-Mail Address</Label>
