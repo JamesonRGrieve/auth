@@ -45,7 +45,7 @@ export default function Login({
 
     try {
       const authString = `${email}:${password}`;
-      const encodedAuth = `Basic ${btoa(authString)}`;
+      const encodedAuth = `Basic ${Buffer.from(authString, 'utf-8').toString('base64')}`;
 
       const response = await axios
         .post(`${authConfig.authServer}${userLoginEndpoint}`, {
