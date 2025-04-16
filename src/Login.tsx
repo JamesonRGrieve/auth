@@ -107,7 +107,14 @@ export default function Login({
         {authConfig.authModes.basic && (
           <>
             <Label htmlFor='password'>Password</Label>
-            <Input id='password' placeholder='Password' name='password' type='password' autoComplete='password' />
+            <Input
+              id='password'
+              placeholder='Password'
+              name='password'
+              type='password'
+              autoComplete='password'
+              autoFocus={authConfig.authModes.basic}
+            />
           </>
         )}
         {otp_uri && (
@@ -116,7 +123,7 @@ export default function Login({
             <Input
               id='token'
               placeholder='Enter your 6 digit code'
-              autoFocus={!authConfig.authModes.basic}
+              autoFocus={otp_uri}
               name='token'
               autoComplete='one-time-code'
             />

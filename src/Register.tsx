@@ -123,6 +123,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
                 placeholder='Password'
                 name='password'
                 type='password'
+                autoFocus={authConfig.authModes.basic}
                 required
                 onChange={(e) => {
                   setPasswords((prev) => ({ ...prev, password: e.target.value }));
