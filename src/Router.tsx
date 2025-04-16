@@ -94,9 +94,9 @@ const pageConfigDefaults: AuthenticationConfig = {
   authBaseURI: process.env.NEXT_PUBLIC_AUTH_URI,
   authServer: process.env.NEXT_PUBLIC_API_URI,
   authModes: {
-    basic: false,
+    basic: true,
     oauth2: Object.values(oAuth2Providers).some((provider) => !!provider.client_id),
-    magical: process.env.NEXT_PUBLIC_ALLOW_EMAIL_SIGN_IN === 'true',
+    magical: false,
   },
   recaptchaSiteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
   enableOU: false,
