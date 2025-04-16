@@ -25,6 +25,9 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [responseMessage, setResponseMessage] = useState('');
+  const [passwords, setPasswords] = useState({ password: '', passwordAgain: '' });
+  const [passwordsMatch, setPasswordsMatch] = useState(false);
+
   const authConfig = useAuthentication();
   useAssertion(validateURI(authConfig.authServer + userRegisterEndpoint), 'Invalid login endpoint.', [
     authConfig.authServer,
@@ -37,17 +40,6 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       return;
     }
     const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
-    if (authConfig.authModes.basic) {
-      if (!formData['password']) {
-        setResponseMessage('Please enter a password.');
-      }
-      if (!formData['password-again']) {
-        setResponseMessage('Please enter your password again.');
-      }
-      if (formData['password'] !== formData['password-again']) {
-        setResponseMessage('Passwords do not match.');
-      }
-    }
     if (getCookie('invitation')) {
       formData['invitation_id'] = getCookie('invitation') ?? ''.toString();
     }
@@ -126,9 +118,29 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
           {authConfig.authModes.basic && (
             <>
               <Label htmlFor='password'>Password</Label>
-              <Input id='password' placeholder='Password' name='password' type='password' autoComplete='password' />
+              <Input
+                id='password'
+                placeholder='Password'
+                name='password'
+                type='password'
+                required
+                onChange={(e) => {
+                  setPasswords((prev) => ({ ...prev, password: e.target.value }));
+                  setPasswordsMatch(e.target.value === passwords.passwordAgain);
+                }}
+              />
               <Label htmlFor='password-again'>Password (Again)</Label>
-              <Input id='password-again' placeholder='Password' name='password' type='password' autoComplete='password' />
+              <Input
+                id='password-again'
+                placeholder='Password'
+                name='password-again'
+                type='password'
+                required
+                onChange={(e) => {
+                  setPasswords((prev) => ({ ...prev, passwordAgain: e.target.value }));
+                  setPasswordsMatch(e.target.value === passwords.password);
+                }}
+              />
             </>
           )}
           {additionalFields.length > 0 &&
@@ -160,7 +172,9 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
               />
             </div>
           )}
-          <Button type='submit'>Register</Button>
+          <Button type='submit' disabled={authConfig.authModes.basic && !passwordsMatch}>
+            Register
+          </Button>
           {responseMessage && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
         </form>
         {invite && <OAuth />}
