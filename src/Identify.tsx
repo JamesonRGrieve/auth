@@ -61,7 +61,9 @@ export default function Identify({
   const onSubmit: SubmitHandler<FormData> = async (formData) => {
     try {
       const response = await axios.post(`${authConfig.authServer}/v1/user`, {
-        username: formData.email,
+        user: {
+          email: formData.email,
+        },
       });
       setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
       router.push(`${pathname}${redirectToOnNotExists}`);
