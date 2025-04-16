@@ -56,7 +56,9 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     try {
       registerResponse = await axios
         .post(`${authConfig.authServer}${userRegisterEndpoint}`, {
-          ...formData,
+          user: {
+            ...formData,
+          },
         })
         .catch((exception: AxiosError) => {
           console.error(exception);
@@ -120,8 +122,6 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
         showBackButton
       >
         <form onSubmit={submitForm} className='flex flex-col gap-4' ref={formRef}>
-          {/* {authConfig.register.heading && <Typography variant='h2'>{authConfig.register.heading}</Typography>} */}
-
           <input type='hidden' id='email' name='email' value={getCookie('email')} />
           {authConfig.authModes.basic && (
             <>
