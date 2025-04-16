@@ -126,9 +126,9 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
           {authConfig.authModes.basic && (
             <>
               <Label htmlFor='password'>Password</Label>
-              <Input id='password' placeholder='Password' name='password' autoComplete='password' />
+              <Input id='password' placeholder='Password' name='password' type='password' autoComplete='password' />
               <Label htmlFor='password-again'>Password (Again)</Label>
-              <Input id='password-again' placeholder='Password' name='password' autoComplete='password' />
+              <Input id='password-again' placeholder='Password' name='password' type='password' autoComplete='password' />
             </>
           )}
           {additionalFields.length > 0 &&

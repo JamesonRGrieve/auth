@@ -72,7 +72,7 @@ export const useAuth: MiddlewareHook = async (req) => {
       try {
         const response = await verifyJWT(jwt);
         console.log('Response Status: ', response.status);
-        const responseJSON = await response.json();
+        const responseJSON = response.status === 204 ? {} : await response.json();
         console.log(responseJSON);
         if (response.status === 402) {
           console.log('- NO SUBSCRIPTION GUARD CLAUSE INVOKED -');
@@ -126,7 +126,7 @@ export const useAuth: MiddlewareHook = async (req) => {
 
           toReturn.response = NextResponse.redirect(new URL(`${process.env.AUTH_URI}/error`, req.url));
           toReturn.activated = true;
-        } else if (response.status !== 200) {
+        } else if (response.status !== 204) {
           console.log('- UNKNOWN RESPONSE CODE GUARD CLAUSE INVOKED -');
           // @ts-expect-error NextJS' types are wrong.
           toReturn.response.headers.set('Set-Cookie', [
@@ -193,11 +193,11 @@ export const useAuth: MiddlewareHook = async (req) => {
           `Detected unauthenticated user attempting to visit non-auth page, redirecting to authentication at ${process.env.AUTH_URI}...`,
         );
         toReturn.response = NextResponse.redirect(new URL(process.env.AUTH_URI as string), {
-          headers: { 
+          headers: {
             'Set-Cookie': [
               generateCookieString('jwt', '', '0'),
-              generateCookieString('href', requestedURI, (86400).toString())
-            ] 
+              generateCookieString('href', requestedURI, (86400).toString()),
+            ],
           },
         });
         toReturn.activated = true;

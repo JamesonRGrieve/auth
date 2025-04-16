@@ -48,7 +48,7 @@ export default function Login({
       const encodedAuth = `Basic ${Buffer.from(authString, 'utf-8').toString('base64')}`;
 
       const response = await axios
-        .post(`${authConfig.authServer}${userLoginEndpoint}`, {
+        .post(`${authConfig.authServer}${userLoginEndpoint}`, null, {
           headers: {
             Authorization: encodedAuth,
           },
@@ -107,7 +107,7 @@ export default function Login({
         {authConfig.authModes.basic && (
           <>
             <Label htmlFor='password'>Password</Label>
-            <Input id='password' placeholder='Password' name='password' autoComplete='password' />
+            <Input id='password' placeholder='Password' name='password' type='password' autoComplete='password' />
           </>
         )}
         {otp_uri && (
