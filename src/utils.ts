@@ -90,7 +90,7 @@ export const verifyJWT = async (jwt: string): Promise<Response> => {
     console.log(`Successfully contacted server at ${authEndpoint}!`);
     return response;
   } catch (exception) {
-    console.log(`Failed to contact server at ${authEndpoint}.`);
+    console.log(`Failed to contact server at ${authEndpoint} - ${exception}.`);
     return new Response();
   }
 };
