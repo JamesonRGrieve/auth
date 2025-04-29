@@ -389,7 +389,7 @@ export const Team = () => {
 
 export function InviteUsers() {
   const [email, setEmail] = useState('');
-  const [roleId, setRoleId] = useState('3');
+  const [roleId, setRoleId] = useState(ROLES?.[1]?.id?.toString());
   const [responseMessage, setResponseMessage] = useState('');
   const { data: activeTeam } = useTeam();
   const { mutate: mutateInvitations } = useInvitations(activeTeam?.id);
