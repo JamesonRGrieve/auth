@@ -10,11 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TooltipBasic } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import axios from 'axios';
 import { getCookie, setCookie } from 'cookies-next';
 import { useEffect, useState } from 'react';
-import { LuCheck, LuPencil, LuPlus } from 'react-icons/lu';
+import { LuCheck, LuPencil, LuPlus, LuUsers } from 'react-icons/lu';
 import { useTeam, useTeams } from '../hooks/useTeam';
 import { useToast } from '@/hooks/useToast';
 
@@ -28,71 +36,73 @@ const AUTHORIZED_ROLES = [0, 1, 2];
 export const Team = () => {
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState('3');
-  const [renaming, setRenaming] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState('');
   const { toast } = useToast();
 
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam();
 
-  const handleConfirm = async () => {
-    if (renaming) {
-      try {
-        await axios.put(
-          `${process.env.NEXT_PUBLIC_API_URI}/v1/teams/${activeTeam?.id}`,
-          { name: newName },
-          {
-            headers: {
-              Authorization: getCookie('jwt'),
-              'Content-Type': 'application/json',
-            },
+  const handleConfirmRename = async () => {
+    try {
+      const jwt = getCookie('jwt') as string;
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/teams/${activeTeam?.id}`,
+        { name: newName },
+        {
+          headers: {
+            Authorization: jwt,
+            'Content-Type': 'application/json',
           },
-        );
-        setRenaming(false);
-        mutate();
-        toast({
-          title: 'Success',
-          description: 'Team name updated successfully!',
-        });
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: error.response?.data?.detail || 'Failed to update team name',
-          variant: 'destructive',
-        });
-      }
-    } else {
-      try {
-        const newResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URI}/v1/teams`,
-          {
-            name: newName,
-            agent_name: newName + ' Agent',
-            ...(newParent ? { parent_company_id: newParent } : {}),
+        },
+      );
+      setIsRenameDialogOpen(false);
+      mutate();
+      toast({
+        title: 'Success',
+        description: 'Team name updated successfully!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to update team name',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleConfirmCreate = async () => {
+    try {
+      const jwt = getCookie('jwt') as string;
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/teams`,
+        {
+          name: newName,
+          agent_name: newName + ' Agent',
+          ...(newParent ? { parent_company_id: newParent } : {}),
+        },
+        {
+          headers: {
+            Authorization: jwt,
+            'Content-Type': 'application/json',
           },
-          {
-            headers: {
-              Authorization: getCookie('jwt'),
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-        mutate();
-        toast({
-          title: 'Success',
-          description: 'Team created successfully!',
-        });
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: error.response?.data?.detail || 'Failed to create team',
-          variant: 'destructive',
-        });
-      }
-      setCreating(false);
+        },
+      );
+      mutate();
+      setIsCreateDialogOpen(false);
+      toast({
+        title: 'Success',
+        description: 'Team created successfully!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to create team',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -109,6 +119,7 @@ export const Team = () => {
     }
 
     try {
+      const jwt = getCookie('jwt') as string;
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
         {
@@ -119,7 +130,7 @@ export const Team = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: getCookie('jwt'),
+            Authorization: jwt,
           },
         },
       );
@@ -137,6 +148,7 @@ export const Team = () => {
           });
         }
         setEmail('');
+        setIsInviteDialogOpen(false);
       }
     } catch (error) {
       toast({
@@ -147,104 +159,163 @@ export const Team = () => {
     }
   };
 
-  useEffect(() => {
-    setSelectedTeam(getCookie('auth-team'));
-  }, [getCookie('auth-team')]);
-
   return (
-    <div className='space-y-6'>
-      <div className='flex items-center justify-start'>
-        {renaming || creating ? (
-          <>
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className='w-64'
-              placeholder='Enter new name'
-            />
-            {creating && (
-              <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
-                <SelectTrigger className='w-64'>
-                  <SelectValue placeholder='(Optional) Select a Parent Team' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Parent Team</SelectLabel>
-                    <SelectItem value='-'>[NONE]</SelectItem>
-                    {teamData?.map((child: any) => (
-                      <SelectItem key={child.id} value={child.id}>
-                        {child.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+    <SidebarContent title='Team Management'>
+      {activeTeam && (
+        <SidebarGroup>
+          <SidebarGroupLabel>{activeTeam?.name}</SidebarGroupLabel>
+          <div className='space-y-2 px-2'>
+            {activeTeam?.description && (
+              <div className='text-sm text-muted-foreground'>
+                <span className='font-medium'>Description:</span> {activeTeam.description}
+              </div>
             )}
-          </>
-        ) : (
-          <Select
-            value={selectedTeam}
-            onValueChange={(value) => {
-              setCookie('auth-team', value, {
-                domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN,
-              });
-              mutate();
-            }}
-          >
-            <SelectTrigger className='w-64'>
-              <SelectValue placeholder='Select a Team' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {teamData?.map((team: any) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        )}
-
-        <div className='flex gap-2'>
-          <TooltipBasic title={renaming ? 'Confirm rename' : 'Rename'}>
-            <Button
+            {activeTeam?.parentId && (
+              <div className='text-sm text-muted-foreground'>
+                <span className='font-medium'>Parent Team ID:</span> {activeTeam.parentId}
+              </div>
+            )}
+            {activeTeam?.agents && activeTeam.agents.length > 0 && (
+              <div className='text-sm text-muted-foreground'>
+                <span className='font-medium'>Agents:</span>
+                <ul className='list-disc list-inside mt-1'>
+                  {activeTeam.agents.map((agent) => (
+                    <li key={agent.id}>{agent.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </SidebarGroup>
+      )}
+      <SidebarGroup>
+        <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
               onClick={() => {
-                if (renaming) {
-                  handleConfirm();
-                } else {
-                  setRenaming(true);
-                  setNewName(activeTeam?.name);
-                }
+                setNewName(activeTeam?.name || '');
+                setIsRenameDialogOpen(true);
               }}
-              disabled={creating}
-              size='icon'
-              variant='ghost'
+              tooltip='Rename Team'
             >
-              {renaming ? <LuCheck className='w-4 h-4' /> : <LuPencil className='w-4 h-4' />}
-            </Button>
-          </TooltipBasic>
+              <LuPencil className='w-4 h-4' />
+              <span>Rename Team</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
 
-          <TooltipBasic title={creating ? 'Confirm create' : 'Create new'}>
-            <Button
+          <SidebarMenuItem>
+            <SidebarMenuButton
               onClick={() => {
-                if (creating) {
-                  handleConfirm();
-                } else {
-                  setCreating(true);
-                  setNewName('');
-                }
+                setNewName('');
+                setNewParent('');
+                setIsCreateDialogOpen(true);
               }}
-              disabled={renaming}
-              size='icon'
-              variant='ghost'
+              tooltip='Create Team'
             >
-              {creating ? <LuCheck className='w-4 h-4' /> : <LuPlus className='w-4 h-4' />}
+              <LuPlus className='w-4 h-4' />
+              <span>Create Team</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => {
+                setEmail('');
+                setRoleId('3');
+                setIsInviteDialogOpen(true);
+              }}
+              tooltip='Invite Member'
+            >
+              <LuUsers className='w-4 h-4' />
+              <span>Invite Member</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Team</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter new name' />
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsRenameDialogOpen(false)}>
+              Cancel
             </Button>
-          </TooltipBasic>
-        </div>
-      </div>
-    </div>
+            <Button onClick={handleConfirmRename}>Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Team</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter team name' />
+            <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder='(Optional) Select a Parent Team' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Parent Team</SelectLabel>
+                  <SelectItem value='-'>[NONE]</SelectItem>
+                  {teamData?.map((child: any) => (
+                    <SelectItem key={child.id} value={child.id}>
+                      {child.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmCreate}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Member</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Enter email address' type='email' />
+            <Select value={roleId} onValueChange={setRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select role' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Role</SelectLabel>
+                  {ROLES.map((role) => (
+                    <SelectItem key={role.id} value={role.id.toString()}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsInviteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>Send Invitation</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SidebarContent>
   );
 };
 
