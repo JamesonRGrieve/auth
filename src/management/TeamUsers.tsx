@@ -374,13 +374,12 @@ export const Team = () => {
 
   return (
     <div className='space-y-6'>
-      <h4 className='font-medium text-md'>{activeTeam?.name} Current Users</h4>
-      <DataTable data={users || []} columns={users_columns} />
-      <InviteUsers />
+      <DataTable data={users || []} columns={users_columns} meta={{ title: 'Current Users' }} />
+      {/* <InviteUsers /> */}
       {invitationsData.length > 0 && (
         <>
           <h4 className='font-medium text-md'>Pending Invitations</h4>
-          <DataTable data={invitationsData || []} columns={invitations_columns} />
+          <DataTable data={invitationsData || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
         </>
       )}
     </div>
