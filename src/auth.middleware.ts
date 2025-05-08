@@ -18,7 +18,21 @@ export const useAuth: MiddlewareHook = async (req) => {
   if (authMode) {
     const queryParams = getQueryParams(req);
     if (requestedURI.endsWith('/user/logout')) {
-      return toReturn;
+      const response = NextResponse.redirect(new URL('/', req.url));
+    
+      // clear JWT cookie BEFORE redirect
+      response.cookies.set('jwt', '', {
+        path: '/',
+        expires: new Date(0), // expire immediately
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+      });
+    
+      return {
+        activated: true,
+        response,
+      };
     }
     if (queryParams['verify_email'] && queryParams['email']) {
       console.log('VERIFYING EMAIL: ', queryParams['email'], queryParams['verify_email']);
