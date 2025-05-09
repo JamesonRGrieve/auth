@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useAgent } from '@/interactive/hooks/useAgent';
+import { useAgent } from '@/interface/hooks/useAgent';
 import deepMerge from '@/lib/objects';
 import log from '@/next-log/log';
 import { useRouter } from 'next/navigation';

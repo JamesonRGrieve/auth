@@ -36,13 +36,15 @@ export const useAuth: MiddlewareHook = async (req) => {
     console.log('-Query Params-');
     console.log(queryParams);
     if (queryParams.invitation_id && queryParams.email) {
-      console.log(`DETECTED INVITE - ${process.env.AUTH_URI}/register`);
+      console.log(
+        `DETECTED INVITE - ${process.env.AUTH_URI}/register - SETTINGS COOKIES ${queryParams.email} ${queryParams.invitation_id} ${queryParams.team_id}`,
+      );
       const cookieArray = [
         generateCookieString('email', queryParams.email, (86400).toString()),
         generateCookieString('invitation', queryParams.invitation_id, (86400).toString()),
       ];
       if (queryParams.company) {
-        cookieArray.push(generateCookieString('company', queryParams.company, (86400).toString()));
+        cookieArray.push(generateCookieString('team_id', queryParams.team_id, (86400).toString()));
       }
       toReturn.activated = true;
       toReturn.response = NextResponse.redirect(`${process.env.AUTH_URI}/register`, {
@@ -70,7 +72,7 @@ export const useAuth: MiddlewareHook = async (req) => {
       try {
         const response = await verifyJWT(jwt);
         console.log('Response Status: ', response.status);
-        const responseJSON = await response.json();
+        const responseJSON = response.status === 204 ? {} : await response.json();
         console.log(responseJSON);
         if (response.status === 402) {
           console.log('- NO SUBSCRIPTION GUARD CLAUSE INVOKED -');
@@ -124,7 +126,7 @@ export const useAuth: MiddlewareHook = async (req) => {
 
           toReturn.response = NextResponse.redirect(new URL(`${process.env.AUTH_URI}/error`, req.url));
           toReturn.activated = true;
-        } else if (response.status !== 200) {
+        } else if (response.status !== 204) {
           console.log('- UNKNOWN RESPONSE CODE GUARD CLAUSE INVOKED -');
           // @ts-expect-error NextJS' types are wrong.
           toReturn.response.headers.set('Set-Cookie', [
@@ -191,7 +193,12 @@ export const useAuth: MiddlewareHook = async (req) => {
           `Detected unauthenticated user attempting to visit non-auth page, redirecting to authentication at ${process.env.AUTH_URI}...`,
         );
         toReturn.response = NextResponse.redirect(new URL(process.env.AUTH_URI as string), {
-          headers: { 'Set-Cookie': generateCookieString('href', requestedURI, (86400).toString()) },
+          headers: {
+            'Set-Cookie': [
+              generateCookieString('jwt', '', '0'),
+              generateCookieString('href', requestedURI, (86400).toString()),
+            ],
+          },
         });
         toReturn.activated = true;
       }
