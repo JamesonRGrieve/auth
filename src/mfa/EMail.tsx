@@ -1,15 +1,19 @@
 'use client';
 
-import Field from '@/components/jrg/ui/styled/FormControl/Field';
 import { Button } from '@/components/ui/button';
+import Field from '@/components/ui/styled/FormControl/Field';
+import { useToast } from '@/hooks/useToast';
 import log from '@/next-log/log';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
+import { CheckCircle } from 'lucide-react';
 import { useState } from 'react';
-import { LuCheckCircle, LuKey } from 'react-icons/lu';
+import { LuKey } from 'react-icons/lu';
 
 export type RegisterFormProps = object;
+
 export default function VerifyEmail({ verifiedCallback }: { verifiedCallback: any }): JSX.Element {
+  const { toast } = useToast();
   const [fields, setFields] = useState({
     emailCode: '',
   });
@@ -17,6 +21,7 @@ export default function VerifyEmail({ verifiedCallback }: { verifiedCallback: an
     emailCode: '',
   });
   const [emailVerified, setEmailVerified] = useState(false);
+
   async function attemptEmail() {
     const emailResponse = (
       await axios.post(
@@ -28,15 +33,26 @@ export default function VerifyEmail({ verifiedCallback }: { verifiedCallback: an
         {},
       )
     ).data.detail;
+
     log(['E-Mail Response', emailResponse], { client: 2 });
+
     if (emailResponse.toLowerCase() === 'true') {
       verifiedCallback(true);
       setEmailVerified(true);
+      toast({
+        title: 'Email Verified',
+        description: 'Your email has been successfully verified.',
+      });
     } else {
-      log(`Email verification of ${getCookie('email')} failed.`, process.env.NEXT_PUBLIC_LOG_VERBOSITY_CLIENT, 2);
+      log(['Email verification failed', getCookie('email')], { client: 2 });
       setErrors({
         ...errors,
         emailCode: 'Email verification failed.',
+      });
+      toast({
+        title: 'Verification Failed',
+        description: 'The verification code is incorrect. Please try again.',
+        variant: 'destructive',
       });
     }
   }
@@ -49,9 +65,10 @@ export default function VerifyEmail({ verifiedCallback }: { verifiedCallback: an
           <div className='py-2'>An email with a code was sent to {getCookie('email')}. Please enter the code below.</div>
         )}
       </div>
+
       <div className='flex flex-col items-center'>
         {emailVerified ? (
-          <LuCheckCircle className='w-20 h-20' />
+          <CheckCircle className='w-20 h-20' />
         ) : (
           <>
             <Field

@@ -75,54 +75,22 @@ export const getJWT = (req: NextRequest) => {
   return jwt;
 };
 export const verifyJWT = async (jwt: string): Promise<Response> => {
-  if (!process.env.SERVERSIDE_API_URI) {
-    process.env.SERVERSIDE_API_URI = ['aginfrastructure', 'localhost', 'back-end', 'boilerplate', 'back-end-image'].join(
-      ',',
-    );
-    console.log('Initialized container names: ', process.env.SERVERSIDE_API_URI);
-  }
-  const containerNames = process.env.SERVERSIDE_API_URI.split(',');
   const responses = {} as any;
-  const authEndpoint = `${process.env.API_URI}/v1/user`;
+  const authEndpoint = `${process.env.APP_URI.includes('localhost') ? process.env.API_URI : process.env.SERVERSIDE_API_URI}/v1`;
   let response;
-  for (const containerName of containerNames) {
-    const testEndpoint = authEndpoint.replace('localhost', containerName);
-    console.log(`Verifying JWT Bearer ${jwt} with server at ${testEndpoint}...`);
-    try {
-      response = await fetch(testEndpoint, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `${jwt}`,
-        },
-      });
+  console.log(`Verifying JWT Bearer ${jwt} with server at ${authEndpoint}...`);
+  try {
+    response = await fetch(authEndpoint, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `${jwt}`,
+      },
+    });
 
-      if (response.status === 200 || [401, 402, 403].includes(response.status)) {
-        console.log(`Successfully contacted server at ${testEndpoint}!`);
-        if (Object.keys(responses).length > 0) {
-          containerNames.sort((a, b) => {
-            if (a === containerName) {
-              return -1;
-            } else if (b === containerName) {
-              return 1;
-            } else {
-              return 0;
-            }
-          });
-          process.env.SERVERSIDE_API_URI = containerNames.join(',');
-          console.log('New container names: ', process.env.SERVERSIDE_API_URI);
-        }
-        return response;
-      } else {
-        responses[testEndpoint] = await response.text();
-        console.log(`Failed to contact server at ${testEndpoint}.`);
-      }
-    } catch (exception) {
-      responses[testEndpoint] = exception;
-    }
+    console.log(`Successfully contacted server at ${authEndpoint}!`);
+    return response;
+  } catch (exception) {
+    console.log(`Failed to contact server at ${authEndpoint} - ${exception}.`);
+    return new Response();
   }
-  console.error('Failed to contact any of the following servers: ', JSON.stringify(responses));
-  for (const key of Object.keys(responses)) {
-    console.error(key, responses[key]);
-  }
-  return new Response();
 };

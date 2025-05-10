@@ -1,6 +1,6 @@
 'use client';
 
-import { useAssertion } from '@/components/jrg/assert/assert';
+import { useAssertion } from '@/components/assert/assert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,7 @@ export type LoginProps = {
 };
 export default function Login({
   searchParams,
-  userLoginEndpoint = '/v1/login',
+  userLoginEndpoint = '/v1/user/authorize',
 }: { searchParams: any } & LoginProps): ReactNode {
   const [responseMessage, setResponseMessage] = useState('');
   const authConfig = useAuthentication();
@@ -39,24 +39,37 @@ export default function Login({
       return;
     }
 
-    const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
+      const authString = `${email}:${password}`;
+      const encodedAuth = `Basic ${Buffer.from(authString, 'utf-8').toString('base64')}`;
+
       const response = await axios
-        .post(`${authConfig.authServer}${userLoginEndpoint}`, {
-          ...formData,
-          referrer: getCookie('href') ?? window.location.href.split('?')[0],
+        .post(`${authConfig.authServer}${userLoginEndpoint}`, null, {
+          headers: {
+            Authorization: encodedAuth,
+          },
         })
         .catch((exception: AxiosError) => exception.response);
+
       if (response) {
         if (response.status !== 200) {
           setResponseMessage(response.data.detail);
         } else {
-          if (validateURI(response.data.detail)) {
-            console.log('Is URI.');
-            window.location.href = response.data.detail;
+          const token = response.data.token;
+          if (token) {
+            // Store the token and redirect
+            document.cookie = `jwt=${token}; path=/`;
+            if (validateURI(response.data.detail)) {
+              window.location.href = response.data.detail;
+            } else {
+              setResponseMessage(response.data.detail);
+            }
           } else {
-            console.log('Is not URI.');
-            setResponseMessage(response.data.detail);
+            setResponseMessage('Login failed: No token received');
           }
         }
       }
@@ -90,16 +103,33 @@ export default function Login({
             <CopyButton content={otp_uri} label={'Copy Link'} />
           </div>
         )}
-        <input type='hidden' id='email' name='email' value={getCookie('email')} />
+        <input type='hidden' id='email' name='email' value={getCookie('email') || ''} />
         {authConfig.authModes.basic && (
           <>
             <Label htmlFor='password'>Password</Label>
-            <Input id='password' placeholder='Password' name='password' autoComplete='password' />
+            <Input
+              id='password'
+              placeholder='Password'
+              name='password'
+              type='password'
+              autoComplete='password'
+              autoFocus={authConfig.authModes.basic}
+            />
           </>
         )}
-        <Label htmlFor='token'>Multi-Factor Code</Label>
-        <Input id='token' placeholder='Enter your 6 digit code' name='token' autoComplete='one-time-code' />
-        <MissingAuthenticator />
+        {otp_uri && (
+          <>
+            <Label htmlFor='token'>Multi-Factor Code</Label>
+            <Input
+              id='token'
+              placeholder='Enter your 6 digit code'
+              autoFocus={otp_uri}
+              name='token'
+              autoComplete='one-time-code'
+            />
+            <MissingAuthenticator />
+          </>
+        )}
         {authConfig.recaptchaSiteKey && (
           <div className='my-3'>
             <ReCAPTCHA

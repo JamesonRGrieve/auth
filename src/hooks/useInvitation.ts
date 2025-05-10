@@ -1,35 +1,32 @@
 import { createGraphQLClient } from '@/interactive/hooks/lib';
 import log from '@/next-log/log';
+import '@/zod2gql';
 import useSWR, { SWRResponse } from 'swr';
-import { z } from 'zod';
-
-export const InvitationSchema = z.object({
-  id: z.string().uuid(),
-  companyId: z.string().uuid(),
-  email: z.string().email(),
-  createdAt: z.string().datetime(),
-  inviterId: z.string().uuid(),
-  isAccepted: z.boolean(),
-  roleId: z.string().uuid(),
-});
-
-export type Invitation = z.infer<typeof InvitationSchema>;
+import { Invitation, InvitationSchema } from './z';
 /**
  * Hook to fetch and manage invitations
- * @param companyId - Optional company ID to fetch invitations for
+ * @param teamId - Optional team ID to fetch invitations for
  * @returns SWR response containing array of invitations
  */
-export function useInvitations(companyId?: string): SWRResponse<Invitation[]> {
+export function useInvitations(teamId?: string): SWRResponse<Invitation[]> {
   const client = createGraphQLClient();
 
   return useSWR<Invitation[]>(
-    companyId ? [`/invitations`, companyId] : '/invitations',
+    teamId ? [`/invitations`, teamId] : '/invitations',
     async (): Promise<Invitation[]> => {
+      if (!teamId) {
+        return [];
+      }
       try {
-        const query = InvitationSchema.toGQL('query', 'GetInvitations', { companyId });
-        const response = await client.request<Invitation[]>(query, { companyId });
-        const validated = InvitationSchema.parse(response);
-        return validated.invitations;
+        const query = InvitationSchema.toGQL('query', 'GetInvitations', { teamId });
+        const response = await client.request<{ invitations: Invitation[] }>(query, { teamId });
+
+        if (!response || !response.invitations) {
+          return [];
+        }
+
+        // Parse and validate the response
+        return response.invitations.map((invitation) => InvitationSchema.parse(invitation));
       } catch (error) {
         log(['GQL useInvitations() Error', error], {
           client: 1,

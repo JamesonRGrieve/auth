@@ -1,24 +1,24 @@
 'use client';
 
+import { useAssertion } from '@/components/assert/assert';
+import { validateURI } from '@/lib/validation';
+import { zodResolver } from '@hookform/resolvers/zod';
 import axios, { AxiosError } from 'axios';
+import { setCookie } from 'cookies-next';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { setCookie } from 'cookies-next';
 import { LuUser } from 'react-icons/lu';
-import OAuth from './oauth2/OAuth';
-import { useAuthentication } from './Router';
-import AuthCard from './AuthCard';
-import { useAssertion } from '@/components/jrg/assert/assert';
-import { validateURI } from '@/lib/validation';
+import { z } from 'zod';
 
-import { Separator } from '@/components/ui/separator';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import AuthCard from './AuthCard';
+import { useAuthentication } from './Router';
+import OAuth from './oauth2/OAuth';
 
 const schema = z.object({
   email: z.string().email({ message: 'Please enter a valid E-Mail address.' }),
@@ -43,10 +43,7 @@ export default function Identify({
   const router = useRouter();
   const authConfig = useAuthentication();
   const pathname = usePathname();
-  // console.log('TEST');
-  // if (redirectToOnNotExists === '/register' && authConfig.authModes.magical) {
-  //   redirectToOnNotExists = '/login';
-  // }
+
   useAssertion(validateURI(authConfig.authServer + identifyEndpoint), 'Invalid identify endpoint.', [
     authConfig.authServer,
     identifyEndpoint,
@@ -63,12 +60,26 @@ export default function Identify({
 
   const onSubmit: SubmitHandler<FormData> = async (formData) => {
     try {
-      const existsResponse = await axios.get(`${authConfig.authServer}${identifyEndpoint}?email=${formData.email}`);
+      const response = await axios.post(`${authConfig.authServer}/v1/user`, {
+        user: {
+          email: formData.email,
+        },
+      });
       setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
-      router.push(`${pathname}${existsResponse.data ? redirectToOnExists : redirectToOnNotExists}`);
+      router.push(`${pathname}${redirectToOnNotExists}`);
     } catch (exception) {
       const axiosError = exception as AxiosError;
-      setError('email', { type: 'server', message: axiosError.message });
+      if (axiosError.response?.status === 409) {
+        // User exists
+        setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+        router.push(`${pathname}${redirectToOnExists}`);
+      } else if (axiosError.response?.status === 422) {
+        // User doesn't exist
+        setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+        router.push(`${pathname}${redirectToOnNotExists}`);
+      } else {
+        setError('email', { type: 'server', message: axiosError.message });
+      }
     }
   };
 
@@ -78,17 +89,10 @@ export default function Identify({
   return (
     <AuthCard title='Welcome' description='Please choose an authentication method.'>
       <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
-        {/* <div className='text-center'>
-          {authConfig.identify.heading && <h2 className='text-3xl font-bold'>{authConfig.identify.heading}</h2>}
-          {showEmail && showOAuth && (
-            <p className='my-2 text-balance text-muted-foreground'>Please choose from one of the following</p>
-          )}
-        </div> */}
-
         {showEmail && (
           <>
             <Label htmlFor='E-Mail Address'>E-Mail Address</Label>
-            <Input id='email' autoComplete='username' placeholder='your@example.com' {...register('email')} />
+            <Input id='email' autoComplete='username' placeholder='your@example.com' autoFocus {...register('email')} />
             {errors.email?.message && <Alert variant='destructive'>{errors.email?.message}</Alert>}
 
             <Button variant='default' disabled={isSubmitting} className='w-full space-x-1'>

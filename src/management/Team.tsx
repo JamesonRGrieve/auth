@@ -10,12 +10,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import axios from 'axios';
-import { getCookie } from 'cookies-next';
-import { useState } from 'react';
-import { LuCheck, LuPencil, LuPlus } from 'react-icons/lu';
-import { useCompanies, useCompany } from '../hooks/useUser';
+import { getCookie, setCookie } from 'cookies-next';
+import { useEffect, useState } from 'react';
+import { LuCheck, LuPencil, LuPlus, LuUsers } from 'react-icons/lu';
+import { useTeam, useTeams } from '../hooks/useTeam';
+import { useToast } from '@/hooks/useToast';
 
 const ROLES = [
   { id: 2, name: 'Admin' },
@@ -27,176 +36,286 @@ const AUTHORIZED_ROLES = [0, 1, 2];
 export const Team = () => {
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState('3');
-  const [renaming, setRenaming] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
-  const { data: companyData } = useCompanies();
-  const { data: activeCompany, mutate } = useCompany();
-  const [responseMessage, setResponseMessage] = useState('');
-  console.log(activeCompany);
-  const handleConfirm = async () => {
-    if (renaming) {
-      try {
-        await axios.put(
-          `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeCompany?.id}`,
-          { name: newName },
-          {
-            headers: {
-              Authorization: getCookie('jwt'),
-              'Content-Type': 'application/json',
-            },
+  const { toast } = useToast();
+
+  const { data: teamData } = useTeams();
+  const { data: activeTeam, mutate } = useTeam();
+
+  const handleConfirmRename = async () => {
+    try {
+      const jwt = getCookie('jwt') as string;
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/teams/${activeTeam?.id}`,
+        { name: newName },
+        {
+          headers: {
+            Authorization: jwt,
+            'Content-Type': 'application/json',
           },
-        );
-        setRenaming(false);
-        mutate();
-        setResponseMessage('Company name updated successfully!');
-      } catch (error) {
-        setResponseMessage(error.response?.data?.detail || 'Failed to update company name');
-      }
-    } else {
-      try {
-        const newResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URI}/v1/companies`,
-          { name: newName, agent_name: newName + ' Agent', ...(newParent ? { parent_company_id: newParent } : {}) },
-          {
-            headers: {
-              Authorization: getCookie('jwt'),
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-        mutate();
-        setResponseMessage('Company created successfully!');
-      } catch (error) {
-        setResponseMessage(error.response?.data?.detail || 'Failed to create company');
-      }
-      setCreating(false);
+        },
+      );
+      setIsRenameDialogOpen(false);
+      mutate();
+      toast({
+        title: 'Success',
+        description: 'Team name updated successfully!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to update team name',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleConfirmCreate = async () => {
+    try {
+      const jwt = getCookie('jwt') as string;
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/teams`,
+        {
+          name: newName,
+          agent_name: newName + ' Agent',
+          ...(newParent ? { parent_company_id: newParent } : {}),
+        },
+        {
+          headers: {
+            Authorization: jwt,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      mutate();
+      setIsCreateDialogOpen(false);
+      toast({
+        title: 'Success',
+        description: 'Team created successfully!',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to create team',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email) {
-      setResponseMessage('Please enter an email to invite.');
+      toast({
+        title: 'Error',
+        description: 'Please enter an email to invite.',
+        variant: 'destructive',
+      });
       return;
     }
+
     try {
+      const jwt = getCookie('jwt') as string;
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
         {
           email: email,
           role_id: parseInt(roleId),
-          company_id: companyData?.id,
+          team_id: teamData?.[0]?.id,
         },
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: getCookie('jwt'),
+            Authorization: jwt,
           },
         },
       );
 
       if (response.status === 200) {
         if (response.data?.id) {
-          setResponseMessage(
-            `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
-          );
+          toast({
+            title: 'Success',
+            description: `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
+          });
         } else {
-          setResponseMessage('Invitation sent successfully!');
+          toast({
+            title: 'Success',
+            description: 'Invitation sent successfully!',
+          });
         }
         setEmail('');
+        setIsInviteDialogOpen(false);
       }
     } catch (error) {
-      setResponseMessage(error.response?.data?.detail || 'Failed to send invitation');
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to send invitation',
+        variant: 'destructive',
+      });
     }
   };
 
   return (
-    <div className='space-y-6'>
-      <div className='flex items-center justify-start'>
-        {renaming || creating ? (
-          <>
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className='w-64'
-              placeholder='Enter new name'
-            />
-            {creating && (
-              <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
-                <SelectTrigger className='w-64'>
-                  <SelectValue placeholder='(Optional) Select a Parent Company' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Parent Company</SelectLabel>
-                    <SelectItem value='-'>[NONE]</SelectItem>
-                    {companyData?.map((child: any) => (
-                      <SelectItem key={child.id} value={child.id}>
-                        {child.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+    <SidebarContent title='Team Management'>
+      {activeTeam && (
+        <SidebarGroup>
+          <SidebarGroupLabel>{activeTeam?.name}</SidebarGroupLabel>
+          <div className='space-y-2 px-2'>
+            {activeTeam?.description && (
+              <div className='text-sm text-muted-foreground'>
+                <span className='font-medium'>Description:</span> {activeTeam.description}
+              </div>
             )}
-          </>
-        ) : (
-          <h3 className='text-lg font-medium'>{activeCompany?.name}</h3>
-        )}
-
-        <TooltipProvider>
-          <div className='flex gap-2'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => {
-                    if (renaming) {
-                      handleConfirm();
-                    } else {
-                      setRenaming(true);
-                      setNewName(activeCompany?.name);
-                    }
-                  }}
-                  disabled={creating}
-                  size='icon'
-                  variant='ghost'
-                >
-                  {renaming ? <LuCheck className='h-4 w-4' /> : <LuPencil className='h-4 w-4' />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{renaming ? 'Confirm rename' : 'Rename'}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => {
-                    if (creating) {
-                      handleConfirm();
-                    } else {
-                      setCreating(true);
-                      setNewName('');
-                    }
-                  }}
-                  disabled={renaming}
-                  size='icon'
-                  variant='ghost'
-                >
-                  {creating ? <LuCheck className='h-4 w-4' /> : <LuPlus className='h-4 w-4' />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{creating ? 'Confirm create' : 'Create new'}</p>
-              </TooltipContent>
-            </Tooltip>
+            {activeTeam?.parentId && (
+              <div className='text-sm text-muted-foreground'>
+                <span className='font-medium'>Parent Team ID:</span> {activeTeam.parentId}
+              </div>
+            )}
+            {activeTeam?.agents && activeTeam.agents.length > 0 && (
+              <div className='text-sm text-muted-foreground'>
+                <span className='font-medium'>Agents:</span>
+                <ul className='list-disc list-inside mt-1'>
+                  {activeTeam.agents.map((agent) => (
+                    <li key={agent.id}>{agent.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        </TooltipProvider>
-      </div>
-    </div>
+        </SidebarGroup>
+      )}
+      <SidebarGroup>
+        <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => {
+                setNewName(activeTeam?.name || '');
+                setIsRenameDialogOpen(true);
+              }}
+              tooltip='Rename Team'
+            >
+              <LuPencil className='w-4 h-4' />
+              <span>Rename Team</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => {
+                setNewName('');
+                setNewParent('');
+                setIsCreateDialogOpen(true);
+              }}
+              tooltip='Create Team'
+            >
+              <LuPlus className='w-4 h-4' />
+              <span>Create Team</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => {
+                setEmail('');
+                setRoleId('3');
+                setIsInviteDialogOpen(true);
+              }}
+              tooltip='Invite Member'
+            >
+              <LuUsers className='w-4 h-4' />
+              <span>Invite Member</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Team</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter new name' />
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmRename}>Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Team</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter team name' />
+            <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder='(Optional) Select a Parent Team' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Parent Team</SelectLabel>
+                  <SelectItem value='-'>[NONE]</SelectItem>
+                  {teamData?.map((child: any) => (
+                    <SelectItem key={child.id} value={child.id}>
+                      {child.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmCreate}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Member</DialogTitle>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Enter email address' type='email' />
+            <Select value={roleId} onValueChange={setRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select role' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Role</SelectLabel>
+                  {ROLES.map((role) => (
+                    <SelectItem key={role.id} value={role.id.toString()}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsInviteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>Send Invitation</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </SidebarContent>
   );
 };
 
