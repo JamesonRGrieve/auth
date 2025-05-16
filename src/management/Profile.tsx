@@ -44,7 +44,27 @@ export const Profile = ({
       ) : (data.missing_requirements && Object.keys(data.missing_requirements).length === 0) ||
         !data.missing_requirements ? (
         <DynamicForm
-          toUpdate={data}
+          fields={{
+            first_name: {
+              type: 'text',
+              display: 'First Name',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.first_name
+            },
+            last_name: {
+              type: 'text',
+              display: 'Last Name',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.last_name
+            },
+            display_name: {
+              type: 'text',
+              display: 'Display Name',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.display_name
+            },
+          }}
+          toUpdate={data.user}
           submitButtonText='Update'
           excludeFields={[
             'id',
@@ -57,28 +77,29 @@ export const Profile = ({
             'companies',
           ]}
           readOnlyFields={['input_tokens', 'output_tokens']}
-          additionalButtons={[
-            <Button key='done' className='col-span-2' onClick={() => router.push('/chat')}>
-              Go to {authConfig.appName}
-            </Button>,
-          ]}
+          // additionalButtons={[
+          //   <Button key='done' className='col-span-2' onClick={() => router.push('/chat')}>
+          //     Go to {authConfig.appName}
+          //   </Button>,
+          // ]}
           onConfirm={async (data) => {
             const updateResponse = (
               await axios
                 .put(
                   `${authConfig.authServer}${userUpdateEndpoint}`,
                   {
+                    user: {
                     ...Object.entries(data).reduce((acc, [key, value]) => {
                       return value ? { ...acc, [key]: value } : acc;
                     }, {}),
                   },
+                  },
                   {
                     headers: {
                       'Content-Type': 'application/json',
-                      Authorization: getCookie('jwt'),
+                      Authorization: `Bearer ${getCookie('jwt')}`,
                     },
-                  },
-                )
+              })
                 .catch((exception: any) => exception.response)
             ).data;
             log(['Update Response', updateResponse], { client: 2 });
