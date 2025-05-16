@@ -45,10 +45,24 @@ export const Profile = ({
         !data.missing_requirements ? (
         <DynamicForm
           fields={{
-            first_name: { type: 'text', display: 'First Name' },
-            last_name: { type: 'text', display: 'Last Name' },
-            display_name: { type: 'text', display: 'Display Name' },
-            timezone: { type: 'text', display: 'Timezone' },
+            first_name: {
+              type: 'text',
+              display: 'First Name',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.first_name
+            },
+            last_name: {
+              type: 'text',
+              display: 'Last Name',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.last_name
+            },
+            display_name: {
+              type: 'text',
+              display: 'Display Name',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.display_name
+            },
           }}
           toUpdate={data.user}
           submitButtonText='Update'
@@ -74,17 +88,18 @@ export const Profile = ({
                 .put(
                   `${authConfig.authServer}${userUpdateEndpoint}`,
                   {
+                    user: {
                     ...Object.entries(data).reduce((acc, [key, value]) => {
                       return value ? { ...acc, [key]: value } : acc;
                     }, {}),
                   },
+                  },
                   {
                     headers: {
                       'Content-Type': 'application/json',
-                      Authorization: getCookie('jwt'),
+                      Authorization: `Bearer ${getCookie('jwt')}`,
                     },
-                  },
-                )
+              })
                 .catch((exception: any) => exception.response)
             ).data;
             log(['Update Response', updateResponse], { client: 2 });
