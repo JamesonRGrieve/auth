@@ -44,7 +44,13 @@ export const Profile = ({
       ) : (data.missing_requirements && Object.keys(data.missing_requirements).length === 0) ||
         !data.missing_requirements ? (
         <DynamicForm
-          toUpdate={data}
+          fields={{
+            first_name: { type: 'text', display: 'First Name' },
+            last_name: { type: 'text', display: 'Last Name' },
+            display_name: { type: 'text', display: 'Display Name' },
+            timezone: { type: 'text', display: 'Timezone' },
+          }}
+          toUpdate={data.user}
           submitButtonText='Update'
           excludeFields={[
             'id',
@@ -57,11 +63,11 @@ export const Profile = ({
             'companies',
           ]}
           readOnlyFields={['input_tokens', 'output_tokens']}
-          additionalButtons={[
-            <Button key='done' className='col-span-2' onClick={() => router.push('/chat')}>
-              Go to {authConfig.appName}
-            </Button>,
-          ]}
+          // additionalButtons={[
+          //   <Button key='done' className='col-span-2' onClick={() => router.push('/chat')}>
+          //     Go to {authConfig.appName}
+          //   </Button>,
+          // ]}
           onConfirm={async (data) => {
             const updateResponse = (
               await axios
