@@ -43,7 +43,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     }
     const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
     if (getCookie('invitation')) {
-      formData['invitation_id'] = getCookie('invitation') ?? ''.toString();
+      formData['invitation_id'] = String(getCookie('invitation') || '');
     }
     let registerResponse;
     let registerResponseData;
