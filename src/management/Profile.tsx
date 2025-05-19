@@ -63,6 +63,12 @@ export const Profile = ({
               validation: (value: string) => value.length > 0,
               value: data.user?.display_name
             },
+            timezone: {
+              type: 'text',
+              display: 'Timezone',
+              validation: (value: string) => value.length > 0,
+              value: data.user?.timezone
+            },
           }}
           toUpdate={data.user}
           submitButtonText='Update'
