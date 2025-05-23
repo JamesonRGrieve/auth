@@ -55,7 +55,7 @@ export default function Manage({
       await axios.get(`${authConfig.authServer}${userDataEndpoint}`, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: getCookie('jwt'),
+          Authorization: `Bearer ${getCookie('jwt')}`,
         },
         validateStatus: (status) => [200, 403].includes(status),
       })
