@@ -42,6 +42,7 @@ export const Team = () => {
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
   const { toast } = useToast();
+  const [roles,setRoles] = useState(ROLES);
 
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam();
@@ -105,6 +106,30 @@ export const Team = () => {
       });
     }
   };
+
+  const fetchRoles = async ()=>{
+    
+    return (
+        await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${selectedTeam.id}/role`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getCookie('jwt')}`,
+          },
+          validateStatus: (status) => [200, 403].includes(status),
+        })
+    ).data;
+  }
+  useEffect(() => {
+    try {
+      if (selectedTeam) {
+        fetchRoles().then((data) => {
+          setRoles([...ROLES, ...data.roles]);
+        });
+      }
+    } catch (error) {
+      setRoles(ROLES);
+    }
+  }, [selectedTeam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -298,7 +323,7 @@ export const Team = () => {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Role</SelectLabel>
-                  {ROLES.map((role) => (
+                  {roles.map((role) => (
                     <SelectItem key={role.id} value={role.id.toString()}>
                       {role.name}
                     </SelectItem>
