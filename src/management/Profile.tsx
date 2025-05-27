@@ -64,6 +64,9 @@ export const Profile = ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getCookie('jwt')}`,
         },
+        params: {
+        include: 'role',
+      },
         validateStatus: (status) => [200, 403].includes(status),
       })
     ).data;
@@ -99,12 +102,12 @@ export const Profile = ({
       },
     },
     {
-      accessorKey: 'parent_id',
+      accessorKey: 'role',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
       cell: ({ row }) => {
         return (
           <div className='flex w-[100px] items-center'>
-            <span>{row.getValue('parent_id')}</span>
+            <span>{row.getValue('role')}</span>
           </div>
         );
       },
@@ -124,7 +127,7 @@ export const Profile = ({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='ghost' className='flex h-8 w-8 p-0' onClick={() => router.push('/team')}>
+              <Button variant='ghost' className='flex h-8 w-8 p-0' onClick={() => router.push(`/team/${row?.original?.id}`)}>
                 <ArrowTopRightIcon />
               </Button>
             </DropdownMenuTrigger>              
