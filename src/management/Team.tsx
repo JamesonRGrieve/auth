@@ -46,6 +46,18 @@ type User = {
     };
   };
 
+interface Role {
+    id: number;
+    name: string;
+    parent_id?: number;
+    [key: string]: any;
+  }
+
+  interface RoleWithChildren extends Role {
+    children: RoleWithChildren[];
+    depth: number;
+  }
+
 export const Team = () => {
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState('3');
@@ -190,15 +202,43 @@ export const Team = () => {
         })
     ).data;
   }
-  useEffect(() => {
-    try {
-      if (selectedTeam) {
-        fetchRoles().then((data) => {
-          setRoles([...ROLES, ...data.roles]);
-        });
+
+  function sortRolesByPermission(roles: Role[]): Role[] {
+    const roleMap = new Map<number, RoleWithChildren>();
+    roles.forEach((role: Role) => {
+      roleMap.set(role.id, { ...role, children: [], depth: -1 });
+    });
+
+    roleMap.forEach((role: RoleWithChildren) => {
+      if (role.parent_id && roleMap.has(role.parent_id)) {
+        roleMap.get(role.parent_id)!.children.push(role);
       }
-    } catch (error) {
-      setRoles(ROLES);
+    });
+
+    function assignDepth(role: RoleWithChildren, depth: number): void {
+      role.depth = depth;
+      role.children.forEach((child: RoleWithChildren) => assignDepth(child, depth + 1));
+    }
+
+    roleMap.forEach((role: RoleWithChildren) => {
+      if (!role.parent_id) {
+        assignDepth(role, 0);
+      }
+    });
+
+    const sortedRoles = Array.from(roleMap.values()).sort((a, b) => a.depth - b.depth);
+
+    return sortedRoles.map(({ children, depth, ...role }) => role as Role);
+  }
+  
+  useEffect(() => {
+    if (selectedTeam) {
+      fetchRoles()
+        .then((data) => {
+          const sortedRoles = sortRolesByPermission(data.roles);
+          setRoles([...ROLES, ...sortedRoles]);
+        })
+        .catch(() => setRoles(ROLES));
     }
   }, [selectedTeam]);
 
