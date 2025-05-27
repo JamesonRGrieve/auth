@@ -8,7 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { Check, Mail, MoreHorizontal, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -62,8 +62,11 @@ export const Team = () => {
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
 
+  const params = useParams();
+  const { id } = params;
+
   const { data: teamData } = useTeams();
-  const { data: activeTeam, mutate } = useTeam();
+  const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
   const [responseMessage, setResponseMessage] = useState('');
   const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);

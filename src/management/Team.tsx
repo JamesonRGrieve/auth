@@ -25,13 +25,26 @@ import { useEffect, useState } from 'react';
 import { LuCheck, LuPencil, LuPlus, LuUsers } from 'react-icons/lu';
 import { useTeam, useTeams } from '../hooks/useTeam';
 import { useToast } from '@/hooks/useToast';
-
+import { ArrowBigLeft } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import useSWR from 'swr';
+import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 const ROLES = [
   { id: 2, name: 'Admin' },
   { id: 3, name: 'User' },
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
+
+type User = {
+    missing_requirements?: {
+      [key: string]: {
+        type: 'number' | 'boolean' | 'text' | 'password';
+        value: DynamicFormFieldValueTypes;
+        validation?: (value: DynamicFormFieldValueTypes) => boolean;
+      };
+    };
+  };
 
 export const Team = () => {
   const [email, setEmail] = useState('');
@@ -41,10 +54,68 @@ export const Team = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
+  const [userTeams, setUserTeams] = useState([]);
+  const [selectedTeam, setSelected] = useState({});
   const { toast } = useToast();
+
+  const params = useParams();
+  const { id } = params;
+  const authTeam = id ? id : getCookie('auth-team');
 
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam();
+  const userDataEndpoint = '/v1/user';
+  const userDataSWRKey = '/user';
+
+  const { data, error, isLoading } = useSWR<User, any, string>(userDataSWRKey, async () => {
+    return (
+      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}${userDataEndpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getCookie('jwt')}`,
+        },
+        validateStatus: (status) => [200, 403].includes(status),
+      })
+    ).data;
+  });
+
+  const getUserTeams = async () => {
+    return (
+      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getCookie('jwt')}`,
+        },
+        validateStatus: (status) => [200, 403].includes(status),
+      })
+    ).data;
+  };
+
+  useEffect(() => {
+
+  })
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getUserTeams();
+      if (data && data?.teams?.length) {
+        console.log(data);
+        setUserTeams(data.teams);
+        const selecetdTeam = data.teams.find((c: { id: string }) => c.id === authTeam);
+        setSelected(selecetdTeam);
+      }
+    };
+    if (data?.user?.id) {
+      fetchData();
+    }
+  }, [data]);
+
+  const selectNewTeam = (teamObj: { id: string}) => {
+    if (teamObj?.id) {
+      setCookie('auth-team', teamObj.id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+      setSelected(teamObj);
+    }
+  }
 
   const handleConfirmRename = async () => {
     try {
@@ -78,7 +149,7 @@ export const Team = () => {
     try {
       const jwt = getCookie('jwt') as string;
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URI}/v1/teams`,
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/team`,
         {
           name: newName,
           agent_name: newName + ' Agent',
@@ -86,7 +157,7 @@ export const Team = () => {
         },
         {
           headers: {
-            Authorization: jwt,
+            Authorization: `Bearer ${jwt}`,
             'Content-Type': 'application/json',
           },
         },
@@ -189,6 +260,26 @@ export const Team = () => {
         </SidebarGroup>
       )}
       <SidebarGroup>
+        <SidebarGroupLabel>Select Team</SidebarGroupLabel>
+          <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
+            <ArrowBigLeft />
+          </SidebarMenuButton>
+          <div className='w-full group-data-[collapsible=icon]:hidden'>
+            <Select value={selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select a Team' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {userTeams?.map((child: any) => (
+                    <SelectItem key={child.id} value={child}>
+                      {child.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
