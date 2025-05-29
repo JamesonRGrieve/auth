@@ -322,10 +322,10 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'createdAt',
+      accessorKey: 'created_at',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Sent Date' />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue('createdAt'));
+        const date = new Date(row.getValue('created_at'));
         const formattedDate = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
