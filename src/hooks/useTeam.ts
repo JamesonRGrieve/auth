@@ -1,12 +1,11 @@
 import { useToast } from '@/hooks/useToast';
-import { chainMutations, createGraphQLClient } from '@/interactive/hooks/lib';
-import { useInteractiveConfig } from '@/interactive/InteractiveConfigContext';
 import log from '@/next-log/log';
 import '@/zod2gql';
 import z, { GQLType } from '@/zod2gql';
 import { getCookie, setCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import useSWR, { SWRResponse } from 'swr';
+import { chainMutations, createGraphQLClient } from './lib';
 import { Team, TeamSchema } from './z';
 /**
  * Hook to fetch and manage team data
@@ -15,7 +14,6 @@ import { Team, TeamSchema } from './z';
 export function useTeams(): SWRResponse<Team[]> {
   const client = createGraphQLClient();
   const { toast } = useToast();
-  const { sdk: sdk } = useInteractiveConfig();
   const router = useRouter();
 
   return useSWR<Team[]>(
