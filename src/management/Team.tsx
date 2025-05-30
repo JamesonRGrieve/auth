@@ -29,9 +29,10 @@ import { ArrowBigLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
+
 const ROLES = [
-  { id: 2, name: 'Admin' },
-  { id: 3, name: 'User' },
+  { id: 'FFFFFFFF-0000-0000-AAAA-FFFFFFFFFFFF', name: 'Admin' },
+  { id: 'FFFFFFFF-0000-0000-0000-FFFFFFFFFFFF', name: 'User' },
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
@@ -48,7 +49,7 @@ type User = {
 
 export const Team = () => {
   const [email, setEmail] = useState('');
-  const [roleId, setRoleId] = useState('3');
+  const [roleId, setRoleId] = useState(ROLES[1].id);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -189,35 +190,54 @@ export const Team = () => {
       return;
     }
 
+    const emailArray = email.split(',').filter(emailStr => emailStr.trim() !== '');
+    if (emailArray.length === 0 || emailArray.length > 10) {
+      toast({
+        title: 'Error',
+        description: emailArray.length === 0 ? 'Please enter an email to invite.' : "You can only enter up to 10 emails.",
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const invalidEmails = emailArray.filter((email) => !emailRegex.test(email.trim()));
+
+    if (invalidEmails.length > 0) {
+      toast({
+        title: 'Error',
+        description: "Invalid emails found: " + invalidEmails.join(', '),
+        variant: 'destructive',
+      });
+      return;
+    }
+    const body = {
+      invitations: emailArray.map((email) => ({
+        email: email.trim(),
+        role_id: roleId,
+        team_id: selectedTeam.id,
+      })),
+    }
+    
     try {
       const jwt = getCookie('jwt') as string;
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitations`,
-        {
-          email: email,
-          role_id: parseInt(roleId),
-          team_id: teamData?.[0]?.id,
-        },
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitation`,
+        body,
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: jwt,
+            Authorization: `Bearer ${jwt}`,
           },
         },
       );
 
-      if (response.status === 200) {
-        if (response.data?.id) {
-          toast({
-            title: 'Success',
-            description: `Invitation sent successfully! The invite link is ${process.env.NEXT_PUBLIC_APP_URI}/?invitation_id=${response.data.id}&email=${email}`,
-          });
-        } else {
-          toast({
+      if (response.status === 201) {
+        toast({
             title: 'Success',
             description: 'Invitation sent successfully!',
-          });
-        }
+        });
         setEmail('');
         setIsInviteDialogOpen(false);
       }
@@ -313,7 +333,7 @@ export const Team = () => {
             <SidebarMenuButton
               onClick={() => {
                 setEmail('');
-                setRoleId('3');
+                setRoleId(ROLES[1].id);
                 setIsInviteDialogOpen(true);
               }}
               tooltip='Invite Member'
