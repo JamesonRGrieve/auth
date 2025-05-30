@@ -31,8 +31,8 @@ import useSWR from 'swr';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 
 const ROLES = [
-  { id: 'FFFFFFFF-FFFF-FFFF-AAAA-FFFFFFFFFFFF', name: 'Admin' },
-  { id: 'FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF', name: 'User' },
+  { id: 'FFFFFFFF-0000-0000-AAAA-FFFFFFFFFFFF', name: 'Admin' },
+  { id: 'FFFFFFFF-0000-0000-0000-FFFFFFFFFFFF', name: 'User' },
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
@@ -49,7 +49,7 @@ type User = {
 
 export const Team = () => {
   const [email, setEmail] = useState('');
-  const [roleId, setRoleId] = useState('FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF');
+  const [roleId, setRoleId] = useState(ROLES[1].id);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -333,7 +333,7 @@ export const Team = () => {
             <SidebarMenuButton
               onClick={() => {
                 setEmail('');
-                setRoleId('FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF');
+                setRoleId(ROLES[1].id);
                 setIsInviteDialogOpen(true);
               }}
               tooltip='Invite Member'
