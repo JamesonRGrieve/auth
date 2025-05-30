@@ -9,7 +9,7 @@ import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { Check, Mail, MoreHorizontal, X } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,12 +65,36 @@ export const Team = () => {
   const params = useParams();
   const { id } = params;
 
+  const authTeam = id ? id : getCookie('auth-team');
+
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
   const [responseMessage, setResponseMessage] = useState('');
   const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);
   const { toast } = useToast();
+  const [invitations, setInvitations] = useState([]);
+
+  const getInvitationsData = async () => {
+    return (
+      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${authTeam}/invitation`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getCookie('jwt')}`,
+        },
+        validateStatus: (status) => [200].includes(status),
+      })
+    ).data;
+  };
+
+  useEffect(() => {
+    if (authTeam) {
+      getInvitationsData()
+        .then((d) => { setInvitations(d.invitations) })
+        .catch((err) => setInvitations([]));
+    }
+  }, [authTeam])
+
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -298,10 +322,10 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'createdAt',
+      accessorKey: 'created_at',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Sent Date' />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue('createdAt'));
+        const date = new Date(row.getValue('created_at'));
         const formattedDate = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
@@ -379,7 +403,7 @@ export const Team = () => {
     <div className='space-y-6'>
       <DataTable data={users || []} columns={users_columns} meta={{ title: 'Current Users' }} />
       {/* <InviteUsers /> */}
-      {(invitationsData?.length === 0)
+      {(invitations?.length === 0)
         ? (
           <>
             <h4 className='text-2xl font-bold mr-auto'>Pending Invitations</h4>
@@ -388,10 +412,10 @@ export const Team = () => {
             </div>
           </>
         )
-        : (invitationsData.length > 0 && (
+        : (invitations.length > 0 && (
           <>
             <h4 className='font-medium text-md'>Pending Invitations</h4>
-            <DataTable data={invitationsData || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
+            <DataTable data={invitations || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
           </>
         ))}
     </div>
