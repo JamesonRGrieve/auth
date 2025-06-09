@@ -47,6 +47,18 @@ type User = {
     };
   };
 
+interface Role {
+    id: number;
+    name: string;
+    parent_id?: number;
+    [key: string]: any;
+  }
+
+  interface RoleWithChildren extends Role {
+    children: RoleWithChildren[];
+    depth: number;
+  }
+
 export const Team = () => {
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState(ROLES[1].id);
@@ -58,6 +70,7 @@ export const Team = () => {
   const [userTeams, setUserTeams] = useState([]);
   const [selectedTeam, setSelected] = useState({});
   const { toast } = useToast();
+  const [roles,setRoles] = useState(ROLES);
 
   const params = useParams();
   const { id } = params;
@@ -177,6 +190,58 @@ export const Team = () => {
       });
     }
   };
+
+  const fetchRoles = async ()=>{
+    
+    return (
+        await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${selectedTeam.id}/role`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getCookie('jwt')}`,
+          },
+          validateStatus: (status) => [200, 403].includes(status),
+        })
+    ).data;
+  }
+
+  function sortRolesByPermission(roles: Role[]): Role[] {
+    const roleMap = new Map<number, RoleWithChildren>();
+    roles.forEach((role: Role) => {
+      roleMap.set(role.id, { ...role, children: [], depth: -1 });
+    });
+
+    roleMap.forEach((role: RoleWithChildren) => {
+      if (role.parent_id && roleMap.has(role.parent_id)) {
+        roleMap.get(role.parent_id)!.children.push(role);
+      }
+    });
+
+    function assignDepth(role: RoleWithChildren, depth: number): void {
+      role.depth = depth;
+      role.children.forEach((child: RoleWithChildren) => assignDepth(child, depth + 1));
+    }
+
+    roleMap.forEach((role: RoleWithChildren) => {
+      if (!role.parent_id) {
+        assignDepth(role, 0);
+      }
+    });
+
+    const sortedRoles = Array.from(roleMap.values()).sort((a, b) => a.depth - b.depth);
+
+    return sortedRoles.map(({ children, depth, ...role }) => role as Role);
+  }
+  
+  useEffect(() => {
+    if (selectedTeam) {
+      fetchRoles()
+        .then((data) => {
+          const sortedRoles = sortRolesByPermission(data.roles);
+          setRoles([...ROLES, ...sortedRoles]);
+        })
+        .catch(() => setRoles(ROLES));
+    }
+  }, [selectedTeam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -409,7 +474,7 @@ export const Team = () => {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Role</SelectLabel>
-                  {ROLES.map((role) => (
+                  {roles.map((role) => (
                     <SelectItem key={role.id} value={role.id.toString()}>
                       {role.name}
                     </SelectItem>
