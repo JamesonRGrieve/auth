@@ -38,26 +38,26 @@ const ROLES = [
 const AUTHORIZED_ROLES = [0, 1, 2];
 
 type User = {
-    missing_requirements?: {
-      [key: string]: {
-        type: 'number' | 'boolean' | 'text' | 'password';
-        value: DynamicFormFieldValueTypes;
-        validation?: (value: DynamicFormFieldValueTypes) => boolean;
-      };
+  missing_requirements?: {
+    [key: string]: {
+      type: 'number' | 'boolean' | 'text' | 'password';
+      value: DynamicFormFieldValueTypes;
+      validation?: (value: DynamicFormFieldValueTypes) => boolean;
     };
   };
+};
 
 interface Role {
-    id: number;
-    name: string;
-    parent_id?: number;
-    [key: string]: any;
-  }
+  id: number;
+  name: string;
+  parent_id?: number;
+  [key: string]: any;
+}
 
-  interface RoleWithChildren extends Role {
-    children: RoleWithChildren[];
-    depth: number;
-  }
+interface RoleWithChildren extends Role {
+  children: RoleWithChildren[];
+  depth: number;
+}
 
 export const Team = () => {
   const [email, setEmail] = useState('');
@@ -70,7 +70,7 @@ export const Team = () => {
   const [userTeams, setUserTeams] = useState([]);
   const [selectedTeam, setSelected] = useState({});
   const { toast } = useToast();
-  const [roles,setRoles] = useState(ROLES);
+  const [roles, setRoles] = useState(ROLES);
 
   const params = useParams();
   const { id } = params;
@@ -105,9 +105,7 @@ export const Team = () => {
     ).data;
   };
 
-  useEffect(() => {
-
-  })
+  useEffect(() => {});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,12 +122,12 @@ export const Team = () => {
     }
   }, [data]);
 
-  const selectNewTeam = (teamObj: { id: string}) => {
+  const selectNewTeam = (teamObj: { id: string }) => {
     if (teamObj?.id) {
       setCookie('auth-team', teamObj.id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
       setSelected(teamObj);
     }
-  }
+  };
 
   const handleConfirmRename = async () => {
     try {
@@ -191,18 +189,17 @@ export const Team = () => {
     }
   };
 
-  const fetchRoles = async ()=>{
-    
+  const fetchRoles = async () => {
     return (
-        await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${selectedTeam.id}/role`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getCookie('jwt')}`,
-          },
-          validateStatus: (status) => [200, 403].includes(status),
-        })
+      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${selectedTeam.id}/role`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getCookie('jwt')}`,
+        },
+        validateStatus: (status) => [200, 403].includes(status),
+      })
     ).data;
-  }
+  };
 
   function sortRolesByPermission(roles: Role[]): Role[] {
     const roleMap = new Map<number, RoleWithChildren>();
@@ -231,7 +228,7 @@ export const Team = () => {
 
     return sortedRoles.map(({ children, depth, ...role }) => role as Role);
   }
-  
+
   useEffect(() => {
     if (selectedTeam) {
       fetchRoles()
@@ -255,16 +252,16 @@ export const Team = () => {
       return;
     }
 
-    const emailArray = email.split(',').filter(emailStr => emailStr.trim() !== '');
+    const emailArray = email.split(',').filter((emailStr) => emailStr.trim() !== '');
     if (emailArray.length === 0 || emailArray.length > 10) {
       toast({
         title: 'Error',
-        description: emailArray.length === 0 ? 'Please enter an email to invite.' : "You can only enter up to 10 emails.",
+        description: emailArray.length === 0 ? 'Please enter an email to invite.' : 'You can only enter up to 10 emails.',
         variant: 'destructive',
       });
       return;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     const invalidEmails = emailArray.filter((email) => !emailRegex.test(email.trim()));
@@ -272,7 +269,7 @@ export const Team = () => {
     if (invalidEmails.length > 0) {
       toast({
         title: 'Error',
-        description: "Invalid emails found: " + invalidEmails.join(', '),
+        description: 'Invalid emails found: ' + invalidEmails.join(', '),
         variant: 'destructive',
       });
       return;
@@ -283,25 +280,21 @@ export const Team = () => {
         role_id: roleId,
         team_id: selectedTeam.id,
       })),
-    }
-    
+    };
+
     try {
       const jwt = getCookie('jwt') as string;
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URI}/v1/invitation`,
-        body,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwt}`,
-          },
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation`, body, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
         },
-      );
+      });
 
       if (response.status === 201) {
         toast({
-            title: 'Success',
-            description: 'Invitation sent successfully!',
+          title: 'Success',
+          description: 'Invitation sent successfully!',
         });
         setEmail('');
         setIsInviteDialogOpen(false);
@@ -346,25 +339,25 @@ export const Team = () => {
       )}
       <SidebarGroup>
         <SidebarGroupLabel>Select Team</SidebarGroupLabel>
-          <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
-            <ArrowBigLeft />
-          </SidebarMenuButton>
-          <div className='w-full group-data-[collapsible=icon]:hidden'>
-            <Select value={selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select a Team' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {userTeams?.map((child: any) => (
-                    <SelectItem key={child.id} value={child}>
-                      {child.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+        <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
+          <ArrowBigLeft />
+        </SidebarMenuButton>
+        <div className='w-full group-data-[collapsible=icon]:hidden'>
+          <Select value={selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select a Team' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {userTeams?.map((child: any) => (
+                  <SelectItem key={child.id} value={child}>
+                    {child.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
         <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -433,7 +426,13 @@ export const Team = () => {
             <DialogTitle>Create New Team</DialogTitle>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter team name' />
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value.slice(0, 20))}
+              required
+              placeholder='Enter team name (max 20 chars)'
+              maxLength={20}
+            />
             <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
               <SelectTrigger>
                 <SelectValue placeholder='(Optional) Select a Parent Team' />
