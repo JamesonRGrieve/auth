@@ -129,7 +129,19 @@ export const Team = () => {
     }
   };
 
+  const checkTeamNameExists = (name: string) => {
+    return userTeams.some((team: any) => team.name.toLowerCase() === name.toLowerCase());
+  };
+
   const handleConfirmRename = async () => {
+    if (checkTeamNameExists(newName)) {
+      toast({
+        title: 'Error',
+        description: 'Team name already exists. Please choose a different name.',
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
       const jwt = getCookie('jwt') as string;
       await axios.put(
@@ -158,6 +170,14 @@ export const Team = () => {
   };
 
   const handleConfirmCreate = async () => {
+    if (checkTeamNameExists(newName)) {
+      toast({
+        title: 'Error',
+        description: 'Team name already exists. Please choose a different name.',
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
       const jwt = getCookie('jwt') as string;
       await axios.post(
