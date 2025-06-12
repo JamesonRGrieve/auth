@@ -145,11 +145,11 @@ export const Team = () => {
     try {
       const jwt = getCookie('jwt') as string;
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URI}/v1/teams/${activeTeam?.id}`,
-        { name: newName },
+        `${process.env.NEXT_PUBLIC_API_URI}/v1/team/${activeTeam?.id}`,
+        { team: { name: newName } },
         {
           headers: {
-            Authorization: jwt,
+            Authorization: `Bearer ${jwt}`,
             'Content-Type': 'application/json',
           },
         },
