@@ -423,94 +423,184 @@ export const Team = () => {
         </SidebarMenu>
       </SidebarGroup>
 
-      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Team</DialogTitle>
-          </DialogHeader>
-          <div className='grid gap-4 py-4'>
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter new name' />
-          </div>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setIsRenameDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmRename}>Rename</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RenameDialog
+        isRenameDialogOpen={isRenameDialogOpen}
+        setIsRenameDialogOpen={setIsRenameDialogOpen}
+        newName={newName}
+        setNewName={setNewName}
+        handleConfirmRename={handleConfirmRename}
+      />
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Team</DialogTitle>
-          </DialogHeader>
-          <div className='grid gap-4 py-4'>
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value.slice(0, 20))}
-              required
-              placeholder='Enter team name (max 20 chars)'
-              maxLength={20}
-            />
-            <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder='(Optional) Select a Parent Team' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Parent Team</SelectLabel>
-                  <SelectItem value='-'>[NONE]</SelectItem>
-                  {teamData?.map((child: any) => (
-                    <SelectItem key={child.id} value={child.id}>
-                      {child.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmCreate}>Create</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateDialog
+        isCreateDialogOpen={isCreateDialogOpen}
+        setIsCreateDialogOpen={setIsCreateDialogOpen}
+        newName={newName}
+        setNewName={setNewName}
+        newParent={newParent}
+        setNewParent={setNewParent}
+        teamData={userTeams}
+        handleConfirmCreate={handleConfirmCreate}
+      />
 
-      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite Member</DialogTitle>
-          </DialogHeader>
-          <div className='grid gap-4 py-4'>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Enter email address' type='email' />
-            <Select value={roleId} onValueChange={setRoleId}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select role' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Role</SelectLabel>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id.toString()}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setIsInviteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>Send Invitation</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InviteDialog
+        isInviteDialogOpen={isInviteDialogOpen}
+        setIsInviteDialogOpen={setIsInviteDialogOpen}
+        email={email}
+        setEmail={setEmail}
+        roleId={roleId}
+        setRoleId={setRoleId}
+        roles={roles}
+        handleSubmit={handleSubmit}
+      />
     </SidebarContent>
+  );
+};
+
+export const RenameDialog = ({
+  isRenameDialogOpen,
+  setIsRenameDialogOpen,
+  newName,
+  setNewName,
+  handleConfirmRename,
+}: {
+  isRenameDialogOpen: boolean;
+  setIsRenameDialogOpen: (open: boolean) => void;
+  newName: string;
+  setNewName: (name: string) => void;
+  handleConfirmRename: () => void;
+}) => {
+  return (
+    <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename Team</DialogTitle>
+        </DialogHeader>
+        <div className='grid gap-4 py-4'>
+          <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder='Enter new name' />
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={() => setIsRenameDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmRename}>Rename</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export const CreateDialog = ({
+  isCreateDialogOpen,
+  setIsCreateDialogOpen,
+  newName,
+  setNewName,
+  newParent,
+  setNewParent,
+  teamData,
+  handleConfirmCreate,
+}: {
+  isCreateDialogOpen: boolean;
+  setIsCreateDialogOpen: (open: boolean) => void;
+  newName: string;
+  setNewName: (name: string) => void;
+  newParent: string;
+  setNewParent: (parent: string) => void;
+  teamData: any[];
+  handleConfirmCreate: () => void;
+}) => {
+  return (
+    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Team</DialogTitle>
+        </DialogHeader>
+        <div className='grid gap-4 py-4'>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value.slice(0, 20))}
+            required
+            placeholder='Enter team name (max 20 chars)'
+            maxLength={20}
+          />
+          <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder='(Optional) Select a Parent Team' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Parent Team</SelectLabel>
+                <SelectItem value='-'>[NONE]</SelectItem>
+                {teamData?.map((child: any) => (
+                  <SelectItem key={child.id} value={child.id}>
+                    {child.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={() => setIsCreateDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmCreate}>Create</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export const InviteDialog = ({
+  isInviteDialogOpen,
+  setIsInviteDialogOpen,
+  email,
+  setEmail,
+  roleId,
+  setRoleId,
+  roles,
+  handleSubmit,
+}: {
+  isInviteDialogOpen: boolean;
+  setIsInviteDialogOpen: (open: boolean) => void;
+  email: string;
+  setEmail: (email: string) => void;
+  roleId: string;
+  setRoleId: (roleId: string) => void;
+  roles: { id: string; name: string }[];
+  handleSubmit: (e: React.FormEvent) => void;
+}) => {
+  return (
+    <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite Member</DialogTitle>
+        </DialogHeader>
+        <div className='grid gap-4 py-4'>
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Enter email address' type='email' />
+          <Select value={roleId} onValueChange={setRoleId}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select role' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Role</SelectLabel>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id.toString()}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button variant='outline' onClick={() => setIsInviteDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit}>Send Invitation</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
