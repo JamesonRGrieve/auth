@@ -209,26 +209,7 @@ export const Team = () => {
         </SidebarGroup>
       )}
       <SidebarGroup>
-        <SidebarGroupLabel>Select Team</SidebarGroupLabel>
-        <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
-          <ArrowBigLeft />
-        </SidebarMenuButton>
-        <div className='w-full group-data-[collapsible=icon]:hidden'>
-          <Select value={selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder='Select a Team' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {userTeams?.map((child: any) => (
-                  <SelectItem key={child.id} value={child}>
-                    {child.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+        <SelectTeam selectedTeam={selectedTeam} userTeams={userTeams} selectNewTeam={selectNewTeam} />
         <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
         <SidebarMenu>
           <RenameDialog newName={newName} setNewName={setNewName} checkTeamNameExists={checkTeamNameExists} />
@@ -251,6 +232,41 @@ export const Team = () => {
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
+  );
+};
+
+const SelectTeam = ({
+  selectedTeam,
+  userTeams,
+  selectNewTeam,
+}: {
+  selectedTeam: any;
+  userTeams: any;
+  selectNewTeam: (team: any) => void;
+}) => {
+  return (
+    <>
+      <SidebarGroupLabel>Select Team</SidebarGroupLabel>
+      <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
+        <ArrowBigLeft />
+      </SidebarMenuButton>
+      <div className='w-full group-data-[collapsible=icon]:hidden'>
+        <Select value={selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder='Select a Team' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {userTeams?.map((child: any) => (
+                <SelectItem key={child.id} value={child}>
+                  {child.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+    </>
   );
 };
 
