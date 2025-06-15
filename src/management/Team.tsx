@@ -60,18 +60,14 @@ interface RoleWithChildren extends Role {
 }
 
 export const Team = () => {
-  const [email, setEmail] = useState('');
-  const [roleId, setRoleId] = useState(ROLES[1].id);
   const [newName, setNewName] = useState('');
   const [userTeams, setUserTeams] = useState([]);
   const [selectedTeam, setSelected] = useState({});
-  const [roles, setRoles] = useState(ROLES);
 
   const params = useParams();
   const { id } = params;
   const authTeam = id ? id : getCookie('auth-team');
 
-  const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam();
   const userDataEndpoint = '/v1/user';
   const userDataSWRKey = '/user';
@@ -100,8 +96,6 @@ export const Team = () => {
     ).data;
   };
 
-  useEffect(() => {});
-
   useEffect(() => {
     const fetchData = async () => {
       const data = await getUserTeams();
@@ -127,57 +121,6 @@ export const Team = () => {
   const checkTeamNameExists = (name: string) => {
     return userTeams.some((team: any) => team.name.toLowerCase() === name.toLowerCase());
   };
-
-  const fetchRoles = async () => {
-    return (
-      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${selectedTeam.id}/role`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getCookie('jwt')}`,
-        },
-        validateStatus: (status) => [200, 403].includes(status),
-      })
-    ).data;
-  };
-
-  function sortRolesByPermission(roles: Role[]): Role[] {
-    const roleMap = new Map<number, RoleWithChildren>();
-    roles.forEach((role: Role) => {
-      roleMap.set(role.id, { ...role, children: [], depth: -1 });
-    });
-
-    roleMap.forEach((role: RoleWithChildren) => {
-      if (role.parent_id && roleMap.has(role.parent_id)) {
-        roleMap.get(role.parent_id)!.children.push(role);
-      }
-    });
-
-    function assignDepth(role: RoleWithChildren, depth: number): void {
-      role.depth = depth;
-      role.children.forEach((child: RoleWithChildren) => assignDepth(child, depth + 1));
-    }
-
-    roleMap.forEach((role: RoleWithChildren) => {
-      if (!role.parent_id) {
-        assignDepth(role, 0);
-      }
-    });
-
-    const sortedRoles = Array.from(roleMap.values()).sort((a, b) => a.depth - b.depth);
-
-    return sortedRoles.map(({ children, depth, ...role }) => role as Role);
-  }
-
-  useEffect(() => {
-    if (selectedTeam) {
-      fetchRoles()
-        .then((data) => {
-          const sortedRoles = sortRolesByPermission(data.roles);
-          setRoles([...ROLES, ...sortedRoles]);
-        })
-        .catch(() => setRoles(ROLES));
-    }
-  }, [selectedTeam]);
 
   return (
     <SidebarContent title='Team Management'>
@@ -221,14 +164,7 @@ export const Team = () => {
             checkTeamNameExists={checkTeamNameExists}
           />
 
-          <InviteDialog
-            email={email}
-            setEmail={setEmail}
-            roleId={roleId}
-            setRoleId={setRoleId}
-            roles={roles}
-            selectedTeam={selectedTeam}
-          />
+          <InviteDialog selectedTeam={selectedTeam} />
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
@@ -466,23 +402,63 @@ export const CreateDialog = ({
   );
 };
 
-export const InviteDialog = ({
-  email,
-  setEmail,
-  roleId,
-  setRoleId,
-  roles,
-  selectedTeam,
-}: {
-  email: string;
-  setEmail: (email: string) => void;
-  roleId: string;
-  setRoleId: (roleId: string) => void;
-  roles: { id: string; name: string }[];
-  selectedTeam: any;
-}) => {
-  const { toast } = useToast();
+export const InviteDialog = ({ selectedTeam }: { selectedTeam: any }) => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [roleId, setRoleId] = useState(ROLES[1].id);
+  const [roles, setRoles] = useState(ROLES);
+  const { toast } = useToast();
+
+  const fetchRoles = async () => {
+    return (
+      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${selectedTeam.id}/role`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getCookie('jwt')}`,
+        },
+        validateStatus: (status) => [200, 403].includes(status),
+      })
+    ).data;
+  };
+
+  function sortRolesByPermission(roles: Role[]): Role[] {
+    const roleMap = new Map<number, RoleWithChildren>();
+    roles.forEach((role: Role) => {
+      roleMap.set(role.id, { ...role, children: [], depth: -1 });
+    });
+
+    roleMap.forEach((role: RoleWithChildren) => {
+      if (role.parent_id && roleMap.has(role.parent_id)) {
+        roleMap.get(role.parent_id)!.children.push(role);
+      }
+    });
+
+    function assignDepth(role: RoleWithChildren, depth: number): void {
+      role.depth = depth;
+      role.children.forEach((child: RoleWithChildren) => assignDepth(child, depth + 1));
+    }
+
+    roleMap.forEach((role: RoleWithChildren) => {
+      if (!role.parent_id) {
+        assignDepth(role, 0);
+      }
+    });
+
+    const sortedRoles = Array.from(roleMap.values()).sort((a, b) => a.depth - b.depth);
+
+    return sortedRoles.map(({ children, depth, ...role }) => role as Role);
+  }
+
+  useEffect(() => {
+    if (selectedTeam) {
+      fetchRoles()
+        .then((data) => {
+          const sortedRoles = sortRolesByPermission(data.roles);
+          setRoles([...ROLES, ...sortedRoles]);
+        })
+        .catch(() => setRoles(ROLES));
+    }
+  }, [selectedTeam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
