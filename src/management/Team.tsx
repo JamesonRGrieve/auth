@@ -145,6 +145,12 @@ export const Team = () => {
             setNewName={setNewName}
             teamData={userTeams}
             checkTeamNameExists={checkTeamNameExists}
+            onTeamCreated={async () => {
+              const data = await getUserTeams();
+              if (data && data?.teams?.length) {
+                setUserTeams(data.teams);
+              }
+            }}
           />
 
           <InviteDialog selectedTeam={selectedTeam} />
@@ -277,11 +283,13 @@ export const CreateDialog = ({
   setNewName,
   teamData,
   checkTeamNameExists,
+  onTeamCreated,
 }: {
   newName: string;
   setNewName: (name: string) => void;
   teamData: any[];
   checkTeamNameExists: (name: string) => boolean;
+  onTeamCreated: () => void;
 }) => {
   const { toast } = useToast();
   const { mutate } = useTeam();
@@ -319,6 +327,7 @@ export const CreateDialog = ({
         title: 'Success',
         description: 'Team created successfully!',
       });
+      if (onTeamCreated) onTeamCreated();
     } catch (error) {
       toast({
         title: 'Error',
