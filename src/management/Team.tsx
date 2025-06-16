@@ -45,7 +45,7 @@ type User = {
 export const Team = () => {
   const [newName, setNewName] = useState('');
   const [userTeams, setUserTeams] = useState([]);
-  const [selectedTeam, setSelected] = useState({});
+  const [selectedTeam, setSelected] = useState<any | null>(null);
 
   const params = useParams();
   const { id } = params;
@@ -138,17 +138,37 @@ export const Team = () => {
         <SelectTeam selectedTeam={selectedTeam} userTeams={userTeams} selectNewTeam={selectNewTeam} />
         <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
         <SidebarMenu>
-          <RenameDialog newName={newName} setNewName={setNewName} checkTeamNameExists={checkTeamNameExists} />
+          <RenameDialog
+            newName={newName}
+            setNewName={setNewName}
+            checkTeamNameExists={checkTeamNameExists}
+            onTeamRenamed={async (newTeamName: string) => {
+              const data = await getUserTeams();
+              if (data && data?.teams?.length) {
+                setUserTeams(data.teams);
+                // Find the renamed team and set as selected
+                if (selectedTeam && selectedTeam.id) {
+                  const renamedTeam = data.teams.find((t: any) => t.id === selectedTeam.id);
+                  if (renamedTeam) setSelected(renamedTeam);
+                }
+              }
+            }}
+          />
 
           <CreateDialog
             newName={newName}
             setNewName={setNewName}
             teamData={userTeams}
             checkTeamNameExists={checkTeamNameExists}
-            onTeamCreated={async () => {
+            onTeamCreated={async (newTeamId?: string) => {
               const data = await getUserTeams();
               if (data && data?.teams?.length) {
                 setUserTeams(data.teams);
+                // Set the newly created team as selected
+                if (newTeamId) {
+                  const createdTeam = data.teams.find((t: any) => t.id === newTeamId);
+                  if (createdTeam) setSelected(createdTeam);
+                }
               }
             }}
           />
@@ -199,10 +219,12 @@ export const RenameDialog = ({
   newName,
   setNewName,
   checkTeamNameExists,
+  onTeamRenamed,
 }: {
   newName: string;
   setNewName: (name: string) => void;
   checkTeamNameExists: (name: string) => boolean;
+  onTeamRenamed?: (newTeamName: string) => void;
 }) => {
   const { toast } = useToast();
   const { data: activeTeam, mutate } = useTeam();
@@ -235,6 +257,7 @@ export const RenameDialog = ({
         title: 'Success',
         description: 'Team name updated successfully!',
       });
+      if (onTeamRenamed) onTeamRenamed(newName);
     } catch (error) {
       toast({
         title: 'Error',
@@ -289,7 +312,7 @@ export const CreateDialog = ({
   setNewName: (name: string) => void;
   teamData: any[];
   checkTeamNameExists: (name: string) => boolean;
-  onTeamCreated: () => void;
+  onTeamCreated: (newTeamId?: string) => void;
 }) => {
   const { toast } = useToast();
   const { mutate } = useTeam();
@@ -307,7 +330,7 @@ export const CreateDialog = ({
     }
     try {
       const jwt = getCookie('jwt') as string;
-      await axios.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URI}/v1/team`,
         {
           name: newName,
@@ -327,7 +350,7 @@ export const CreateDialog = ({
         title: 'Success',
         description: 'Team created successfully!',
       });
-      if (onTeamCreated) onTeamCreated();
+      if (onTeamCreated) onTeamCreated(response.data?.id);
     } catch (error) {
       toast({
         title: 'Error',
