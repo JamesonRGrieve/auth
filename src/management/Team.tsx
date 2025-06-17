@@ -167,7 +167,7 @@ export const Team = () => {
                 // Set the newly created team as selected
                 if (newTeamId) {
                   const createdTeam = data.teams.find((t: any) => t.id === newTeamId);
-                  if (createdTeam) setSelected(createdTeam);
+                  if (createdTeam) selectNewTeam(createdTeam);
                 }
               }
             }}
@@ -350,7 +350,7 @@ export const CreateDialog = ({
         title: 'Success',
         description: 'Team created successfully!',
       });
-      if (onTeamCreated) onTeamCreated(response.data?.id);
+      if (onTeamCreated) onTeamCreated(response.data?.team?.id);
     } catch (error) {
       toast({
         title: 'Error',

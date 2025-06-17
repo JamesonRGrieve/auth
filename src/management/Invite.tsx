@@ -128,13 +128,25 @@ export const InviteDialog = ({ selectedTeam }: { selectedTeam: any }) => {
       });
       return;
     }
-    const body = {
-      invitations: emailArray.map((email) => ({
-        email: email.trim(),
+    let body;
+    if(emailArray.length === 1){
+      body = {
+      invitation: {
+        email:emailArray[0].trim(),
         role_id: roleId,
         team_id: selectedTeam.id,
-      })),
+      }
     };
+    }
+    else{
+      body = {
+        invitations: emailArray.map((email) => ({
+          email: email.trim(),
+          role_id: roleId,
+          team_id: selectedTeam.id,
+        })),
+     };
+    }
 
     try {
       const jwt = getCookie('jwt') as string;

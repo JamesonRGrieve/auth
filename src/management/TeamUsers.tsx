@@ -377,7 +377,7 @@ export const Team = () => {
                 onClick={async () => {
                   await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${row.original.id}`, {
                     headers: {
-                      Authorization: getCookie('jwt'),
+                      Authorization: `Bearer ${getCookie('jwt')}`,
                     },
                   });
                   mutateInvitations();
