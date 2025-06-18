@@ -58,13 +58,13 @@ export const useAuth: MiddlewareHook = async (req) => {
       }
       console.log('-Query Params-');
       console.log(queryParams);
-      if (queryParams.invitation_id && queryParams.email) {
+      if (queryParams.code && queryParams.email) {
         console.log(
-          `DETECTED INVITE - ${process.env.AUTH_URI}/register - SETTINGS COOKIES ${queryParams.email} ${queryParams.invitation_id} ${queryParams.team_id}`,
+          `DETECTED INVITE - ${process.env.AUTH_URI}/register - SETTINGS COOKIES ${queryParams.email} ${queryParams.code} ${queryParams.team_id}`,
         );
         const cookieArray = [
           generateCookieString('email', queryParams.email, (86400).toString()),
-          generateCookieString('invitation', queryParams.invitation_id, (86400).toString()),
+          generateCookieString('invitation', queryParams.code, (86400).toString()),
         ];
         if (queryParams.company) {
           cookieArray.push(generateCookieString('team_id', queryParams.team_id, (86400).toString()));
