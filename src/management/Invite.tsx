@@ -18,6 +18,8 @@ import { getCookie } from 'cookies-next';
 import { useEffect, useState } from 'react';
 import { LuUsers } from 'react-icons/lu';
 import { useToast } from '@/hooks/useToast';
+import { useInvitations } from '../hooks/useInvitation';
+import { useParams } from 'next/navigation';
 
 const ROLES = [
   { id: 'FFFFFFFF-0000-0000-AAAA-FFFFFFFFFFFF', name: 'Admin' },
@@ -42,6 +44,11 @@ export const InviteDialog = ({ selectedTeam }: { selectedTeam: any }) => {
   const [roleId, setRoleId] = useState(ROLES[1].id);
   const [roles, setRoles] = useState(ROLES);
   const { toast } = useToast();
+
+  const params = useParams();
+  const { id } = params;
+  const authTeam = id ? id : getCookie('auth-team');
+  const {mutate:inviteMutate} = useInvitations(String(authTeam))
 
   const fetchRoles = async () => {
     return (
@@ -164,6 +171,7 @@ export const InviteDialog = ({ selectedTeam }: { selectedTeam: any }) => {
         });
         setEmail('');
         setIsInviteDialogOpen(false);
+        inviteMutate();
       }
     } catch (error) {
       toast({

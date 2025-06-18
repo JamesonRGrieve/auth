@@ -27,10 +27,11 @@ import { LuPencil, LuPlus } from 'react-icons/lu';
 import { useTeam } from '../hooks/useTeam';
 import { useToast } from '@/hooks/useToast';
 import { ArrowBigLeft } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 import { InviteDialog } from './Invite';
+import { useInvitations } from '../hooks/useInvitation';
 
 type User = {
   missing_requirements?: {
@@ -46,12 +47,13 @@ export const Team = () => {
   const [newName, setNewName] = useState('');
   const [userTeams, setUserTeams] = useState([]);
   const [selectedTeam, setSelected] = useState<any | null>(null);
-
+  const router = useRouter();
   const params = useParams();
   const { id } = params;
   const authTeam = id ? id : getCookie('auth-team');
 
   const { data: activeTeam, mutate } = useTeam();
+  const {mutate:inviteMutate} = useInvitations(String(authTeam));
   const userDataEndpoint = '/v1/user';
   const userDataSWRKey = '/user';
 
@@ -98,6 +100,8 @@ export const Team = () => {
     if (teamObj?.id) {
       setCookie('auth-team', teamObj.id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
       setSelected(teamObj);
+      router.push(`/team/${teamObj.id}`);
+      inviteMutate();
     }
   };
 
@@ -107,25 +111,25 @@ export const Team = () => {
 
   return (
     <SidebarContent title='Team Management'>
-      {activeTeam && (
+      {selectedTeam && (
         <SidebarGroup>
-          <SidebarGroupLabel>{activeTeam?.name}</SidebarGroupLabel>
+          <SidebarGroupLabel>{selectedTeam?.name}</SidebarGroupLabel>
           <div className='space-y-2 px-2'>
-            {activeTeam?.description && (
+            {selectedTeam?.description && (
               <div className='text-sm text-muted-foreground'>
-                <span className='font-medium'>Description:</span> {activeTeam.description}
+                <span className='font-medium'>Description:</span> {selectedTeam.description}
               </div>
             )}
             {activeTeam?.parentId && (
               <div className='text-sm text-muted-foreground'>
-                <span className='font-medium'>Parent Team ID:</span> {activeTeam.parentId}
+                <span className='font-medium'>Parent Team ID:</span> {selectedTeam.parentId}
               </div>
             )}
-            {activeTeam?.agents && activeTeam.agents.length > 0 && (
+            {selectedTeam?.agents && selectedTeam.agents.length > 0 && (
               <div className='text-sm text-muted-foreground'>
                 <span className='font-medium'>Agents:</span>
                 <ul className='list-disc list-inside mt-1'>
-                  {activeTeam.agents.map((agent) => (
+                  {selectedTeam.agents.map((agent) => (
                     <li key={agent.id}>{agent.name}</li>
                   ))}
                 </ul>

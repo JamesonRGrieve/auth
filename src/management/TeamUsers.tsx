@@ -27,6 +27,7 @@ import { DataTable } from '@/components/wais/data/data-table';
 import { DataTableColumnHeader } from '@/components/wais/data/data-table-column-header';
 import { useInvitations } from '../hooks/useInvitation';
 import { useTeam, useTeams } from '../hooks/useTeam';
+import useTeamUsers from '../hooks/useTeamUsers';
 
 interface User {
   email: string;
@@ -69,31 +70,11 @@ export const Team = () => {
 
   const { data: teamData } = useTeams();
   const { data: activeTeam, mutate } = useTeam(String(id));
-  const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
+  const { data: invitationsData, mutate: mutateInvitations } = useInvitations(String(authTeam));
   const [responseMessage, setResponseMessage] = useState('');
-  const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);
+  const {data:users} = useTeamUsers(String(authTeam));
   const { toast } = useToast();
-  const [invitations, setInvitations] = useState([]);
-
-  const getInvitationsData = async () => {
-    return (
-      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team/${authTeam}/invitation`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getCookie('jwt')}`,
-        },
-        validateStatus: (status) => [200].includes(status),
-      })
-    ).data;
-  };
-
-  useEffect(() => {
-    if (authTeam) {
-      getInvitationsData()
-        .then((d) => { setInvitations(d.invitations) })
-        .catch((err) => setInvitations([]));
-    }
-  }, [authTeam])
+  
 
   const users_columns: ColumnDef<User>[] = [
     {
@@ -123,7 +104,7 @@ export const Team = () => {
       cell: ({ row }) => {
         return (
           <div className='flex space-x-2'>
-            <span className='max-w-[500px] truncate font-medium'>{row.getValue('firstName')}</span>
+            <span className='max-w-[500px] truncate font-medium'>{row?.original?.user?.first_name || '-'}</span>
           </div>
         );
       },
@@ -137,7 +118,7 @@ export const Team = () => {
       cell: ({ row }) => {
         return (
           <div className='flex w-[100px] items-center'>
-            <span>{row.getValue('lastName')}</span>
+            <span>{row?.original?.user?.last_name || '-'}</span>
           </div>
         );
       },
@@ -154,7 +135,7 @@ export const Team = () => {
       cell: ({ row }) => {
         return (
           <div className='flex items-center'>
-            <span className='truncate'>{row.getValue('email')}</span>
+            <span className='truncate'>{row?.original?.user?.email}</span>
           </div>
         );
       },
@@ -273,7 +254,7 @@ export const Team = () => {
         return (
           <div className='flex items-center space-x-2'>
             <Mail className='w-4 h-4 text-muted-foreground' />
-            <span className='font-medium'>{row.getValue('email')}</span>
+            <span className='font-medium'>{row?.original?.user?.email || ""}</span>
           </div>
         );
       },
@@ -282,17 +263,17 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'role_id',
+      accessorKey: 'roleId',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
       cell: ({ row }) => {
         const roleMap = {
           1: 'Root Admin',
-          2: 'Team Admin',
-          3: 'User',
+          'FFFFFFFF-0000-0000-AAAA-FFFFFFFFFFFF': 'Admin',
+          'FFFFFFFF-0000-0000-0000-FFFFFFFFFFFF': 'User',
         };
         return (
           <div className='flex w-[100px] items-center'>
-            <span>{roleMap[row.getValue('role_id') as keyof typeof roleMap]}</span>
+            <span>{roleMap[row.getValue('roleId') as keyof typeof roleMap]}</span>
           </div>
         );
       },
@@ -322,10 +303,10 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'created_at',
+      accessorKey: 'createdAt',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Sent Date' />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue('created_at'));
+        const date = new Date(row.getValue('createdAt'));
         const formattedDate = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
@@ -377,7 +358,7 @@ export const Team = () => {
                 onClick={async () => {
                   await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${row.original.id}`, {
                     headers: {
-                      Authorization: `Bearer ${getCookie('jwt')}`,
+                      Authorization: getCookie('jwt'),
                     },
                   });
                   mutateInvitations();
@@ -403,7 +384,7 @@ export const Team = () => {
     <div className='space-y-6'>
       <DataTable data={users || []} columns={users_columns} meta={{ title: 'Current Users' }} />
       {/* <InviteUsers /> */}
-      {(invitations?.length === 0)
+      {(invitationsData?.length === 0)
         ? (
           <>
             <h4 className='text-2xl font-bold mr-auto'>Pending Invitations</h4>
@@ -412,10 +393,10 @@ export const Team = () => {
             </div>
           </>
         )
-        : (invitations.length > 0 && (
+        : (invitationsData.length > 0 && (
           <>
             <h4 className='font-medium text-md'>Pending Invitations</h4>
-            <DataTable data={invitations || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
+            <DataTable data={invitationsData || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
           </>
         ))}
     </div>
