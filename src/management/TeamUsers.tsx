@@ -254,7 +254,7 @@ export const Team = () => {
         return (
           <div className='flex items-center space-x-2'>
             <Mail className='w-4 h-4 text-muted-foreground' />
-            <span className='font-medium'>{row?.original?.user?.email || ""}</span>
+            <span className='font-medium'>{row?.original?.email || ""}</span>
           </div>
         );
       },
@@ -285,15 +285,15 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'is_accepted',
+      accessorKey: 'status',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
       cell: ({ row }) => {
-        const isAccepted = row.getValue('is_accepted');
+        const status = row.getValue('status');
         return (
           <div className='flex w-[100px] items-center'>
-            <Badge variant={isAccepted ? 'default' : 'secondary'}>
-              {isAccepted ? <Check className='w-3 h-3 mr-1' /> : <X className='w-3 h-3 mr-1' />}
-              {isAccepted ? 'Accepted' : 'Pending'}
+            <Badge variant={status ? 'default' : 'secondary'}>
+              {status ? <Check className='w-3 h-3 mr-1' /> : <X className='w-3 h-3 mr-1' />}
+              {String(status)}
             </Badge>
           </div>
         );
@@ -303,10 +303,10 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'createdAt',
+      accessorKey: 'created_at',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Sent Date' />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue('createdAt'));
+        const date = new Date(row.getValue('created_at'));
         const formattedDate = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
