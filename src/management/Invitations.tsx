@@ -32,6 +32,10 @@ export function InvitationsTable({ userId }: { userId?: string }) {
         }
       );
       await mutate();
+      toast({
+        title: 'Invitation accepted',
+        description: 'You have successfully accepted the invitation.',
+      })
     } catch (e) {
       toast({
         title: 'Error accepting invitation',
