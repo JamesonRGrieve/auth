@@ -133,16 +133,19 @@ export const InvitationSchema = z
     id: z.string().uuid(),
     teamId: z.string().uuid(),
     code: z.string().nullable(),
-    roleId: z.number(),
-    inviterId: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime().nullable(),
-    createdByUser: z.string().nullable(),
-    updatedByUser: z.string().nullable(),
-    team: SimpleTeamSchema.nullable(),
-    inviter: SimpleUserSchema.nullable(),
-    invitees: z.array(InviteeSchema).optional(),
+    roleId: z.string().nullable(),
+    // inviterId: z.string().uuid(),
+    createdAt: z.string(),
+    updatedAt: z.string().nullable(),
+    createdByUserId: z.string().nullable(),
+    // updatedByUser: z.string().nullable(),
+    // team: TeamSchema.nullable(),
+    user: UserSchema.nullable(),
+    //role: RoleSchema.nullable(),
+    userId: z.string().nullable()
+    // inviter: SimpleUserSchema.nullable(),
+    // invitees: z.array(InviteeSchema).optional(),
   })
-  .describe('Invitation');
+  .describe('Invitations');
 
 export type Invitation = z.infer<typeof InvitationSchema>;

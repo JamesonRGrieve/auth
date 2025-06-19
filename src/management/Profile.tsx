@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { DropdownMenu, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
+import { InvitationsTable } from './Invitations';
 
 type Team = {
   image_url: string | null;
@@ -273,6 +274,9 @@ export const Profile = ({
           )}
           {responseMessage && <p>{responseMessage}</p>}
         </>
+      )}
+      {data?.user?.id && (
+        <InvitationsTable userId={data.user.id} />
       )}
     </div>
   );
