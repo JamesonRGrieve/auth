@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { toTitleCase } from '@/dynamic-form/DynamicForm';
 import { validateURI } from '@/lib/validation';
 import axios, { AxiosError } from 'axios';
-import { deleteCookie, getCookie, setCookie } from 'cookies-next';
+import { CookieValueTypes, deleteCookie, getCookie, setCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
@@ -94,7 +94,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     }
   }, []);
 
-  const [invite, setInvite] = useState<string | null>(String(getCookie('invitation')));
+  const [invite, setInvite] = useState<CookieValueTypes | Promise<CookieValueTypes> | undefined>(getCookie('invitation'));
 
   // useEffect(() => {
   //   const invitation = String(getCookie('invitation') || '');
@@ -125,8 +125,8 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   return (
     <div className={additionalFields.length === 0 && authConfig.authModes.magical ? ' invisible' : ''}>
       <AuthCard
-        title={invite !== null ? inviteHeader.title : registerHeader.title}
-        description={invite !== null ? inviteHeader.description : registerHeader.description}
+        title={invite  ? inviteHeader.title : registerHeader.title}
+        description={invite ? inviteHeader.description : registerHeader.description}
         showBackButton
       >
         <form onSubmit={submitForm} className='flex flex-col gap-4' ref={formRef}>
@@ -190,7 +190,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
             </div>
           )}
           <Button type='submit' disabled={authConfig.authModes.basic && !passwordsMatch}>
-            {getCookie('invitation') !== null ? 'Accept Invitation' : 'Register'}
+            {invite ? 'Accept Invitation' : 'Register'}
           </Button>
           {responseMessage && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
         </form>
