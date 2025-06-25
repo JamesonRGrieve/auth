@@ -35,7 +35,6 @@ type Team = {
   training_data: string | null;
 };
 
-
 export const Profile = ({
   isLoading,
   error,
@@ -66,8 +65,8 @@ export const Profile = ({
           Authorization: `Bearer ${getCookie('jwt')}`,
         },
         params: {
-        include: 'role',
-      },
+          include: 'role',
+        },
         validateStatus: (status) => [200, 403].includes(status),
       })
     ).data;
@@ -88,9 +87,7 @@ export const Profile = ({
   const user_teams_columns: ColumnDef<Team>[] = [
     {
       accessorKey: 'name',
-      header: ({ column }) => (
-          <DataTableColumnHeader column={column} title='Team' />
-        ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Team' />,
       cell: ({ row }) => {
         return (
           <div className='flex space-x-2'>
@@ -131,7 +128,7 @@ export const Profile = ({
               <Button variant='ghost' className='flex h-8 w-8 p-0' onClick={() => router.push(`/team/${row?.original?.id}`)}>
                 <ArrowTopRightIcon />
               </Button>
-            </DropdownMenuTrigger>              
+            </DropdownMenuTrigger>
           </DropdownMenu>
         );
       },
@@ -162,25 +159,25 @@ export const Profile = ({
               type: 'text',
               display: 'First Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.first_name
+              value: data.user?.first_name,
             },
             last_name: {
               type: 'text',
               display: 'Last Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.last_name
+              value: data.user?.last_name,
             },
             display_name: {
               type: 'text',
               display: 'Display Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.display_name
+              value: data.user?.display_name,
             },
             timezone: {
               type: 'text',
               display: 'Timezone',
               validation: (value: string) => value.length > 0,
-              value: data.user?.timezone
+              value: data.user?.timezone,
             },
           }}
           toUpdate={data.user}
@@ -199,7 +196,7 @@ export const Profile = ({
           additionalButtons={[
             <div className='col-span-4'>
               <DataTable data={userTeams || []} columns={user_teams_columns} meta={{ title: 'Teams' }} />
-            </div>
+            </div>,
           ]}
           onConfirm={async (data) => {
             const updateResponse = (
@@ -208,17 +205,18 @@ export const Profile = ({
                   `${authConfig.authServer}${userUpdateEndpoint}`,
                   {
                     user: {
-                    ...Object.entries(data).reduce((acc, [key, value]) => {
-                      return value ? { ...acc, [key]: value } : acc;
-                    }, {}),
-                  },
+                      ...Object.entries(data).reduce((acc, [key, value]) => {
+                        return value ? { ...acc, [key]: value } : acc;
+                      }, {}),
+                    },
                   },
                   {
                     headers: {
                       'Content-Type': 'application/json',
                       Authorization: `Bearer ${getCookie('jwt')}`,
                     },
-              })
+                  },
+                )
                 .catch((exception: any) => exception.response)
             ).data;
             log(['Update Response', updateResponse], { client: 2 });
@@ -275,9 +273,8 @@ export const Profile = ({
           {responseMessage && <p>{responseMessage}</p>}
         </>
       )}
-      {data?.user?.id && (
-        <InvitationsTable userId={data.user.id} />
-      )}
+      <div className='pb-4' />
+      {data?.user?.id && <InvitationsTable userId={data.user.id} />}
     </div>
   );
 };
