@@ -86,8 +86,11 @@ export default function Identify({
   const showEmail = authConfig.authModes.basic || authConfig.authModes.magical;
   const showOAuth = authConfig.authModes.oauth2;
 
+  const description =
+    showEmail && !showOAuth ? 'Please enter your email address to continue.' : 'Please choose an authentication method.';
+
   return (
-    <AuthCard title='Welcome' description='Please choose an authentication method.'>
+    <AuthCard title='Welcome' description={description}>
       <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
         {showEmail && (
           <>
