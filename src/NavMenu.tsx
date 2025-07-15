@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { TbMessageCirclePlus } from 'react-icons/tb';
 import { Item } from '../../appwrapper/src/Nav';
+import { PersonIcon } from '@radix-ui/react-icons';
 
 export const items: Item[] = [
   {
@@ -24,6 +25,16 @@ export const items: Item[] = [
     url: '/chat',
     icon: TbMessageCirclePlus,
     isActive: true,
+  },
+  {
+    title: 'Residents',
+    url: '/residents',
+    icon: PersonIcon,
+  },
+  {
+    title: 'Notes',
+    url: '?residents-search=true',
+    icon: BookOpen,
   },
   {
     title: 'Agent Management',
