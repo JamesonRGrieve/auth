@@ -74,8 +74,22 @@ export const Team = () => {
   const [responseMessage, setResponseMessage] = useState('');
   const {data:users} = useTeamUsers(String(authTeam));
   const { toast } = useToast();
-  
 
+  const inviteesArray = convertInvitationsData(invitationsData) ;
+
+  function convertInvitationsData(invitationsData:Invitation[]){
+    if(invitationsData.length === 0) return [];
+    const list = [];
+    invitationsData.map((data)=>{
+      const role_id = data.role_id;
+      for(let i = 0 ; i < data.invitees.length ; i++){
+        data.invitees[i].role_id = role_id;
+        list.push(data.invitees[i])
+      }
+    })
+    return list;
+  }
+  
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -273,7 +287,7 @@ export const Team = () => {
         };
         return (
           <div className='flex w-[100px] items-center'>
-            <span>{roleMap[row.getValue('roleId') as keyof typeof roleMap]}</span>
+            <span>{roleMap[row.original.role_id as keyof typeof roleMap]}</span>
           </div>
         );
       },
@@ -288,11 +302,11 @@ export const Team = () => {
       accessorKey: 'status',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
       cell: ({ row }) => {
-        const status = row.getValue('status');
+        const status = row.original?.status;
         return (
           <div className='flex w-[100px] items-center'>
             <Badge variant={status ? 'default' : 'secondary'}>
-              {status ? <Check className='w-3 h-3 mr-1' /> : <X className='w-3 h-3 mr-1' />}
+              {/* {status ? <Check className='w-3 h-3 mr-1' /> : <X className='w-3 h-3 mr-1' />} */}
               {String(status)}
             </Badge>
           </div>
@@ -396,7 +410,7 @@ export const Team = () => {
         : (invitationsData.length > 0 && (
           <>
             <h4 className='font-medium text-md'>Pending Invitations</h4>
-            <DataTable data={invitationsData || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
+            <DataTable data={inviteesArray || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
           </>
         ))}
     </div>
