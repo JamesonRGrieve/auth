@@ -44,15 +44,39 @@ const ROLES = [
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
-interface Invitation {
+export interface Invitee {
+  invitation_id: string;
+  invitation: any | null;
+  user_id: string | null;
+  user: any | null;
+  updated_at: string;
+  updated_by_user_id: string | null;
   id: string;
-  team_id: string;
+  created_at: string;
+  created_by_user_id: string;
   email: string;
-  inviter_id: string;
-  role_id: number;
-  is_accepted: boolean;
-  createdAt: string;
-  invitation_link: string;
+  declined_at: string | null;
+  accepted_at: string | null;
+  status: 'pending' | 'accepted';
+  role_id?:string | null;
+}
+
+export interface Invitation {
+  role_id: string;
+  role: any | null;
+  team_id: string;
+  team: any | null;
+  user_id: string | null;
+  user: any | null;
+  updated_at: string;
+  updated_by_user_id: string | null;
+  id: string;
+  created_at: string;
+  created_by_user_id: string;
+  code: string;
+  max_uses: number | null;
+  expires_at: string | null;
+  invitees: Invitee[];
 }
 
 export const Team = () => {
@@ -79,7 +103,7 @@ export const Team = () => {
 
   function convertInvitationsData(invitationsData:Invitation[]){
     if(invitationsData.length === 0) return [];
-    const list = [];
+    const list:Invitee[] = [];
     invitationsData.map((data)=>{
       const role_id = data.role_id;
       for(let i = 0 ; i < data.invitees.length ; i++){
