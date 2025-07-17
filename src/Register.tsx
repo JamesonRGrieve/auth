@@ -60,6 +60,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
         });
       if (registerResponse.status === 200 || registerResponse.status === 201) {
         deleteCookie('invitation', { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+        deleteCookie('team', { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
       }
       registerResponseData = registerResponse?.data;
     } catch (exception) {
@@ -95,7 +96,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   }, []);
 
   const [invite, setInvite] = useState<CookieValueTypes | Promise<CookieValueTypes> | undefined>(getCookie('invitation'));
-
+  const teamName = getCookie('team') || ""
   // useEffect(() => {
   //   const invitation = String(getCookie('invitation') || '');
   //   if (invitation) {
@@ -118,7 +119,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const inviteHeader = {
     title: 'Accept Invitation',
     description: invite
-      ? `You've been invited to join ${invite}. Please complete your registration to join the team.`
+      ? `You've been invited to join ${String(teamName)}. Please complete your registration to join the team.`
       : `You've been invited to join a team. Please complete your registration to join the team.`,
   };
 
