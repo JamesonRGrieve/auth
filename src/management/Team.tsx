@@ -53,7 +53,7 @@ export const Team = () => {
   const authTeam = id ? id : getCookie('auth-team');
 
   const { data: activeTeam, mutate } = useTeam();
-  const {mutate:inviteMutate} = useInvitations(String(authTeam));
+  const { mutate: inviteMutate } = useInvitations(String(authTeam));
   const userDataEndpoint = '/v1/user';
   const userDataSWRKey = '/user';
 
@@ -323,7 +323,16 @@ export const CreateDialog = ({
   const [newParent, setNewParent] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const handleConfirmCreate = async () => {
+  const handleConfirmCreate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Team name is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (checkTeamNameExists(newName)) {
       toast({
         title: 'Error',
@@ -384,37 +393,41 @@ export const CreateDialog = ({
           <DialogHeader>
             <DialogTitle>Create New Team</DialogTitle>
           </DialogHeader>
-          <div className='grid gap-4 py-4'>
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value.slice(0, 20))}
-              required
-              placeholder='Enter team name (max 20 chars)'
-              maxLength={20}
-            />
-            <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder='(Optional) Select a Parent Team' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Parent Team</SelectLabel>
-                  <SelectItem value='-'>[NONE]</SelectItem>
-                  {teamData?.map((child: any) => (
-                    <SelectItem key={child.id} value={child.id}>
-                      {child.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmCreate}>Create</Button>
-          </DialogFooter>
+          <form onSubmit={handleConfirmCreate}>
+            <div className='grid gap-4 py-4'>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value.slice(0, 20))}
+                required
+                placeholder='Enter team name (max 20 chars)'
+                maxLength={20}
+                name='teamName'
+                autoFocus
+              />
+              <Select value={newParent} onValueChange={(value) => setNewParent(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder='(Optional) Select a Parent Team' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Parent Team</SelectLabel>
+                    <SelectItem value='-'>[NONE]</SelectItem>
+                    {teamData?.map((child: any) => (
+                      <SelectItem key={child.id} value={child.id}>
+                        {child.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant='outline' type='button' onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type='submit'>Create</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>
