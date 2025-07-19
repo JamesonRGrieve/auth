@@ -58,7 +58,7 @@ export interface Invitee {
   declined_at: string | null;
   accepted_at: string | null;
   status: 'pending' | 'accepted';
-  role_id?:string | null;
+  role_id?: string | null;
 }
 
 export interface Invitation {
@@ -96,24 +96,24 @@ export const Team = () => {
   const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(String(authTeam));
   const [responseMessage, setResponseMessage] = useState('');
-  const {data:users} = useTeamUsers(String(authTeam));
+  const { data: users } = useTeamUsers(String(authTeam));
   const { toast } = useToast();
 
-  const inviteesArray = convertInvitationsData(invitationsData) ;
+  const inviteesArray = convertInvitationsData(invitationsData);
 
-  function convertInvitationsData(invitationsData:Invitation[]){
-    if(invitationsData.length === 0) return [];
-    const list:Invitee[] = [];
-    invitationsData.map((data)=>{
+  function convertInvitationsData(invitationsData: Invitation[]) {
+    if (invitationsData.length === 0) return [];
+    const list: Invitee[] = [];
+    invitationsData.map((data) => {
       const role_id = data.role_id;
-      for(let i = 0 ; i < data.invitees.length ; i++){
+      for (let i = 0; i < data.invitees.length; i++) {
         data.invitees[i].role_id = role_id;
-        list.push(data.invitees[i])
+        list.push(data.invitees[i]);
       }
-    })
+    });
     return list;
   }
-  
+
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -292,7 +292,7 @@ export const Team = () => {
         return (
           <div className='flex items-center space-x-2'>
             <Mail className='w-4 h-4 text-muted-foreground' />
-            <span className='font-medium'>{row?.original?.email || ""}</span>
+            <span className='font-medium'>{row?.original?.email || ''}</span>
           </div>
         );
       },
@@ -419,24 +419,23 @@ export const Team = () => {
   log(['Invitations Data', invitationsData], { client: 3 });
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-10'>
       <DataTable data={users || []} columns={users_columns} meta={{ title: 'Current Users' }} />
       {/* <InviteUsers /> */}
-      {(invitationsData?.length === 0)
-        ? (
+      {invitationsData?.length === 0 ? (
+        <div>
+          <h4 className='text-2xl font-bold mr-auto'>Pending Invitations</h4>
+          <div className='flex items-center justify-center p-4 border rounded-md text-center'>
+            <span className='text-sm text-muted-foreground'>No pending invitations.</span>
+          </div>
+        </div>
+      ) : (
+        invitationsData.length > 0 && (
           <>
-            <h4 className='text-2xl font-bold mr-auto'>Pending Invitations</h4>
-            <div className='flex items-center justify-center p-4 border rounded-md text-center'>
-              <span className='text-sm text-muted-foreground'>No pending invitations.</span>
-            </div>
-          </>
-        )
-        : (invitationsData.length > 0 && (
-          <>
-            <h4 className='font-medium text-md'>Pending Invitations</h4>
             <DataTable data={inviteesArray || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
           </>
-        ))}
+        )
+      )}
     </div>
   );
 };
