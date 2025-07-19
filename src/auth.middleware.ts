@@ -65,6 +65,7 @@ export const useAuth: MiddlewareHook = async (req) => {
         const cookieArray = [
           generateCookieString('email', queryParams.email, (86400).toString()),
           generateCookieString('invitation', queryParams.code, (86400).toString()),
+          generateCookieString('team', queryParams.team.replaceAll("+"," "), (86400).toString()),
         ];
         if (queryParams.company) {
           cookieArray.push(generateCookieString('team_id', queryParams.team_id, (86400).toString()));
