@@ -96,7 +96,7 @@ export const Team = () => {
   const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(String(authTeam));
   const [responseMessage, setResponseMessage] = useState('');
-  const { data: users } = useTeamUsers(String(authTeam));
+  const { data: users } = useTeamUsers(authTeam as string);
   const { toast } = useToast();
 
   const inviteesArray = convertInvitationsData(invitationsData);
