@@ -78,9 +78,7 @@ export const Team = () => {
       },
       validateStatus: (status) => [200, 403].includes(status),
     });
-    const filteredTeams = response.data?.teams
-      ? response.data.teams.filter((team: Team) => team.id !== SYSTEM_TEAM_ID)
-      : [];
+    const filteredTeams = response.data?.teams ? response.data.teams.filter((team: Team) => team.id !== SYSTEM_TEAM_ID) : [];
     return { ...response.data, teams: filteredTeams };
   };
 
@@ -88,13 +86,13 @@ export const Team = () => {
     const fetchData = async () => {
       const data = await getUserTeams();
       if (data && data?.teams?.length) {
-        
         setUserTeams(data.teams);
         const selecetdTeam = data.teams.find((c: { id: string }) => c.id === authTeam);
         setSelected(selecetdTeam);
       }
     };
-    if (data?.user?.id) {
+
+    if (data?.id) {
       fetchData();
     }
   }, [data]);
@@ -204,10 +202,7 @@ const SelectTeam = ({
         <ArrowBigLeft />
       </SidebarMenuButton>
       <div className='w-full group-data-[collapsible=icon]:hidden'>
-        <Select
-          value={selectedTeam === null ? '' : selectedTeam}
-          onValueChange={(value) => selectNewTeam(value)}
-        >
+        <Select value={selectedTeam === null ? '' : selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
           <SelectTrigger>
             <SelectValue placeholder={hasTeams ? 'Select a Team' : 'None - Create a team'} />
           </SelectTrigger>
