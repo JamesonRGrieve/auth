@@ -7,7 +7,7 @@ import { getCookie } from 'cookies-next';
  * @param teamId - The ID of the team
  * @returns SWR response containing the users of the team
  */
-export default function useTeamUsers(teamId: string) {
+export default function useTeamUsers(teamId: string | undefined) {
   return useSWR(
     teamId ? [`/v1/team/${teamId}/user`, teamId] : null,
     async () => {

@@ -24,7 +24,7 @@ import axios from 'axios';
 import { getCookie, setCookie } from 'cookies-next';
 import { useEffect, useState } from 'react';
 import { LuPencil, LuPlus } from 'react-icons/lu';
-import { useTeam } from '../hooks/useTeam';
+import { SYSTEM_TEAM_ID, useTeam } from '../hooks/useTeam';
 import { useToast } from '@/hooks/useToast';
 import { ArrowBigLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -32,6 +32,7 @@ import useSWR from 'swr';
 import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 import { InviteDialog } from './Invite';
 import { useInvitations } from '../hooks/useInvitation';
+import { Team } from '../hooks/z';
 
 type User = {
   missing_requirements?: {
@@ -70,22 +71,24 @@ export const Team = () => {
   });
 
   const getUserTeams = async () => {
-    return (
-      await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getCookie('jwt')}`,
-        },
-        validateStatus: (status) => [200, 403].includes(status),
-      })
-    ).data;
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/team`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getCookie('jwt')}`,
+      },
+      validateStatus: (status) => [200, 403].includes(status),
+    });
+    const filteredTeams = response.data?.teams
+      ? response.data.teams.filter((team: Team) => team.id !== SYSTEM_TEAM_ID)
+      : [];
+    return { ...response.data, teams: filteredTeams };
   };
 
   useEffect(() => {
     const fetchData = async () => {
       const data = await getUserTeams();
       if (data && data?.teams?.length) {
-        console.log(data);
+        
         setUserTeams(data.teams);
         const selecetdTeam = data.teams.find((c: { id: string }) => c.id === authTeam);
         setSelected(selecetdTeam);
@@ -193,6 +196,7 @@ const SelectTeam = ({
   userTeams: any;
   selectNewTeam: (team: any) => void;
 }) => {
+  const hasTeams = userTeams && userTeams.length > 0;
   return (
     <>
       <SidebarGroupLabel>Select Team</SidebarGroupLabel>
@@ -200,17 +204,26 @@ const SelectTeam = ({
         <ArrowBigLeft />
       </SidebarMenuButton>
       <div className='w-full group-data-[collapsible=icon]:hidden'>
-        <Select value={selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
+        <Select
+          value={selectedTeam === null ? '' : selectedTeam}
+          onValueChange={(value) => selectNewTeam(value)}
+        >
           <SelectTrigger>
-            <SelectValue placeholder='Select a Team' />
+            <SelectValue placeholder={hasTeams ? 'Select a Team' : 'None - Create a team'} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {userTeams?.map((child: any) => (
-                <SelectItem key={child.id} value={child}>
-                  {child.name}
+              {hasTeams ? (
+                userTeams.map((child: any) => (
+                  <SelectItem key={child.id} value={child}>
+                    {child.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value='SYSTEM' disabled>
+                  No teams available
                 </SelectItem>
-              ))}
+              )}
             </SelectGroup>
           </SelectContent>
         </Select>
