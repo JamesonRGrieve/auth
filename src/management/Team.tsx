@@ -158,6 +158,7 @@ export const Team = () => {
                 }
               }
             }}
+            disabled={!selectedTeam}
           />
 
           <CreateDialog
@@ -232,11 +233,13 @@ export const RenameDialog = ({
   setNewName,
   checkTeamNameExists,
   onTeamRenamed,
+  disabled,
 }: {
   newName: string;
   setNewName: (name: string) => void;
   checkTeamNameExists: (name: string) => boolean;
   onTeamRenamed?: (newTeamName: string) => void;
+  disabled?: boolean;
 }) => {
   const { toast } = useToast();
   const { data: activeTeam, mutate } = useTeam();
@@ -288,6 +291,7 @@ export const RenameDialog = ({
             setIsRenameDialogOpen(true);
           }}
           tooltip='Rename Team'
+          disabled={disabled}
         >
           <LuPencil className='w-4 h-4' />
           <span>Rename Team</span>
