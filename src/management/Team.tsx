@@ -92,7 +92,7 @@ export const Team = () => {
       }
     };
 
-    if (data?.id) {
+    if (data?.user?.id) {
       fetchData();
     }
   }, [data]);
