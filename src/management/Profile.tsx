@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu
 import { MoreHorizontal } from 'lucide-react';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import { InvitationsTable } from './Invitations';
+import { useTeams } from '../hooks/useTeam';
 
 type Team = {
   image_url: string | null;
@@ -56,33 +57,7 @@ export const Profile = ({
   userUpdateEndpoint: string;
   setResponseMessage: (message: string) => void;
 }) => {
-  const [userTeams, setUserTeams] = useState([]);
-  const getUserTeams = async () => {
-    return (
-      await axios.get(`${authConfig.authServer}/v1/team`, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getCookie('jwt')}`,
-        },
-        params: {
-          include: 'role',
-        },
-        validateStatus: (status) => [200, 403].includes(status),
-      })
-    ).data;
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await getUserTeams();
-      if (data && data?.teams?.length) {
-        setUserTeams(data.teams);
-      }
-    };
-    if (data?.user?.id) {
-      fetchData();
-    }
-  }, [data?.user]);
+  const { data: userTeams } = useTeams();
 
   const user_teams_columns: ColumnDef<Team>[] = [
     {
