@@ -6,7 +6,7 @@ import DynamicForm from '@/dynamic-form/DynamicForm';
 import log from '@/next-log/log';
 import axios from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
-import { mutate } from 'swr';
+import useSWR, { mutate } from 'swr';
 import VerifySMS from '../mfa/SMS';
 import { FormEvent, useEffect, useState } from 'react';
 import { DataTable } from '../../../wais/data/data-table';
@@ -58,6 +58,14 @@ export const Profile = ({
   setResponseMessage: (message: string) => void;
 }) => {
   const { data: userTeams } = useTeams();
+  const { data: tempUserInfo } = useSWR('/user-info', async () => {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${getCookie('jwt')}`,
+      },
+    });
+    return response.data;
+  });
 
   const user_teams_columns: ColumnDef<Team>[] = [
     {
@@ -134,25 +142,25 @@ export const Profile = ({
               type: 'text',
               display: 'First Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.first_name,
+              value: tempUserInfo?.user?.first_name,
             },
             last_name: {
               type: 'text',
               display: 'Last Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.last_name,
+              value: tempUserInfo?.user?.last_name,
             },
             display_name: {
               type: 'text',
               display: 'Display Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.display_name,
+              value: tempUserInfo?.user?.display_name,
             },
             timezone: {
               type: 'text',
               display: 'Timezone',
               validation: (value: string) => value.length > 0,
-              value: data.user?.timezone,
+              value: tempUserInfo?.user?.timezone,
             },
           }}
           toUpdate={data.user}
