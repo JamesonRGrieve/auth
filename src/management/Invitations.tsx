@@ -3,12 +3,11 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '../../../wais/data/data-table-column-header';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import { Button } from '@/components/ui/button';
-import { createGraphQLClient } from '../hooks/lib';
-import useSWR, { SWRResponse } from 'swr';
-import { Invitation, InvitationSchema } from '../hooks/z';
 import log from '@/lib/next-log/src/log';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
+import useSWR, { SWRResponse } from 'swr';
+import { Invitation } from '../hooks/z';
 import { useToast } from '@/hooks/useToast';
 
 export function InvitationsTable({ userId }: { userId?: string }) {
@@ -42,7 +41,6 @@ export function InvitationsTable({ userId }: { userId?: string }) {
         description: 'There was an error accepting the invitation. Please try again.',
         variant: 'destructive',
       })
-    } finally {
     }
   };
 
@@ -60,7 +58,7 @@ export function InvitationsTable({ userId }: { userId?: string }) {
     {
       accessorKey: 'createdAt',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Created At" />,
-      cell: ({ row }) => <span>{new Date(row.original.createdAt).toLocaleString()}</span>,
+      cell: ({ row }) => <span>{new Date(row.original.created_at).toLocaleString()}</span>,
     },
     {
       id: 'actions',
@@ -86,33 +84,58 @@ export function InvitationsTable({ userId }: { userId?: string }) {
 
 
 export function useInvitationsByUserId(userId?: string): SWRResponse<Invitation[]> {
-  const client = createGraphQLClient();
-
   return useSWR<Invitation[]>(
-    userId ? [`/invitations`, userId] : '/invitations',
+    userId ? [`/user/invitation`, userId] : '/user/invitation',
     async (): Promise<Invitation[]> => {
-      if (!userId) {
-        return [];
-      }
+      if (!getCookie('jwt') || !userId) return [];
       try {
-        const query = InvitationSchema.toGQL('query', 'GetInvitations', { userId
-         });
-        const response = await client.request<{ invitations: Invitation[] }>(query, { userId });
-
-        if (!response || !response.invitations) {
-          return [];
-        }
-
-        // Parse and validate the response
-        return response.invitations.filter((i) => i?.userId === userId);
-      } catch (error) {
-        log(['GQL useInvitationsByUserId() Error', error], {
+        log(['REST useInvitationsByUserId() Fetching', { userId }], {
           client: 1,
+        });
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/user/invitation`, {
+          headers: {
+            Authorization: `Bearer ${getCookie('jwt')}`,
+          },
+          params: { userId },
+        });
+        log(['REST useInvitationsByUserId() Response', response.data], {
+          client: 3,
+        });
+
+        const data = convertInvitationsData(response?.data?.invitations || [],userId);
+
+
+        return data || [];
+      } catch (error) {
+        log(['REST useInvitationsByUserId() Error', error], {
+          client: 3,
         });
         return [];
       }
     },
     { fallbackData: [] },
   );
+}
+
+
+function convertInvitationsData(invitationsData: any[],userId:string) {
+  if (invitationsData.length === 0) return [];
+  const list: any[] = [];
+  invitationsData.forEach((data) => {
+    for (let i = 0; i < data.invitees.length; i++) {
+      if(data.invitees[i].user_id === userId && data.invitees[i].status === "pending"){
+        const inviteeWithTeam = {
+          team: data.team,
+          role_id: data.role_id,
+          role: data.role,
+          created_at: data.created_at,
+          code: data.code,
+          ...data.invitees[i]
+        };
+        list.push(inviteeWithTeam);
+      }
+    }
+  });
+  return list;
 }
 
