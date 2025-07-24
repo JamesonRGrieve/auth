@@ -177,7 +177,7 @@ export const Profile = ({
           ]}
           readOnlyFields={['input_tokens', 'output_tokens']}
           additionalButtons={[
-            <div className='col-span-4'>
+            <div key='teams-table' className='col-span-4'>
               <DataTable data={userTeams || []} columns={user_teams_columns} meta={{ title: 'Teams' }} />
             </div>,
           ]}
