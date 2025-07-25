@@ -33,6 +33,7 @@ import { DynamicFormFieldValueTypes } from '@/dynamic-form/DynamicForm';
 import { InviteDialog } from './Invite';
 import { useInvitations } from '../hooks/useInvitation';
 import { Team } from '../hooks/z';
+import { Label } from '../../../ui/label';
 
 type User = {
   missing_requirements?: {
@@ -334,6 +335,7 @@ export const CreateDialog = ({
   const { mutate } = useTeam();
   const [newParent, setNewParent] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
 
   const handleConfirmCreate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -345,12 +347,13 @@ export const CreateDialog = ({
       });
       return;
     }
-    if (checkTeamNameExists(newName)) {
-      toast({
-        title: 'Error',
-        description: 'Team name already exists. Please choose a different name.',
-        variant: 'destructive',
-      });
+    if (checkTeamNameExists(newName) && !isDuplicate) {
+      setIsDuplicate(true);
+      // toast({
+      //   title: 'Error',
+      //   description: 'Team name already exists. Please choose a different name.',
+      //   variant: 'destructive',
+      // });
       return;
     }
     try {
@@ -371,6 +374,7 @@ export const CreateDialog = ({
       );
       mutate();
       setIsCreateDialogOpen(false);
+      setIsDuplicate(false);
       toast({
         title: 'Success',
         description: 'Team created successfully!',
@@ -385,6 +389,13 @@ export const CreateDialog = ({
     }
   };
 
+  const handleTeamName = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNewName(e.target.value.slice(0, 20));
+    if (isDuplicate) {
+      setIsDuplicate(false);
+    }
+  }
+
   return (
     <>
       <SidebarMenuItem>
@@ -392,6 +403,7 @@ export const CreateDialog = ({
           onClick={() => {
             setNewName('');
             setNewParent('');
+            setIsDuplicate(false);
             setIsCreateDialogOpen(true);
           }}
           tooltip='Create Team'
@@ -409,7 +421,7 @@ export const CreateDialog = ({
             <div className='grid gap-4 py-4'>
               <Input
                 value={newName}
-                onChange={(e) => setNewName(e.target.value.slice(0, 20))}
+                onChange={(e) => handleTeamName(e)}
                 required
                 placeholder='Enter team name (max 20 chars)'
                 maxLength={20}
@@ -433,8 +445,13 @@ export const CreateDialog = ({
                 </SelectContent>
               </Select>
             </div>
+            {isDuplicate && (
+              <div className='text-xs text-yellow-700 bg-yellow-100 rounded px-2 py-2 mb-2'>
+              <Label>You are already a member of a team with this name, creating another may cause confusion, are you sure you want to continue?</Label>
+              </div>
+            )}
             <DialogFooter>
-              <Button variant='outline' type='button' onClick={() => setIsCreateDialogOpen(false)}>
+              <Button variant='outline' type='button' onClick={() => {setIsCreateDialogOpen(false); setIsDuplicate(false)} }>
                 Cancel
               </Button>
               <Button type='submit'>Create</Button>
