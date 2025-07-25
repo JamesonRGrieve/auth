@@ -18,6 +18,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import { InvitationsTable } from './Invitations';
 import { useTeams } from '../hooks/useTeam';
+import { toast } from '@/hooks/useToast';
 
 type Team = {
   image_url: string | null;
@@ -182,29 +183,41 @@ export const Profile = ({
             </div>,
           ]}
           onConfirm={async (data) => {
-            const updateResponse = (
-              await axios
-                .put(
-                  `${authConfig.authServer}${userUpdateEndpoint}`,
-                  {
-                    user: {
-                      ...Object.entries(data).reduce((acc, [key, value]) => {
-                        return value ? { ...acc, [key]: value } : acc;
-                      }, {}),
+            try {
+              const updateResponse = (
+                await axios
+                  .put(
+                    `${authConfig.authServer}${userUpdateEndpoint}`,
+                    {
+                      user: {
+                        ...Object.entries(data).reduce((acc, [key, value]) => {
+                          return value ? { ...acc, [key]: value } : acc;
+                        }, {}),
+                      },
                     },
-                  },
-                  {
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${getCookie('jwt')}`,
+                    {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${getCookie('jwt')}`,
+                      },
                     },
-                  },
-                )
-                .catch((exception: any) => exception.response)
-            ).data;
-            log(['Update Response', updateResponse], { client: 2 });
-            setResponseMessage(updateResponse.detail.toString());
-            await mutate('/user');
+                  )
+                  .catch((exception: any) => exception.response)
+              ).data;
+              log(['Update Response', updateResponse], { client: 2 });
+              setResponseMessage(updateResponse.detail ? updateResponse.detail.toString() : 'Update successful.');
+              await mutate('/user');
+              toast({
+                title: 'Profile updated',
+                description: 'Your profile was updated successfully.',
+              });
+            } catch (err: any) {
+              toast({
+                title: 'Profile update failed',
+                description: err?.message || 'There was an error updating your profile.',
+                variant: 'destructive',
+              });
+            }
           }}
         />
       ) : (
@@ -235,7 +248,7 @@ export const Profile = ({
                       {
                         headers: {
                           'Content-Type': 'application/json',
-                          Authorization: getCookie('jwt'),
+                          Authorization: `Bearer ${getCookie('jwt')}`,
                         },
                       },
                     )
