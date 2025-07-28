@@ -142,6 +142,8 @@ export const Team = () => {
       )}
       <SidebarGroup>
         <SelectTeam selectedTeam={selectedTeam} userTeams={userTeams} selectNewTeam={selectNewTeam} />
+      </SidebarGroup>
+      <SidebarGroup>
         <SidebarGroupLabel>Team Functions</SidebarGroupLabel>
         <SidebarMenu>
           <RenameDialog
@@ -394,7 +396,7 @@ export const CreateDialog = ({
     if (isDuplicate) {
       setIsDuplicate(false);
     }
-  }
+  };
 
   return (
     <>
@@ -447,11 +449,21 @@ export const CreateDialog = ({
             </div>
             {isDuplicate && (
               <div className='text-xs text-yellow-700 bg-yellow-100 rounded px-2 py-2 mb-2'>
-              <Label>You are already a member of a team with this name, creating another may cause confusion, are you sure you want to continue?</Label>
+                <Label>
+                  You are already a member of a team with this name, creating another may cause confusion, are you sure you
+                  want to continue?
+                </Label>
               </div>
             )}
             <DialogFooter>
-              <Button variant='outline' type='button' onClick={() => {setIsCreateDialogOpen(false); setIsDuplicate(false)} }>
+              <Button
+                variant='outline'
+                type='button'
+                onClick={() => {
+                  setIsCreateDialogOpen(false);
+                  setIsDuplicate(false);
+                }}
+              >
                 Cancel
               </Button>
               <Button type='submit'>Create</Button>
