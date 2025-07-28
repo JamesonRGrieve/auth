@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { validateURI } from '@/lib/validation';
 import axios, { AxiosError } from 'axios';
-import { getCookie } from 'cookies-next';
+import { deleteCookie, getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { FormEvent, ReactNode, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -69,6 +69,12 @@ export default function Login({
             // } else {
             //   setResponseMessage(response.data.detail);
             // }
+            if (getCookie('invitation')) {
+              const invitation = getCookie('invitation');
+              deleteCookie('invitation', { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+              window.location.href = `${process.env.NEXT_PUBLIC_APP_URI}/invite/${invitation}`;
+              return;
+            }
             const href = await getCookie('href');
             const href2 =process.env.NEXT_PUBLIC_APP_URI ? `${process.env.NEXT_PUBLIC_APP_URI}/user`: `${window.location.protocol}//${window.location.hostname}/user`
             window.location.href = href || href2;
