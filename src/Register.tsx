@@ -131,7 +131,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
         showBackButton
       >
         <form onSubmit={submitForm} className='flex flex-col gap-4' ref={formRef}>
-          <input type='hidden' id='email' name='email' value={String(getCookie('email') || '')} />
+          <input type='hidden' id='email' name='email' value={(String(getCookie('email')).toLowerCase().trim() || '')} />
           {authConfig.authModes.basic && (
             <>
               <Label htmlFor='password'>Password</Label>

@@ -63,7 +63,7 @@ export const useAuth: MiddlewareHook = async (req) => {
           `DETECTED INVITE - ${process.env.AUTH_URI}/register - SETTINGS COOKIES ${queryParams.email} ${queryParams.code} ${queryParams.team_id}`,
         );
         const cookieArray = [
-          generateCookieString('email', queryParams.email, (86400).toString()),
+          generateCookieString('email', queryParams.email, (86400).toString().toLowerCase()),
           generateCookieString('invitation', queryParams.code, (86400).toString()),
           generateCookieString('team', queryParams.team.replaceAll("+"," "), (86400).toString()),
         ];
