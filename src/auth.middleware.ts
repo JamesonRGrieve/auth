@@ -209,7 +209,11 @@ export const useAuth: MiddlewareHook = async (req) => {
           console.log('JWT is valid (or server was unable to verify it).');
            if (queryParams.code && queryParams.email) {
             const redirect = new URL(`${process.env.APP_URI}/invite/${queryParams.code}`);
-            toReturn.response = NextResponse.redirect(redirect)
+            toReturn.response = NextResponse.redirect(redirect,{
+              headers: {
+                'Set-Cookie': [generateCookieString('team', queryParams.team.replaceAll("+"," "), (86400).toString())],
+              },
+            })
           }
         } catch (exception) {
           if (exception instanceof TypeError && exception.cause instanceof AggregateError) {
