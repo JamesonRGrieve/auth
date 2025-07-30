@@ -92,11 +92,11 @@ export const Team = () => {
   const { id } = params;
 
   const authTeam = id ? id : getCookie('auth-team');
-  const {data:user} = useUser();
+  const { data: user } = useUser();
   const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(String(authTeam));
   const [responseMessage, setResponseMessage] = useState('');
-  const { data: users ,mutate:teamUsersMutate } = useTeamUsers(authTeam as string);
+  const { data: users, mutate: teamUsersMutate } = useTeamUsers(authTeam as string);
   const { toast } = useToast();
 
   const inviteesArray = convertInvitationsData(invitationsData);
@@ -105,6 +105,8 @@ export const Team = () => {
     if (invitationsData.length === 0) return [];
     const list: Invitee[] = [];
     invitationsData.map((data) => {
+      if (!Array.isArray(data.invitees)) return;
+      const role_id = data.role_id;
       for (let i = 0; i < data.invitees.length; i++) {
         const newInvitee ={
           ...data.invitees[i],
@@ -228,24 +230,21 @@ export const Team = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={async (e) => {
-                  if(user.id === row.original.user_id){
+                  if (user.id === row.original.user_id) {
                     toast({
-                      title: "Action not allowed",
-                      description: "You cannot delete yourself from the team.",
-                      variant: "destructive",
+                      title: 'Action not allowed',
+                      description: 'You cannot delete yourself from the team.',
+                      variant: 'destructive',
                     });
                     return;
                   }
                   try {
-                    await axios.delete(
-                      `${process.env.NEXT_PUBLIC_API_URI}/v1/user_team/${row.original.id}`,
-                      {
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${getCookie('jwt')}`,
-                        },
+                    await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/user_team/${row.original.id}`, {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${getCookie('jwt')}`,
                       },
-                    );
+                    });
                     toast({
                       title: 'User deleted',
                       description: 'The user has been removed from the team.',
