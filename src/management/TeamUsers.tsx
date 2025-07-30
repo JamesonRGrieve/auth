@@ -28,6 +28,7 @@ import { DataTableColumnHeader } from '@/components/wais/data/data-table-column-
 import { useInvitations } from '../hooks/useInvitation';
 import { useTeam, useTeams } from '../hooks/useTeam';
 import useTeamUsers from '../hooks/useTeamUsers';
+import { useUser } from '../hooks/useUser';
 
 interface User {
   email: string;
@@ -91,12 +92,11 @@ export const Team = () => {
   const { id } = params;
 
   const authTeam = id ? id : getCookie('auth-team');
-
-  const { data: teamData } = useTeams();
+  const {data:user} = useUser();
   const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: invitationsData, mutate: mutateInvitations } = useInvitations(String(authTeam));
   const [responseMessage, setResponseMessage] = useState('');
-  const { data: users } = useTeamUsers(authTeam as string);
+  const { data: users ,mutate:teamUsersMutate } = useTeamUsers(authTeam as string);
   const { toast } = useToast();
 
   const inviteesArray = convertInvitationsData(invitationsData);
@@ -223,13 +223,21 @@ export const Team = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={async (e) => {
+                  if(user.id === row.original.user_id){
+                    toast({
+                      title: "Action not allowed",
+                      description: "You cannot delete yourself from the team.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
                   try {
                     await axios.delete(
-                      `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeTeam?.id}/users/${row.original.id}`,
+                      `${process.env.NEXT_PUBLIC_API_URI}/v1/user_team/${row.original.id}`,
                       {
                         headers: {
                           'Content-Type': 'application/json',
-                          Authorization: getCookie('jwt'),
+                          Authorization: `Bearer ${getCookie('jwt')}`,
                         },
                       },
                     );
@@ -237,7 +245,7 @@ export const Team = () => {
                       title: 'User deleted',
                       description: 'The user has been removed from the team.',
                     });
-                    mutate();
+                    teamUsersMutate();
                   } catch (error) {
                     toast({
                       title: 'Error deleting user',
