@@ -40,7 +40,7 @@ export default function Login({
     }
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
+    const email = (formData.get('email') as string).toLowerCase().trim();
     const password = formData.get('password') as string;
 
     try {

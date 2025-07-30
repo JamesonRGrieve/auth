@@ -62,7 +62,7 @@ export default function Identify({
     try {
       const response = await axios.post(`${authConfig.authServer}/v1/user`, {
         user: {
-          email: formData.email,
+          email: formData.email.toLowerCase().trim(),
         },
       });
       setCookie('email', formData.email, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
