@@ -202,9 +202,9 @@ const SelectTeam = ({
   return (
     <>
       <SidebarGroupLabel>Select Team</SidebarGroupLabel>
-      <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
+      {/* <SidebarMenuButton className='group-data-[state=expanded]:hidden'>
         <ArrowBigLeft />
-      </SidebarMenuButton>
+      </SidebarMenuButton> */}
       <div className='w-full group-data-[collapsible=icon]:hidden'>
         <Select value={selectedTeam === null ? '' : selectedTeam} onValueChange={(value) => selectNewTeam(value)}>
           <SelectTrigger>
