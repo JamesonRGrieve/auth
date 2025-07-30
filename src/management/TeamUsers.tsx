@@ -105,11 +105,17 @@ export const Team = () => {
     if (invitationsData.length === 0) return [];
     const list: Invitee[] = [];
     invitationsData.map((data) => {
-      if (!data || !Array.isArray(data.invitees)) return;
+      if (!Array.isArray(data.invitees)) return;
       const role_id = data.role_id;
       for (let i = 0; i < data.invitees.length; i++) {
-        data.invitees[i].role_id = role_id;
-        list.push(data.invitees[i]);
+        const newInvitee ={
+          ...data.invitees[i],
+          role_id:data.role_id,
+          team:data.team,
+          team_id:data.team_id,
+          code:data.code,
+        }
+        list.push(newInvitee);
       }
     });
     return list;
@@ -371,7 +377,8 @@ export const Team = () => {
       cell: ({ row }) => {
         const router = useRouter();
 
-        const copyInviteLink = (link: string) => {
+        const copyInviteLink = (invitation:any ) => {
+          const link = `${process.env.NEXT_PUBLIC_APP_URI}/accept-invitation?code=${invitation?.code}&email=${invitation?.email}&team=${invitation?.team?.name || activeTeam.name}`
           navigator.clipboard.writeText(link);
           toast({
             title: 'Link copied',
@@ -390,7 +397,7 @@ export const Team = () => {
             <DropdownMenuContent align='end' className='w-[160px]'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => copyInviteLink(row.original.invitation_link)}>
+              <DropdownMenuItem onClick={() => copyInviteLink(row.original)}>
                 Copy Invite Link
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`/invitation/${row.original.id}`)}>
@@ -400,12 +407,32 @@ export const Team = () => {
               <DropdownMenuItem
                 className='text-destructive'
                 onClick={async () => {
-                  await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${row.original.id}`, {
-                    headers: {
-                      Authorization: getCookie('jwt'),
-                    },
-                  });
-                  mutateInvitations();
+                  if(row?.original?.status !== 'pending'){
+                    toast({
+                      title: 'Error Cancelling Invitation',
+                      description: 'Only pending invitations can be cancelled.',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                  try {
+                    await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${row.original?.invitation_id}`, {
+                      headers: {
+                        Authorization: `Bearer ${getCookie('jwt')}`,
+                      },
+                    });
+                    toast({
+                      title: 'Invitation Cancelled',
+                      description: 'The invitation has been cancelled.',
+                    });
+                    mutateInvitations();
+                  } catch (error) {
+                    toast({
+                      title: 'Error Cancelling Invitation',
+                      description: error.response?.data?.detail || 'There was an error cancelling the invitation.',
+                      variant: 'destructive',
+                    });
+                  }
                 }}
               >
                 Cancel Invitation
