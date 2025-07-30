@@ -6,7 +6,7 @@ import DynamicForm from '@/dynamic-form/DynamicForm';
 import log from '@/next-log/log';
 import axios from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
-import { mutate } from 'swr';
+import useSWR, { mutate } from 'swr';
 import VerifySMS from '../mfa/SMS';
 import { FormEvent, useEffect, useState } from 'react';
 import { DataTable } from '../../../wais/data/data-table';
@@ -18,6 +18,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import { InvitationsTable } from './Invitations';
 import { useTeams } from '../hooks/useTeam';
+import { toast } from '@/hooks/useToast';
 
 type Team = {
   image_url: string | null;
@@ -58,6 +59,14 @@ export const Profile = ({
   setResponseMessage: (message: string) => void;
 }) => {
   const { data: userTeams } = useTeams();
+  const { data: tempUserInfo } = useSWR('/user-info', async () => {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${getCookie('jwt')}`,
+      },
+    });
+    return response.data;
+  });
 
   const user_teams_columns: ColumnDef<Team>[] = [
     {
@@ -134,25 +143,25 @@ export const Profile = ({
               type: 'text',
               display: 'First Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.first_name,
+              value: tempUserInfo?.user?.first_name,
             },
             last_name: {
               type: 'text',
               display: 'Last Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.last_name,
+              value: tempUserInfo?.user?.last_name,
             },
             display_name: {
               type: 'text',
               display: 'Display Name',
               validation: (value: string) => value.length > 0,
-              value: data.user?.display_name,
+              value: tempUserInfo?.user?.display_name,
             },
             timezone: {
               type: 'text',
               display: 'Timezone',
               validation: (value: string) => value.length > 0,
-              value: data.user?.timezone,
+              value: tempUserInfo?.user?.timezone,
             },
           }}
           toUpdate={data.user}
@@ -169,34 +178,46 @@ export const Profile = ({
           ]}
           readOnlyFields={['input_tokens', 'output_tokens']}
           additionalButtons={[
-            <div className='col-span-4'>
+            <div key='teams-table' className='col-span-4'>
               <DataTable data={userTeams || []} columns={user_teams_columns} meta={{ title: 'Teams' }} />
             </div>,
           ]}
           onConfirm={async (data) => {
-            const updateResponse = (
-              await axios
-                .put(
-                  `${authConfig.authServer}${userUpdateEndpoint}`,
-                  {
-                    user: {
-                      ...Object.entries(data).reduce((acc, [key, value]) => {
-                        return value ? { ...acc, [key]: value } : acc;
-                      }, {}),
+            try {
+              const updateResponse = (
+                await axios
+                  .put(
+                    `${authConfig.authServer}${userUpdateEndpoint}`,
+                    {
+                      user: {
+                        ...Object.entries(data).reduce((acc, [key, value]) => {
+                          return value ? { ...acc, [key]: value } : acc;
+                        }, {}),
+                      },
                     },
-                  },
-                  {
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${getCookie('jwt')}`,
+                    {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${getCookie('jwt')}`,
+                      },
                     },
-                  },
-                )
-                .catch((exception: any) => exception.response)
-            ).data;
-            log(['Update Response', updateResponse], { client: 2 });
-            setResponseMessage(updateResponse.detail.toString());
-            await mutate('/user');
+                  )
+                  .catch((exception: any) => exception.response)
+              ).data;
+              log(['Update Response', updateResponse], { client: 2 });
+              setResponseMessage(updateResponse.detail ? updateResponse.detail.toString() : 'Update successful.');
+              await mutate('/user');
+              toast({
+                title: 'Profile updated',
+                description: 'Your profile was updated successfully.',
+              });
+            } catch (err: any) {
+              toast({
+                title: 'Profile update failed',
+                description: err?.message || 'There was an error updating your profile.',
+                variant: 'destructive',
+              });
+            }
           }}
         />
       ) : (
@@ -227,7 +248,7 @@ export const Profile = ({
                       {
                         headers: {
                           'Content-Type': 'application/json',
-                          Authorization: getCookie('jwt'),
+                          Authorization: `Bearer ${getCookie('jwt')}`,
                         },
                       },
                     )
