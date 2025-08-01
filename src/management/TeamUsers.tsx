@@ -94,7 +94,9 @@ export const Team = () => {
   const authTeam = id ? id : getCookie('auth-team');
   const { data: user } = useUser();
   const { data: activeTeam, mutate } = useTeam(String(id));
-  const { data: invitationsData, mutate: mutateInvitations } = useInvitations(String(authTeam));
+  const { data: userData } = useUser();
+  const { data: invitationsList, mutate: mutateInvitations } = useInvitations(String(authTeam));
+  const invitationsData = invitationsList?.filter((invitation: Invitation) => invitation?.created_by_user_id === userData?.id) || [];
   const [responseMessage, setResponseMessage] = useState('');
   const { data: users, mutate: teamUsersMutate } = useTeamUsers(authTeam as string);
   const { toast } = useToast();
