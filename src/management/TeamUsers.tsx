@@ -96,7 +96,8 @@ export const Team = () => {
   const { data: activeTeam, mutate } = useTeam(String(id));
   const { data: userData } = useUser();
   const { data: invitationsList, mutate: mutateInvitations } = useInvitations(String(authTeam));
-  const invitationsData = invitationsList?.filter((invitation: Invitation) => invitation?.created_by_user_id === userData?.id) || [];
+  const invitationsData =
+    invitationsList?.filter((invitation: Invitation) => invitation?.created_by_user_id === userData?.id) || [];
   const [responseMessage, setResponseMessage] = useState('');
   const { data: users, mutate: teamUsersMutate } = useTeamUsers(authTeam as string);
   const { toast } = useToast();
@@ -110,13 +111,13 @@ export const Team = () => {
       if (!Array.isArray(data.invitees)) return;
       const role_id = data.role_id;
       for (let i = 0; i < data.invitees.length; i++) {
-        const newInvitee ={
+        const newInvitee = {
           ...data.invitees[i],
-          role_id:data.role_id,
-          team:data.team,
-          team_id:data.team_id,
-          code:data.code,
-        }
+          role_id: data.role_id,
+          team: data.team,
+          team_id: data.team_id,
+          code: data.code,
+        };
         list.push(newInvitee);
       }
     });
@@ -379,8 +380,8 @@ export const Team = () => {
       cell: ({ row }) => {
         const router = useRouter();
 
-        const copyInviteLink = (invitation:any ) => {
-          const link = `${process.env.NEXT_PUBLIC_APP_URI}/accept-invitation?code=${invitation?.code}&email=${invitation?.email}&team=${invitation?.team?.name || activeTeam.name}`
+        const copyInviteLink = (invitation: any) => {
+          const link = `${process.env.NEXT_PUBLIC_APP_URI}/accept-invitation?code=${invitation?.code}&email=${invitation?.email}&team=${invitation?.team?.name || activeTeam.name}`;
           navigator.clipboard.writeText(link);
           toast({
             title: 'Link copied',
@@ -399,9 +400,7 @@ export const Team = () => {
             <DropdownMenuContent align='end' className='w-[160px]'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => copyInviteLink(row.original)}>
-                Copy Invite Link
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => copyInviteLink(row.original)}>Copy Invite Link</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`/invitation/${row.original.id}`)}>
                 View Details
               </DropdownMenuItem>
@@ -409,7 +408,7 @@ export const Team = () => {
               <DropdownMenuItem
                 className='text-destructive'
                 onClick={async () => {
-                  if(row?.original?.status !== 'pending'){
+                  if (row?.original?.status !== 'pending') {
                     toast({
                       title: 'Error Cancelling Invitation',
                       description: 'Only pending invitations can be cancelled.',
@@ -459,7 +458,7 @@ export const Team = () => {
       {/* <InviteUsers /> */}
       {invitationsData?.length === 0 ? (
         <div>
-          <h4 className='text-2xl font-bold mr-auto'>Pending Invitations</h4>
+          <h4 className='text-2xl font-bold mr-auto mb-4'>Pending Invitations</h4>
           <div className='flex items-center justify-center p-4 border rounded-md text-center'>
             <span className='text-sm text-muted-foreground'>No pending invitations.</span>
           </div>
