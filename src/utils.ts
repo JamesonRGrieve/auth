@@ -83,7 +83,7 @@ export const verifyJWT = async (jwt: string): Promise<Response> => {
     response = await fetch(authEndpoint, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${jwt}`,
+        Authorization: `Bearer ${jwt}`,
       },
     });
 
