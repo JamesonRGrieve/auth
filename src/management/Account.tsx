@@ -46,7 +46,7 @@ export const Account = ({
                 {
                   headers: {
                     'Content-Type': 'application/json',
-                    Authorization: getCookie('jwt'),
+                    Authorization: `Bearer ${getCookie('jwt')}`,
                   },
                 },
               )

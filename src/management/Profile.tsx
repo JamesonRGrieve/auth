@@ -75,7 +75,7 @@ export const Profile = ({
                   {
                     headers: {
                       'Content-Type': 'application/json',
-                      Authorization: getCookie('jwt'),
+                      Authorization: `Bearer ${getCookie('jwt')}`,
                     },
                   },
                 )
@@ -114,7 +114,7 @@ export const Profile = ({
                       {
                         headers: {
                           'Content-Type': 'application/json',
-                          Authorization: getCookie('jwt'),
+                          Authorization: `Bearer ${getCookie('jwt')}`,
                         },
                       },
                     )
