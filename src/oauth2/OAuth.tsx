@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-// import { useAgent } from '@/interface/hooks/useAgent';
 import deepMerge from '@/lib/objects';
 import log from '@/next-log/log';
 import { useRouter } from 'next/navigation';
@@ -15,11 +14,9 @@ export type OAuthProps = {
 export default function OAuth({ overrides }: OAuthProps): ReactNode {
   const router = useRouter();
   const oAuthProviders = useMemo(() => deepMerge(providers, overrides) as typeof providers, [providers, overrides]);
-  const { mutate } = useAgent();
   log(['OAuth Providers: ', oAuthProviders], { client: 3 });
   const onOAuth2 = useCallback(
     (response: any) => {
-      mutate();
       document.location.href = `${process.env.NEXT_PUBLIC_APP_URI}/chat`; // This should be fixed properly just low priority.
 
       // const redirect = getCookie('href') ?? '/';

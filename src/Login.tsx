@@ -40,7 +40,7 @@ export default function Login({
     }
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
+    const email = (formData.get('email') as string).toLowerCase().trim();
     const password = formData.get('password') as string;
 
     try {
@@ -63,11 +63,15 @@ export default function Login({
           if (token) {
             // Store the token and redirect
             document.cookie = `jwt=${token}; path=/`;
-            if (validateURI(response.data.detail)) {
-              window.location.href = response.data.detail;
-            } else {
-              setResponseMessage(response.data.detail);
-            }
+            //If detail property used in future
+            // if (validateURI(response.data.detail)) {
+            //   window.location.href = response.data.detail;
+            // } else {
+            //   setResponseMessage(response.data.detail);
+            // }
+            const href = await getCookie('href');
+            const href2 =process.env.NEXT_PUBLIC_APP_URI ? `${process.env.NEXT_PUBLIC_APP_URI}/user`: `${window.location.protocol}//${window.location.hostname}/user`
+            window.location.href = href || href2;
           } else {
             setResponseMessage('Login failed: No token received');
           }

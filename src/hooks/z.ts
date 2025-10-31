@@ -70,8 +70,8 @@ export const TeamSchema = z
     parentId: z.union([z.string().uuid(), z.null()]).optional(),
     // primary: z.boolean().optional(),
     // roleId: z.number().int().positive().optional(),
-    agents: z.array(AgentSchema),
-    userTeams: z.array(UserTeamSchema).optional(),
+    // agents: z.array(AgentSchema),
+    // userTeams: z.array(UserTeamSchema).optional(),
     // extensions: z
     //   .array(
     //     z.object({
@@ -96,14 +96,14 @@ export const UserSchema = z
     displayName: z.string().optional().nullable(),
     firstName: z.string().optional().nullable(),
     lastName: z.string().optional().nullable(),
-    mfaCount: z.number().int(),
+    //mfaCount: z.number().int(),
     active: z.boolean(),
     createdAt: z.string(),
     imageUrl: z.string().optional().nullable(),
     // Rename to userTeams to match the desired output
-    userTeams: z.array(UserTeamSchema).optional(),
+    //userTeams: z.array(UserTeamSchema).optional(),
     // Add agents to the user schema
-    agents: z.array(AgentSchema).optional(),
+    //agents: z.array(AgentSchema).optional(),
   })
   .describe('User');
 
@@ -133,16 +133,19 @@ export const InvitationSchema = z
     id: z.string().uuid(),
     teamId: z.string().uuid(),
     code: z.string().nullable(),
-    roleId: z.number(),
-    inviterId: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime().nullable(),
-    createdByUser: z.string().nullable(),
-    updatedByUser: z.string().nullable(),
-    team: SimpleTeamSchema.nullable(),
-    inviter: SimpleUserSchema.nullable(),
-    invitees: z.array(InviteeSchema).optional(),
+    roleId: z.string().nullable(),
+    // inviterId: z.string().uuid(),
+    createdAt: z.string(),
+    updatedAt: z.string().nullable(),
+    createdByUserId: z.string().nullable(),
+    // updatedByUser: z.string().nullable(),
+    // team: TeamSchema.nullable(),
+    user: UserSchema.nullable(),
+    //role: RoleSchema.nullable(),
+    userId: z.string().nullable()
+    // inviter: SimpleUserSchema.nullable(),
+    // invitees: z.array(InviteeSchema).optional(),
   })
-  .describe('Invitation');
+  .describe('Invitations');
 
 export type Invitation = z.infer<typeof InvitationSchema>;

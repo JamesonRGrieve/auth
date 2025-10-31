@@ -8,8 +8,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { Check, Mail, MoreHorizontal, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,8 @@ import { DataTable } from '@/components/wais/data/data-table';
 import { DataTableColumnHeader } from '@/components/wais/data/data-table-column-header';
 import { useInvitations } from '../hooks/useInvitation';
 import { useTeam, useTeams } from '../hooks/useTeam';
+import useTeamUsers from '../hooks/useTeamUsers';
+import { useUser } from '../hooks/useUser';
 
 interface User {
   email: string;
@@ -43,15 +45,39 @@ const ROLES = [
 ];
 
 const AUTHORIZED_ROLES = [0, 1, 2];
-interface Invitation {
+export interface Invitee {
+  invitation_id: string;
+  invitation: any | null;
+  user_id: string | null;
+  user: any | null;
+  updated_at: string;
+  updated_by_user_id: string | null;
   id: string;
-  team_id: string;
+  created_at: string;
+  created_by_user_id: string;
   email: string;
-  inviter_id: string;
-  role_id: number;
-  is_accepted: boolean;
-  createdAt: string;
-  invitation_link: string;
+  declined_at: string | null;
+  accepted_at: string | null;
+  status: 'pending' | 'accepted';
+  role_id?: string | null;
+}
+
+export interface Invitation {
+  role_id: string;
+  role: any | null;
+  team_id: string;
+  team: any | null;
+  user_id: string | null;
+  user: any | null;
+  updated_at: string;
+  updated_by_user_id: string | null;
+  id: string;
+  created_at: string;
+  created_by_user_id: string;
+  code: string;
+  max_uses: number | null;
+  expires_at: string | null;
+  invitees: Invitee[];
 }
 
 export const Team = () => {
@@ -62,12 +88,42 @@ export const Team = () => {
   const [newParent, setNewParent] = useState('');
   const [newName, setNewName] = useState('');
 
-  const { data: teamData } = useTeams();
-  const { data: activeTeam, mutate } = useTeam();
-  const { data: invitationsData, mutate: mutateInvitations } = useInvitations(activeTeam?.id);
+  const params = useParams();
+  const { id } = params;
+
+  const authTeam = id ? id : getCookie('auth-team');
+  const { data: user } = useUser();
+  const { data: activeTeam, mutate } = useTeam(String(id));
+  const { data: userData } = useUser();
+  const { data: invitationsList, mutate: mutateInvitations } = useInvitations(String(authTeam));
+  const invitationsData =
+    invitationsList?.filter((invitation: Invitation) => invitation?.created_by_user_id === userData?.id) || [];
   const [responseMessage, setResponseMessage] = useState('');
-  const users = activeTeam && teamData.find((c) => c.id === activeTeam.id)?.userTeams.map((u) => u.user);
+  const { data: users, mutate: teamUsersMutate } = useTeamUsers(authTeam as string);
   const { toast } = useToast();
+
+  const inviteesArray = convertInvitationsData(invitationsData);
+
+  function convertInvitationsData(invitationsData: Invitation[]) {
+    if (invitationsData.length === 0) return [];
+    const list: Invitee[] = [];
+    invitationsData.map((data) => {
+      if (!Array.isArray(data.invitees)) return;
+      const role_id = data.role_id;
+      for (let i = 0; i < data.invitees.length; i++) {
+        const newInvitee = {
+          ...data.invitees[i],
+          role_id: data.role_id,
+          team: data.team,
+          team_id: data.team_id,
+          code: data.code,
+        };
+        list.push(newInvitee);
+      }
+    });
+    return list;
+  }
+
   const users_columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -96,7 +152,7 @@ export const Team = () => {
       cell: ({ row }) => {
         return (
           <div className='flex space-x-2'>
-            <span className='max-w-[500px] truncate font-medium'>{row.getValue('firstName')}</span>
+            <span className='max-w-[500px] truncate font-medium'>{row?.original?.user?.first_name || '-'}</span>
           </div>
         );
       },
@@ -110,7 +166,7 @@ export const Team = () => {
       cell: ({ row }) => {
         return (
           <div className='flex w-[100px] items-center'>
-            <span>{row.getValue('lastName')}</span>
+            <span>{row?.original?.user?.last_name || '-'}</span>
           </div>
         );
       },
@@ -127,7 +183,7 @@ export const Team = () => {
       cell: ({ row }) => {
         return (
           <div className='flex items-center'>
-            <span className='truncate'>{row.getValue('email')}</span>
+            <span className='truncate'>{row?.original?.user?.email}</span>
           </div>
         );
       },
@@ -177,21 +233,26 @@ export const Team = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={async (e) => {
+                  if (user.id === row.original.user_id) {
+                    toast({
+                      title: 'Action not allowed',
+                      description: 'You cannot delete yourself from the team.',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
                   try {
-                    await axios.delete(
-                      `${process.env.NEXT_PUBLIC_API_URI}/v1/companies/${activeTeam?.id}/users/${row.original.id}`,
-                      {
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${getCookie('jwt')}`,
-                        },
+                    await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/user_team/${row.original.id}`, {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${getCookie('jwt')}`,
                       },
-                    );
+                    });
                     toast({
                       title: 'User deleted',
                       description: 'The user has been removed from the team.',
                     });
-                    mutate();
+                    teamUsersMutate();
                   } catch (error) {
                     toast({
                       title: 'Error deleting user',
@@ -246,7 +307,7 @@ export const Team = () => {
         return (
           <div className='flex items-center space-x-2'>
             <Mail className='w-4 h-4 text-muted-foreground' />
-            <span className='font-medium'>{row.getValue('email')}</span>
+            <span className='font-medium'>{row?.original?.email || ''}</span>
           </div>
         );
       },
@@ -255,17 +316,17 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'role_id',
+      accessorKey: 'roleId',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
       cell: ({ row }) => {
         const roleMap = {
           1: 'Root Admin',
-          2: 'Team Admin',
-          3: 'User',
+          'FFFFFFFF-0000-0000-AAAA-FFFFFFFFFFFF': 'Admin',
+          'FFFFFFFF-0000-0000-0000-FFFFFFFFFFFF': 'User',
         };
         return (
           <div className='flex w-[100px] items-center'>
-            <span>{roleMap[row.getValue('role_id') as keyof typeof roleMap]}</span>
+            <span>{roleMap[row.original.role_id as keyof typeof roleMap]}</span>
           </div>
         );
       },
@@ -277,15 +338,15 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'is_accepted',
+      accessorKey: 'status',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
       cell: ({ row }) => {
-        const isAccepted = row.getValue('is_accepted');
+        const status = row.original?.status;
         return (
           <div className='flex w-[100px] items-center'>
-            <Badge variant={isAccepted ? 'default' : 'secondary'}>
-              {isAccepted ? <Check className='w-3 h-3 mr-1' /> : <X className='w-3 h-3 mr-1' />}
-              {isAccepted ? 'Accepted' : 'Pending'}
+            <Badge variant={status ? 'default' : 'secondary'}>
+              {/* {status ? <Check className='w-3 h-3 mr-1' /> : <X className='w-3 h-3 mr-1' />} */}
+              {String(status)}
             </Badge>
           </div>
         );
@@ -295,10 +356,10 @@ export const Team = () => {
       },
     },
     {
-      accessorKey: 'createdAt',
+      accessorKey: 'created_at',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Sent Date' />,
       cell: ({ row }) => {
-        const date = new Date(row.getValue('createdAt'));
+        const date = new Date(row.getValue('created_at'));
         const formattedDate = date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'short',
@@ -319,7 +380,8 @@ export const Team = () => {
       cell: ({ row }) => {
         const router = useRouter();
 
-        const copyInviteLink = (link: string) => {
+        const copyInviteLink = (invitation: any) => {
+          const link = `${process.env.NEXT_PUBLIC_APP_URI}/accept-invitation?code=${invitation?.code}&email=${invitation?.email}&team=${invitation?.team?.name || activeTeam.name}`;
           navigator.clipboard.writeText(link);
           toast({
             title: 'Link copied',
@@ -338,9 +400,7 @@ export const Team = () => {
             <DropdownMenuContent align='end' className='w-[160px]'>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => copyInviteLink(row.original.invitation_link)}>
-                Copy Invite Link
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => copyInviteLink(row.original)}>Copy Invite Link</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`/invitation/${row.original.id}`)}>
                 View Details
               </DropdownMenuItem>
@@ -348,12 +408,32 @@ export const Team = () => {
               <DropdownMenuItem
                 className='text-destructive'
                 onClick={async () => {
-                  await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${row.original.id}`, {
-                    headers: {
-                      Authorization: `Bearer ${getCookie('jwt')}`,
-                    },
-                  });
-                  mutateInvitations();
+                  if (row?.original?.status !== 'pending') {
+                    toast({
+                      title: 'Error Cancelling Invitation',
+                      description: 'Only pending invitations can be cancelled.',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                  try {
+                    await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${row.original?.invitation_id}`, {
+                      headers: {
+                        Authorization: `Bearer ${getCookie('jwt')}`,
+                      },
+                    });
+                    toast({
+                      title: 'Invitation Cancelled',
+                      description: 'The invitation has been cancelled.',
+                    });
+                    mutateInvitations();
+                  } catch (error) {
+                    toast({
+                      title: 'Error Cancelling Invitation',
+                      description: error.response?.data?.detail || 'There was an error cancelling the invitation.',
+                      variant: 'destructive',
+                    });
+                  }
                 }}
               >
                 Cancel Invitation
@@ -373,14 +453,22 @@ export const Team = () => {
   log(['Invitations Data', invitationsData], { client: 3 });
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-10'>
       <DataTable data={users || []} columns={users_columns} meta={{ title: 'Current Users' }} />
       {/* <InviteUsers /> */}
-      {invitationsData.length > 0 && (
-        <>
-          <h4 className='font-medium text-md'>Pending Invitations</h4>
-          <DataTable data={invitationsData || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
-        </>
+      {invitationsData?.length === 0 ? (
+        <div>
+          <h4 className='text-2xl font-bold mr-auto mb-4'>Pending Invitations</h4>
+          <div className='flex items-center justify-center p-4 border rounded-md text-center'>
+            <span className='text-sm text-muted-foreground'>No pending invitations.</span>
+          </div>
+        </div>
+      ) : (
+        invitationsData.length > 0 && (
+          <>
+            <DataTable data={inviteesArray || []} columns={invitations_columns} meta={{ title: 'Pending Invitations' }} />
+          </>
+        )
       )}
     </div>
   );
