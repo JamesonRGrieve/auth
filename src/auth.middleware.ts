@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthMode, generateCookieString, getAuthMode, getJWT, getQueryParams, getRequestedURI, verifyJWT } from './utils';
+import axios, { AxiosError } from 'axios';
 
 export type MiddlewareHook = (req: NextRequest) => Promise<{
   activated: boolean;
@@ -70,13 +71,40 @@ export const useAuth: MiddlewareHook = async (req) => {
         if (queryParams.company) {
           cookieArray.push(generateCookieString('team_id', queryParams.team_id, (86400).toString()));
         }
+
+        try {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URI}/v1/user`, {
+            user: {
+              email: decodeURIComponent(queryParams.email),
+            },
+          });
+        } catch (exception) {
+          const axiosError = exception as AxiosError;
+          if (axiosError.response?.status === 409) {
+            // User exists
+            toReturn.response = NextResponse.redirect(`${process.env.AUTH_URI}/login`, {
+              headers: {
+                'Set-Cookie': cookieArray,
+              },
+            });
+          } else {
+            // User doesn't exist
+            toReturn.response = NextResponse.redirect(`${process.env.AUTH_URI}/register`, {
+              headers: {
+                'Set-Cookie': cookieArray,
+              },
+            });
+          }
+        }
+
+
         toReturn.activated = true;
-        toReturn.response = NextResponse.redirect(`${process.env.AUTH_URI}/register`, {
-          // @ts-expect-error NextJS' types are wrong.
-          headers: {
-            'Set-Cookie': cookieArray,
-          },
-        });
+        // toReturn.response = NextResponse.redirect(`${process.env.AUTH_URI}/register`, {
+        //   // @ts-expect-error NextJS' types are wrong.
+        //   headers: {
+        //     'Set-Cookie': cookieArray,
+        //   },
+        // });
       }
 
       if (
@@ -85,7 +113,12 @@ export const useAuth: MiddlewareHook = async (req) => {
       ) {
         console.log('Private routes: ', process.env.PRIVATE_ROUTES?.split(','));
         console.log('Public route: ', req.nextUrl.pathname);
-        return toReturn;
+        const token = getJWT(req);
+        if (req.nextUrl.pathname.startsWith('/accept-invitation') && token.length > 0) {
+          console.log('Its only supposed to log when user clicked invite link and is logged in.');
+        } else {
+          return toReturn;
+        }
       }
       if (req.nextUrl.pathname.startsWith('/user/close')) {
         // Let oauth close happen on subsequent links.
@@ -174,6 +207,14 @@ export const useAuth: MiddlewareHook = async (req) => {
             console.log('JWT is valid and no guard clauses tripped.');
           }
           console.log('JWT is valid (or server was unable to verify it).');
+           if (queryParams.code && queryParams.email) {
+            const redirect = new URL(`${process.env.APP_URI}/invite/${queryParams.code}`);
+            toReturn.response = NextResponse.redirect(redirect,{
+              headers: {
+                'Set-Cookie': [generateCookieString('team', queryParams.team.replaceAll("+"," "), (86400).toString())],
+              },
+            })
+          }
         } catch (exception) {
           if (exception instanceof TypeError && exception.cause instanceof AggregateError) {
             console.error(
