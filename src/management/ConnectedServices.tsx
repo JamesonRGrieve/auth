@@ -42,7 +42,7 @@ export const ConnectedServices = () => {
       setLoading(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/oauth2`, {
         headers: {
-          Authorization: getCookie('jwt'),
+          Authorization: `Bearer ${getCookie('jwt')}`,
         },
       });
 
@@ -71,7 +71,7 @@ export const ConnectedServices = () => {
     try {
       await axios.delete(`${process.env.NEXT_PUBLIC_API_URI}/v1/oauth2/${provider.toLowerCase()}`, {
         headers: {
-          Authorization: getCookie('jwt'),
+          Authorization: `Bearer ${getCookie('jwt')}`,
         },
       });
       await fetchConnections();
@@ -104,7 +104,7 @@ export const ConnectedServices = () => {
         },
         {
           headers: {
-            Authorization: jwt,
+            Authorization: `Bearer ${jwt}`,
           },
         },
       );

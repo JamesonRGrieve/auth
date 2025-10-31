@@ -11,7 +11,7 @@ export default function useProducts() {
         ? (
             await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/products`, {
               headers: {
-                Authorization: getCookie('jwt'),
+                Authorization: `Bearer ${getCookie('jwt')}`,
               },
             })
           ).data

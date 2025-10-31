@@ -13,7 +13,7 @@ export default function useLoggedIn() {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/user`, {
           headers: {
-            Authorization: getCookie('jwt'),
+            Authorization: `Bearer ${getCookie('jwt')}`,
           },
         });
         if (response.status === 200) {

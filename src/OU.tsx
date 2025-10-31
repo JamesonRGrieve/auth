@@ -40,7 +40,7 @@ export default function OrganizationalUnit({
   } = useSWR<OrganizationalUnit[]>(`/ou/${searchParams.ou}`, async () => {
     const response = await axios.get(`${authConfig.authServer}${organizationalUnitEndpoint}`, {
       headers: {
-        Authorization: getCookie('jwt'),
+        Authorization: `Bearer ${getCookie('jwt')}`,
       },
     });
     return response.data.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));

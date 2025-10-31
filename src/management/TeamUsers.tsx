@@ -502,7 +502,7 @@ export function InviteUsers() {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: getCookie('jwt'),
+            Authorization: `Bearer ${getCookie('jwt')}`,
           },
         },
       );
