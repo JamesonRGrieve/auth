@@ -7,6 +7,9 @@ import { useRouter } from 'next/navigation';
 import useSWR, { SWRResponse } from 'swr';
 import { chainMutations, createGraphQLClient } from './lib';
 import { Team, TeamSchema } from './z';
+
+export const SYSTEM_TEAM_ID = 'FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF';
+
 /**
  * Hook to fetch and manage team data
  * @returns SWR response containing array of teams
@@ -21,13 +24,14 @@ export function useTeams(): SWRResponse<Team[]> {
     async (): Promise<Team[]> => {
       try {
         const query = z.array(TeamSchema).toGQL(GQLType.Query);
-        const response = await client.request(query);
+        const response = await client.request<{teams:Team[]}>(query);
+        const data= response.teams.filter((team)=>team.id !== SYSTEM_TEAM_ID);
         if (response.teams) {
-          if (!getCookie('auth-team') || !response.teams.some((team: any) => team.id === getCookie('auth-team'))) {
-            setCookie('auth-team', response.teams[0].id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+          if (!getCookie('auth-team') || !data.some((team: any) => team.id === getCookie('auth-team'))) {
+            setCookie('auth-team', data[0].id, { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
           }
         }
-        return response.teams || [];
+        return data || [];
       } catch (error) {
         log(['GQL useTeams() Error', error], {
           client: 1,

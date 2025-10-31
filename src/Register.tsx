@@ -6,13 +6,15 @@ import { Label } from '@/components/ui/label';
 import { toTitleCase } from '@/dynamic-form/DynamicForm';
 import { validateURI } from '@/lib/validation';
 import axios, { AxiosError } from 'axios';
-import { getCookie } from 'cookies-next';
+import { CookieValueTypes, deleteCookie, getCookie, setCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
 import OAuth from './oauth2/OAuth';
 import { useAuthentication } from './Router';
+import { useTeam } from './hooks/useTeam';
+import useSWR from 'swr';
 
 export type RegisterProps = {
   additionalFields?: string[];
@@ -41,7 +43,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     }
     const formData = Object.fromEntries(new FormData((event.currentTarget as HTMLFormElement) ?? undefined));
     if (getCookie('invitation')) {
-      formData['invitation_id'] = getCookie('invitation') ?? ''.toString();
+      formData['invitation_code'] = String(getCookie('invitation') || '');
     }
     let registerResponse;
     let registerResponseData;
@@ -56,6 +58,10 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
           console.error(exception);
           return exception.response;
         });
+      if (registerResponse.status === 200 || registerResponse.status === 201) {
+        deleteCookie('invitation', { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+        deleteCookie('team', { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+      }
       registerResponseData = registerResponse?.data;
     } catch (exception) {
       console.error(exception);
@@ -83,38 +89,49 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     // To-Do Assert that there are no dupes or empty strings in additionalFields (after trimming and lowercasing)
   }, [additionalFields]);
   useEffect(() => {
-    if (getCookie('invitation')) {
-      setInvite(getCookie('team_id') || '');
-    }
-  }, []);
-  useEffect(() => {
     if (!submitted && formRef.current && authConfig.authModes.magical && additionalFields.length === 0) {
       setSubmitted(true);
       formRef.current.requestSubmit();
     }
   }, []);
 
-  const [invite, setInvite] = useState<string | null>(null);
+  const [invite, setInvite] = useState<CookieValueTypes | Promise<CookieValueTypes> | undefined>(getCookie('invitation'));
+  const teamName = getCookie('team') || ""
+  // useEffect(() => {
+  //   const invitation = String(getCookie('invitation') || '');
+  //   if (invitation) {
+  //     fetch(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${invitation}`)
+  //       .then((res) => (res.ok ? res.json() : null))
+  //       .then((data) => {
+  //         if (data && data.teamId) {
+  //           setCookie('auth-team', String(data.teamId), { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN });
+  //           setInvite(data.team && data.team.name ? String(data.team.name) : null);
+  //         }
+  //       });
+  //   }
+  // }, []);
 
   const registerHeader = {
     title: 'Sign Up',
-    description: 'Welcome, please complete your registration.',
+    description: 'Welcome! Please complete your registration.',
   };
 
   const inviteHeader = {
     title: 'Accept Invitation',
-    description: `You've been invited to join ${invite?.replaceAll('+', ' ') || 'Team'}. Please complete your registration to join the team.`,
+    description: invite
+      ? `You've been invited to join ${String(teamName)}. Please complete your registration to join the team.`
+      : `You've been invited to join a team. Please complete your registration to join the team.`,
   };
 
   return (
     <div className={additionalFields.length === 0 && authConfig.authModes.magical ? ' invisible' : ''}>
       <AuthCard
-        title={invite !== null ? inviteHeader.title : registerHeader.title}
-        description={invite !== null ? inviteHeader.description : registerHeader.description}
+        title={invite  ? inviteHeader.title : registerHeader.title}
+        description={invite ? inviteHeader.description : registerHeader.description}
         showBackButton
       >
         <form onSubmit={submitForm} className='flex flex-col gap-4' ref={formRef}>
-          <input type='hidden' id='email' name='email' value={getCookie('email')} />
+          <input type='hidden' id='email' name='email' value={(String(getCookie('email')).toLowerCase().trim() || '')} />
           {authConfig.authModes.basic && (
             <>
               <Label htmlFor='password'>Password</Label>
@@ -174,11 +191,11 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
             </div>
           )}
           <Button type='submit' disabled={authConfig.authModes.basic && !passwordsMatch}>
-            Register
+            {invite ? 'Accept Invitation' : 'Register'}
           </Button>
           {responseMessage && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
         </form>
-        {invite && <OAuth />}
+        {/* {invite && <OAuth />} */}
       </AuthCard>
     </div>
   );

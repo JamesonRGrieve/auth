@@ -12,6 +12,8 @@ import {
   Users,
   VenetianMask,
   Workflow,
+  Server,
+  RefreshCcw
 } from 'lucide-react';
 import { TbMessageCirclePlus } from 'react-icons/tb';
 import { Item } from '../../appwrapper/src/Nav';
@@ -141,4 +143,14 @@ export const items: Item[] = [
       },
     ],
   },
+  {
+    title: 'Provider',
+    url: '/provider',
+    icon: Server,
+  },
+  {
+    title: 'Rotation',
+    url: '/rotation',
+    icon: RefreshCcw,
+  }
 ];

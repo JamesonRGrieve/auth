@@ -181,7 +181,7 @@ export function PricingCard({
                     },
                     {
                       headers: {
-                        Authorization: getCookie('jwt'),
+                        Authorization: `Bearer ${getCookie('jwt')}`,
                       },
                     },
                   )

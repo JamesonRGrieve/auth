@@ -6,8 +6,36 @@ import DynamicForm from '@/dynamic-form/DynamicForm';
 import log from '@/next-log/log';
 import axios from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
-import { mutate } from 'swr';
+import useSWR, { mutate } from 'swr';
 import VerifySMS from '../mfa/SMS';
+import { FormEvent, useEffect, useState } from 'react';
+import { DataTable } from '../../../wais/data/data-table';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTableColumnHeader } from '../../../wais/data/data-table-column-header';
+import { useRouter } from 'next/navigation';
+import { DropdownMenu, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+import { ArrowTopRightIcon } from '@radix-ui/react-icons';
+import { InvitationsTable } from './Invitations';
+import { useTeams } from '../hooks/useTeam';
+import { toast } from '@/hooks/useToast';
+
+type Team = {
+  image_url: string | null;
+  name: string;
+  parent_id: string | null;
+  parent: string | null;
+  children: any[]; // You can replace `any` with a more specific type if known
+  updated_at: string; // ISO date string, you could also use `Date` if parsing
+  updated_by_user_id: string | null;
+  id: string;
+  created_at: string;
+  created_by_user_id: string;
+  description: string | null;
+  encryption_key: string;
+  token: string | null;
+  training_data: string | null;
+};
 
 export const Profile = ({
   isLoading,
@@ -30,6 +58,72 @@ export const Profile = ({
   userUpdateEndpoint: string;
   setResponseMessage: (message: string) => void;
 }) => {
+  const { data: userTeams } = useTeams();
+  const { data: tempUserInfo } = useSWR('/user-info', async () => {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${getCookie('jwt')}`,
+      },
+    });
+    return response.data;
+  });
+
+  const user_teams_columns: ColumnDef<Team>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Team' />,
+      cell: ({ row }) => {
+        return (
+          <div className='flex space-x-2'>
+            <span className='max-w-[500px] truncate font-medium'>{row.getValue('name')}</span>
+          </div>
+        );
+      },
+      meta: {
+        headerName: 'team',
+      },
+    },
+    {
+      accessorKey: 'role',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Role' />,
+      cell: ({ row }) => {
+        return (
+          <div className='flex w-[100px] items-center'>
+            <span>{row.getValue('role')}</span>
+          </div>
+        );
+      },
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
+      meta: {
+        headerName: 'role',
+      },
+    },
+    {
+      id: 'actions',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+      cell: ({ row }) => {
+        const router = useRouter();
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost' className='flex h-8 w-8 p-0' onClick={() => router.push(`/team/${row?.original?.id}`)}>
+                <ArrowTopRightIcon />
+              </Button>
+            </DropdownMenuTrigger>
+          </DropdownMenu>
+        );
+      },
+      enableHiding: true,
+      enableSorting: false,
+      meta: {
+        headerName: 'Actions',
+      },
+    },
+  ];
+
   return (
     <div>
       <div>
@@ -44,7 +138,33 @@ export const Profile = ({
       ) : (data.missing_requirements && Object.keys(data.missing_requirements).length === 0) ||
         !data.missing_requirements ? (
         <DynamicForm
-          toUpdate={data}
+          fields={{
+            first_name: {
+              type: 'text',
+              display: 'First Name',
+              validation: (value: string) => value.length > 0,
+              value: tempUserInfo?.user?.first_name,
+            },
+            last_name: {
+              type: 'text',
+              display: 'Last Name',
+              validation: (value: string) => value.length > 0,
+              value: tempUserInfo?.user?.last_name,
+            },
+            display_name: {
+              type: 'text',
+              display: 'Display Name',
+              validation: (value: string) => value.length > 0,
+              value: tempUserInfo?.user?.display_name,
+            },
+            timezone: {
+              type: 'text',
+              display: 'Timezone',
+              validation: (value: string) => value.length > 0,
+              value: tempUserInfo?.user?.timezone,
+            },
+          }}
+          toUpdate={data.user}
           submitButtonText='Update'
           excludeFields={[
             'id',
@@ -58,32 +178,46 @@ export const Profile = ({
           ]}
           readOnlyFields={['input_tokens', 'output_tokens']}
           additionalButtons={[
-            <Button key='done' className='col-span-2' onClick={() => router.push('/chat')}>
-              Go to {authConfig.appName}
-            </Button>,
+            <div key='teams-table' className='col-span-4'>
+              <DataTable data={userTeams || []} columns={user_teams_columns} meta={{ title: 'Teams' }} />
+            </div>,
           ]}
           onConfirm={async (data) => {
-            const updateResponse = (
-              await axios
-                .put(
-                  `${authConfig.authServer}${userUpdateEndpoint}`,
-                  {
-                    ...Object.entries(data).reduce((acc, [key, value]) => {
-                      return value ? { ...acc, [key]: value } : acc;
-                    }, {}),
-                  },
-                  {
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: getCookie('jwt'),
+            try {
+              const updateResponse = (
+                await axios
+                  .put(
+                    `${authConfig.authServer}${userUpdateEndpoint}`,
+                    {
+                      user: {
+                        ...Object.entries(data).reduce((acc, [key, value]) => {
+                          return value ? { ...acc, [key]: value } : acc;
+                        }, {}),
+                      },
                     },
-                  },
-                )
-                .catch((exception: any) => exception.response)
-            ).data;
-            log(['Update Response', updateResponse], { client: 2 });
-            setResponseMessage(updateResponse.detail.toString());
-            await mutate('/user');
+                    {
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${getCookie('jwt')}`,
+                      },
+                    },
+                  )
+                  .catch((exception: any) => exception.response)
+              ).data;
+              log(['Update Response', updateResponse], { client: 2 });
+              setResponseMessage(updateResponse.detail ? updateResponse.detail.toString() : 'Update successful.');
+              await mutate('/user');
+              toast({
+                title: 'Profile updated',
+                description: 'Your profile was updated successfully.',
+              });
+            } catch (err: any) {
+              toast({
+                title: 'Profile update failed',
+                description: err?.message || 'There was an error updating your profile.',
+                variant: 'destructive',
+              });
+            }
           }}
         />
       ) : (
@@ -114,7 +248,7 @@ export const Profile = ({
                       {
                         headers: {
                           'Content-Type': 'application/json',
-                          Authorization: getCookie('jwt'),
+                          Authorization: `Bearer ${getCookie('jwt')}`,
                         },
                       },
                     )
@@ -135,6 +269,8 @@ export const Profile = ({
           {responseMessage && <p>{responseMessage}</p>}
         </>
       )}
+      <div className='pb-4' />
+      {data?.user?.id && <InvitationsTable userId={data.user.id} />}
     </div>
   );
 };
