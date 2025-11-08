@@ -38,26 +38,41 @@ export const ConnectedServices = () => {
   });
 
   const fetchConnections = async () => {
+    setLoading(true);
+    // Prepare a base list of providers (default: not connected) so the UI can render
+    const baseServices = Object.keys(oAuth2Providers)
+      .filter((key) => oAuth2Providers[key].client_id)
+      .map((key) => ({ provider: key, connected: false }));
+
+    // Show base list optimistically; if the endpoint is missing we'll keep these as not connected
+    setConnectedServices(baseServices);
+
     try {
-      setLoading(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/oauth2`, {
         headers: {
           Authorization: `Bearer ${getCookie('jwt')}`,
         },
       });
 
-      const allServices = Object.keys(oAuth2Providers)
-        .filter((key) => oAuth2Providers[key].client_id)
-        .map((key) => ({
-          provider: key,
-          connected: response.data.includes(key.toLowerCase()),
-        }));
+      const connectedKeys: string[] = Array.isArray(response.data) ? response.data : [];
+
+      const allServices = baseServices.map((s) => ({
+        ...s,
+        connected: connectedKeys.includes(s.provider.toLowerCase()),
+      }));
 
       setConnectedServices(allServices);
       setError(null);
-    } catch (err) {
-      console.error('Error fetching connections:', err);
-      setError('Failed to fetch connected services');
+    } catch (err: any) {
+      // If the endpoint doesn't exist (404) treat it as no connected services rather than an error
+      if (err?.response?.status === 404) {
+        // Quietly ignore 404 — backend may not expose this endpoint in some environments
+        console.debug('OAuth2 endpoint not found (404) — treating as no connected services.');
+        setError(null);
+      } else {
+        console.error('Error fetching connections:', err);
+        setError('Failed to fetch connected services');
+      }
     } finally {
       setLoading(false);
     }
