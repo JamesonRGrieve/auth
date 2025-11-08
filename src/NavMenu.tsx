@@ -1,13 +1,10 @@
 import {
   BookOpen,
-  Bot,
   GraduationCap,
   HelpCircle,
-  Link as LuLink,
   Puzzle,
   Rocket,
   Settings,
-  SquareLibrary,
   User,
   Users,
   VenetianMask,
@@ -15,63 +12,9 @@ import {
   Server,
   RefreshCcw
 } from 'lucide-react';
-import { TbMessageCirclePlus } from 'react-icons/tb';
-import { Item } from '../../appwrapper/src/Nav';
+import type { Item } from '@/app/NavMain';
 
 export const items: Item[] = [
-  {
-    title: 'New Chat',
-    url: '/chat',
-    icon: TbMessageCirclePlus,
-    isActive: true,
-  },
-  {
-    title: 'Agent Management',
-    icon: Bot,
-    items: [
-      {
-        title: 'Prompt Library',
-        icon: SquareLibrary,
-        url: '/settings/prompts',
-      },
-      {
-        title: 'Chain Library',
-        icon: LuLink,
-        url: '/settings/chains',
-      },
-      {
-        title: 'Training',
-        icon: GraduationCap,
-        url: '/settings/training',
-        queryParams: {
-          mode: 'user',
-        },
-      },
-      {
-        title: 'Extensions',
-        icon: Puzzle,
-        url: '/settings/extensions',
-        queryParams: {
-          tab: 'extensions',
-          mode: 'user',
-        },
-      },
-      {
-        title: 'Abilities',
-        icon: Workflow,
-        url: '/settings/extensions',
-        queryParams: {
-          tab: 'abilities',
-          mode: 'user',
-        },
-      },
-      {
-        title: 'Settings',
-        icon: Settings,
-        url: '/settings', // Still need to split off provider settings and add agent rename functionality on a new page
-      },
-    ],
-  },
   {
     title: 'Team Management',
     icon: Users,
