@@ -10,11 +10,28 @@ import {
   VenetianMask,
   Workflow,
   Server,
-  RefreshCcw
+  RefreshCcw,
+  ArrowRightLeft,
 } from 'lucide-react';
 import type { Item } from '@/app/NavMain';
 
 export const items: Item[] = [
+  {
+    title: 'Connections',
+    icon: ArrowRightLeft,
+    items: [
+      {
+        title: 'Provider',
+        url: '/provider',
+        icon: Server,
+      },
+      {
+        title: 'Rotation',
+        url: '/rotation',
+        icon: RefreshCcw,
+      },
+    ],
+  },
   {
     title: 'Team Management',
     icon: Users,
@@ -86,14 +103,4 @@ export const items: Item[] = [
       },
     ],
   },
-  {
-    title: 'Provider',
-    url: '/provider',
-    icon: Server,
-  },
-  {
-    title: 'Rotation',
-    url: '/rotation',
-    icon: RefreshCcw,
-  }
 ];
