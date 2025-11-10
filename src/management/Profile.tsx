@@ -59,14 +59,73 @@ export const Profile = ({
   setResponseMessage: (message: string) => void;
 }) => {
   const { data: userTeams } = useTeams();
-  const { data: tempUserInfo } = useSWR('/user-info', async () => {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URI}/v1/user`, {
-      headers: {
-        Authorization: `Bearer ${getCookie('jwt')}`,
-      },
-    });
-    return response.data;
-  });
+  // Use `data` passed from parent Manage component as the authoritative user object.
+  // But be resilient to different API shapes. Try several common locations for fields.
+  const readUserField = (field: string) => {
+    // Try several common keys and shapes to be resilient to API variations.
+    const candidates = [] as string[];
+    const camel = field.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    candidates.push(field, camel, field.replace(/_/g, ''), field.replace('_name', ''), 'name');
+    // Common identity keys
+    if (field === 'first_name') candidates.push('given_name', 'givenName');
+    if (field === 'last_name') candidates.push('family_name', 'familyName');
+    if (field === 'display_name') candidates.push('displayName', 'username', 'userName');
+
+    try {
+      for (const key of candidates) {
+        // check several nesting patterns
+        if (data && data.user && data.user[key] !== undefined) return data.user[key];
+        if (data && data[key] !== undefined) return data[key];
+        if (data && data.user && data.user.user && data.user.user[key] !== undefined) return data.user.user[key];
+        if (data && data.user && data.user.profile && data.user.profile[key] !== undefined) return data.user.profile[key];
+      }
+    } catch (e) {
+      // ignore
+    }
+    return undefined;
+  };
+
+  // Debug: (removed runtime console output) - kept comment for dev reference
+
+  // If the user has no timezone set on the server, detect the browser timezone and
+  // persist it automatically on first sign-in so the UI and subsequent logins show
+  // the correct timezone. Do NOT overwrite an existing timezone.
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return; // only client
+      if (!data) return;
+      const existingTZ = readUserField('timezone');
+      if (existingTZ && String(existingTZ).length > 0) return; // already set, do nothing
+
+      const detectedTZ = (typeof Intl !== 'undefined' && Intl.DateTimeFormat)
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : 'UTC';
+
+      // Persist the timezone so it becomes the user's saved preference.
+      (async () => {
+        try {
+          await axios.put(
+            `${authConfig.authServer}${userUpdateEndpoint}`,
+            { user: { timezone: detectedTZ } },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getCookie('jwt')}`,
+              },
+            },
+          );
+          // Refresh SWR cache
+          await mutate(userDataSWRKey);
+          await mutate('/user');
+          // no need to notify the user explicitly here (silent default)
+        } catch (err) {
+          // failed to persist timezone; swallow silently (optionally investigate server logs)
+        }
+      })();
+    } catch (err) {
+      // swallow errors
+    }
+  }, [data, authConfig, userUpdateEndpoint, userDataSWRKey]);
 
   const user_teams_columns: ColumnDef<Team>[] = [
     {
@@ -143,25 +202,36 @@ export const Profile = ({
               type: 'text',
               display: 'First Name',
               validation: (value: string) => value.length > 0,
-              value: tempUserInfo?.user?.first_name,
+              value: readUserField('first_name') ?? '',
             },
             last_name: {
               type: 'text',
               display: 'Last Name',
               validation: (value: string) => value.length > 0,
-              value: tempUserInfo?.user?.last_name,
+              value: readUserField('last_name') ?? '',
             },
             display_name: {
               type: 'text',
               display: 'Display Name',
               validation: (value: string) => value.length > 0,
-              value: tempUserInfo?.user?.display_name,
+              // Prefer explicit display_name, otherwise compose from first+last if available
+              value:
+                readUserField('display_name') ??
+                (readUserField('first_name') || readUserField('last_name')
+                  ? `${readUserField('first_name') ?? ''} ${readUserField('last_name') ?? ''}`.trim()
+                  : ''),
             },
             timezone: {
               type: 'text',
               display: 'Timezone',
               validation: (value: string) => value.length > 0,
-              value: tempUserInfo?.user?.timezone,
+              // Use server value if present; otherwise fall back to browser timezone or UTC.
+              value:
+                (readUserField('timezone') && String(readUserField('timezone')).length > 0
+                  ? String(readUserField('timezone'))
+                  : (typeof Intl !== 'undefined' && Intl.DateTimeFormat)
+                  ? Intl.DateTimeFormat().resolvedOptions().timeZone
+                  : 'UTC'),
             },
           }}
           toUpdate={data.user}
