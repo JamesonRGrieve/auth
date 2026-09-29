@@ -654,3 +654,10 @@ FodyWeavers.xsd
 metadata.json
 test.ipynb
 *storybook.log
+
+# Ratchet coverage reports (regenerated on every run; baselines are checked in)
+.animation-coverage.json
+.important-coverage.json
+.js-coverage.json
+.symmetry-coverage.json
+.theme-coverage.json
