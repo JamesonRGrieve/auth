@@ -5,7 +5,7 @@ import Field from '@jgrieve/forms/Field';
 import { Button } from '@jgrieve/forms/components/ui/button';
 import axios from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
-import { type ChangeEvent, type ReactElement, useEffect, useState } from 'react';
+import { type ReactElement, useEffect, useState } from 'react';
 import { LuCircleCheck as LuCheckCircle, LuKey } from 'react-icons/lu';
 import QRCode from 'react-qr-code';
 import log from '../lib/log';

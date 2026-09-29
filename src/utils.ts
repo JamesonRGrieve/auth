@@ -37,6 +37,12 @@ export const getAuthMode = (): number => {
   }
   return authMode;
 };
+/** cookies-next options that scope a cookie to NEXT_PUBLIC_COOKIE_DOMAIN when one is configured. */
+export const cookieDomainOptions = (): { domain?: string } => {
+  const domain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+  return domain !== undefined && domain !== '' ? { domain } : {};
+};
+
 export const generateCookieString = (key: string, value: string, age: string): string =>
   `${key}=${value}; Domain=${process.env.NEXT_PUBLIC_COOKIE_DOMAIN}; Path=/; Max-Age=${age}; SameSite=strict;`;
 

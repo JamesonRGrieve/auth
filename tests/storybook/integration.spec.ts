@@ -15,7 +15,9 @@ test.describe('Storybook integration', () => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
     page.on('console', (msg) => {
-      if (msg.type() === 'error') errors.push(msg.text());
+      if (msg.type() === 'error') {
+        errors.push(msg.text());
+      }
     });
 
     await page.goto('/iframe.html?id=components-authcard--default');

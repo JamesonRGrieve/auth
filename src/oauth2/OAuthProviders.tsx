@@ -514,4 +514,11 @@ const providers = {
   },
 };
 
+export type OAuth2ProviderConfig = (typeof providers)[keyof typeof providers];
+
+const providersByName: ReadonlyMap<string, OAuth2ProviderConfig> = new Map(Object.entries(providers));
+
+/** Look up a provider by a runtime name (e.g. one returned by the server); undefined when unknown. */
+export const getOAuth2Provider = (name: string): OAuth2ProviderConfig | undefined => providersByName.get(name);
+
 export default providers;

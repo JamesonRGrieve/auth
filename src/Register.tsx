@@ -12,7 +12,9 @@ import { ReCAPTCHA } from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
 import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
+import { loginRedirectPath, type RegisterResponseFlags } from './registerRedirect';
 import { useAuthentication } from './useAuthentication';
+import { cookieDomainOptions } from './utils';
 
 export type RegisterProps = {
   additionalFields?: string[];
@@ -44,7 +46,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     if (typeof invitationCookie === 'string' && invitationCookie !== '') {
       formData['invitation_code'] = invitationCookie;
     }
-    type RegisterPayload = { detail?: string; otp_uri?: string; verify_email?: boolean; verify_sms?: boolean };
+    type RegisterPayload = RegisterResponseFlags & { detail?: string };
     let registerResponse: AxiosResponse<RegisterPayload> | null | undefined;
     let registerResponseData: RegisterPayload | undefined;
     try {
@@ -59,14 +61,8 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
           return exception.response;
         });
       if (registerResponse !== undefined && (registerResponse.status === 200 || registerResponse.status === 201)) {
-        void deleteCookie(
-          'invitation',
-          process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-        );
-        void deleteCookie(
-          'team',
-          process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-        );
+        void deleteCookie('invitation', cookieDomainOptions());
+        void deleteCookie('team', cookieDomainOptions());
       }
       registerResponseData = registerResponse?.data;
     } catch (exception: unknown) {
@@ -76,18 +72,8 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
 
     // TODO Check for status 418 which is app disabled by admin.
     setResponseMessage(registerResponseData?.detail ?? '');
-    const loginParams: string[] = [];
-    if (registerResponseData?.otp_uri !== undefined && registerResponseData.otp_uri !== '') {
-      loginParams.push(`otp_uri=${registerResponseData.otp_uri}`);
-    }
-    if (registerResponseData?.verify_email === true) {
-      loginParams.push(`verify_email=true`);
-    }
-    if (registerResponseData?.verify_sms === true) {
-      loginParams.push(`verify_sms=true`);
-    }
     if (registerResponse !== null && registerResponse !== undefined && [200, 201].includes(registerResponse.status)) {
-      router.push(loginParams.length > 0 ? `/user/login?${loginParams.join('&')}` : '/user/login');
+      router.push(loginRedirectPath(registerResponseData));
     }
   };
   useEffect(() => {
@@ -103,19 +89,6 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const [invite, _setInvite] = useState<CookieValueTypes | Promise<CookieValueTypes> | undefined>(getCookie('invitation'));
   const teamNameCookie = getCookie('team');
   const teamName = typeof teamNameCookie === 'string' ? teamNameCookie : '';
-  // useEffect(() => {
-  //   const invitation = String(getCookie('invitation') || '');
-  //   if (invitation) {
-  //     fetch(`${process.env.NEXT_PUBLIC_API_URI}/v1/invitation/${invitation}`)
-  //       .then((res) => (res.ok ? res.json() : null))
-  //       .then((data) => {
-  //         if (data && data.teamId) {
-  //           setCookie('auth-team', String(data.teamId), process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {});
-  //           setInvite(data.team && data.team.name ? String(data.team.name) : null);
-  //         }
-  //       });
-  //   }
-  // }, []);
 
   const registerHeader = {
     title: 'Sign Up',

@@ -4,19 +4,11 @@
 import { getCookie } from 'cookies-next/client';
 import { Suspense } from 'react';
 import PricingTable from './Stripe/PricingTable';
+import { firstSearchParam } from './lib/searchParams';
 import { useAuthentication } from './useAuthentication';
 
-declare module 'react' {
-  interface HTMLAttributes<T> {
-    'pricing-table-id'?: string;
-    'publishable-key'?: string;
-    'customer-session-client-secret'?: string;
-    'customer-email'?: string;
-  }
-}
-
 declare module 'react/jsx-runtime' {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+  // eslint-disable-next-line @typescript-eslint/no-shadow -- a module augmentation must reuse the name JSX to merge into React's JSX namespace.
   namespace JSX {
     interface IntrinsicElements {
       'stripe-pricing-table': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
@@ -47,11 +39,11 @@ export default function Subscribe({
             <stripe-pricing-table
               pricing-table-id={process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID}
               publishable-key={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-              customer-session-client-secret={searchParams['customer_session'] as string | undefined}
+              customer-session-client-secret={firstSearchParam(searchParams['customer_session'])}
               customer-email={
                 searchParams['customer_session'] !== undefined
                   ? undefined
-                  : ((searchParams['email'] as string | undefined) ?? getCookie('email'))
+                  : (firstSearchParam(searchParams['email']) ?? getCookie('email'))
               }
             />
           </div>

@@ -19,15 +19,6 @@ vi.mock('./lib', () => ({
   createGraphQLClient: vi.fn(() => ({ request: requestMock })),
 }));
 
-const emptyUser = {
-  id: '',
-  email: '',
-  firstName: '',
-  lastName: '',
-  userTeams: [],
-  agents: [],
-};
-
 const lastFetcher = (): BareFetcher => {
   const fetcher = vi.mocked(useSWR).mock.calls.at(-1)?.[1];
   if (typeof fetcher !== 'function') {
@@ -57,10 +48,10 @@ describe('useUser', () => {
     expect(Array.isArray(key) ? key[0] : key).toBe('/user');
   });
 
-  it('seeds an empty-user fallback on the SWR options', () => {
+  it('seeds a null (signed-out) fallback on the SWR options', () => {
     useUser();
     const options = vi.mocked(useSWR).mock.calls.at(-1)?.[2];
-    expect(options).toEqual({ fallbackData: emptyUser });
+    expect(options).toEqual({ fallbackData: null });
   });
 
   it('fetcher returns null when no jwt cookie is present', async () => {
@@ -86,9 +77,9 @@ describe('useUser', () => {
     expect(requestMock).toHaveBeenCalledOnce();
   });
 
-  it('fetcher returns the empty-user shape when the request rejects', async () => {
+  it('fetcher resolves to null (no user) when the request rejects', async () => {
     requestMock.mockRejectedValue(new Error('network'));
     useUser();
-    await expect(lastFetcher()(['/user', 'test-jwt'])).resolves.toEqual(emptyUser);
+    await expect(lastFetcher()(['/user', 'test-jwt'])).resolves.toBeNull();
   });
 });

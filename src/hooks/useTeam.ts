@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import z, { GQLType } from '@zephyrex/zod2gql';
 import { getCookie, setCookie } from 'cookies-next/client';
 import useSWR, { type SWRResponse } from 'swr';
-import z, { GQLType } from '@zephyrex/zod2gql';
 import log from '../lib/log';
+import { cookieDomainOptions } from '../utils';
 import { chainMutations, createGraphQLClient } from './lib';
 import { type Team, TeamSchema } from './z';
 
@@ -24,11 +25,7 @@ export function useTeams(): SWRResponse<Team[]> {
         const data = response.teams.filter((team) => team.id !== SYSTEM_TEAM_ID);
         const authTeam = getCookie('auth-team');
         if (authTeam === undefined || authTeam === '' || !data.some((team: Team) => team.id === authTeam)) {
-          setCookie(
-            'auth-team',
-            data[0]?.id ?? '',
-            process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-          );
+          setCookie('auth-team', data[0]?.id ?? '', cookieDomainOptions());
         }
         return data;
       } catch (error: unknown) {

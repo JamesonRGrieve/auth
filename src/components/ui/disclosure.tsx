@@ -146,8 +146,8 @@ export function DisclosureContent({
   };
 
   const combinedVariants = {
-    expanded: { ...BASE_VARIANTS['expanded'], ...variants?.['expanded'] },
-    collapsed: { ...BASE_VARIANTS['collapsed'], ...variants?.['collapsed'] },
+    expanded: { ...BASE_VARIANTS['expanded'], ...variants?.expanded },
+    collapsed: { ...BASE_VARIANTS['collapsed'], ...variants?.collapsed },
   };
 
   return (

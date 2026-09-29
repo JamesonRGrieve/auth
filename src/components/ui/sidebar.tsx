@@ -11,16 +11,15 @@ import { setCookie } from 'cookies-next';
 import * as React from 'react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { cn } from '../../lib/utils';
+import { cookieDomainOptions } from '../../utils';
 import { Sheet, SheetContent } from './sheet';
 import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
-const _SIDEBAR_COOKIE_NAME = 'sidebar:state';
-const _SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = '16rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
-const _SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 type SidebarContextMap = {
   left?: SidebarContextValue;
   right?: SidebarContextValue;
@@ -96,11 +95,10 @@ const SidebarProvider = React.forwardRef<
             setRightOpen(openState);
           }
 
-          const cookieDomain = process.env['NEXT_PUBLIC_COOKIE_DOMAIN'];
           void setCookie(`sidebar-${side}-state`, openState, {
             path: '/',
-            maxAge: 60 * 60 * 24 * 7,
-            ...(cookieDomain ? { domain: cookieDomain } : {}),
+            maxAge: SIDEBAR_COOKIE_MAX_AGE,
+            ...cookieDomainOptions(),
           });
         };
       },

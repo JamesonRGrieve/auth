@@ -16,6 +16,7 @@ import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
 import { AuthenticatorHelp as MissingAuthenticator } from './mfa/MissingAuthenticator';
 import { useAuthentication } from './useAuthentication';
+import { cookieDomainOptions } from './utils';
 
 export type LoginProps = {
   userLoginEndpoint?: string;
@@ -99,10 +100,7 @@ export default function Login({
             // }
             const invitation = getCookie('invitation');
             if (typeof invitation === 'string' && invitation !== '') {
-              void deleteCookie(
-                'invitation',
-                process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-              );
+              void deleteCookie('invitation', cookieDomainOptions());
               window.location.href = `${process.env.NEXT_PUBLIC_APP_URI ?? ''}/invite/${invitation}`;
               return;
             }

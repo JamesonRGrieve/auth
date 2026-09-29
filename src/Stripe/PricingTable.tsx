@@ -104,8 +104,10 @@ export default function PricingTable(): React.JSX.Element {
 
           <div className='flex flex-col items-center max-w-4xl gap-4 px-3 mx-auto my-10 md:items-end md:flex-row'>
             {(pricingData as Product[]).map((product) => {
-              const price = product.prices[0];
-              if (!price) return null;
+              const price = product.prices.at(0);
+              if (price === undefined) {
+                return null;
+              }
               return <PricingCard key={product.name} price={price} {...product} />;
             })}
           </div>

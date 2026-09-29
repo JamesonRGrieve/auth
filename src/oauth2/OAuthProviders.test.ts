@@ -6,7 +6,7 @@
  * an env var and is therefore allowed to be `undefined` when unconfigured.
  */
 import { describe, expect, it } from 'vitest';
-import providers from './OAuthProviders';
+import providers, { getOAuth2Provider } from './OAuthProviders';
 
 describe('OAuthProviders', () => {
   it('exports a non-empty map of providers', () => {
@@ -31,29 +31,25 @@ describe('OAuthProviders', () => {
   });
 
   it('Google entry requests offline access via params.access_type', () => {
-    const google = (providers as Record<string, { params: Record<string, unknown> }>)['Google'];
-    expect(google).toBeDefined();
-    expect(google!.params['access_type']).toBe('offline');
+    const google = getOAuth2Provider('Google');
+    expect(google?.params).toMatchObject({ access_type: 'offline' });
   });
 
   it('uses unique authorization URIs across providers', () => {
     const uris = Object.values(providers).map((config) => config.uri);
-    // Some providers legitimately share an auth server (none currently in this
-    // map), so we count duplicates and assert each duplicate is intentional.
-    const seen = new Map<string, number>();
-    for (const uri of uris) {
-      seen.set(uri, (seen.get(uri) ?? 0) + 1);
-    }
-    for (const [, count] of seen) {
-      expect(count).toBeGreaterThanOrEqual(1);
-    }
+    expect(new Set(uris).size).toBe(uris.length);
   });
 
   it('Tesla scope opts into the location + commands surfaces (smoke)', () => {
-    const tesla = (providers as Record<string, { scope: string }>)['Tesla'];
-    expect(tesla).toBeDefined();
-    expect(tesla!.scope).toMatch(/vehicle_location/);
-    expect(tesla!.scope).toMatch(/vehicle_cmds/);
+    const tesla = getOAuth2Provider('Tesla');
+    expect(tesla?.scope).toMatch(/vehicle_location/);
+    expect(tesla?.scope).toMatch(/vehicle_cmds/);
+  });
+
+  it('getOAuth2Provider returns the entry for a known name and undefined otherwise', () => {
+    expect(getOAuth2Provider('Google')).toBe(providers.Google);
+    expect(getOAuth2Provider('NotAProvider')).toBeUndefined();
+    expect(getOAuth2Provider('toString')).toBeUndefined();
   });
 
   it('client_id is either a non-empty string or undefined (env-sourced)', () => {

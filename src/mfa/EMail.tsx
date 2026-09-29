@@ -7,7 +7,7 @@ import { useToast } from '@jgrieve/forms/hooks/useToast';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { CheckCircle } from 'lucide-react';
-import { type ChangeEvent, type ReactElement, useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { LuKey } from 'react-icons/lu';
 import log from '../lib/log';
 

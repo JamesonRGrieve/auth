@@ -31,6 +31,7 @@ import {
 } from '../components/ui/sidebar';
 import { useInvitations } from '../hooks/useInvitation';
 import { SYSTEM_TEAM_ID, useTeam } from '../hooks/useTeam';
+import { cookieDomainOptions } from '../utils';
 import { InviteDialog } from './Invite';
 
 type TeamWithExtras = {
@@ -412,11 +413,7 @@ export const Team = (): React.JSX.Element => {
 
   const selectNewTeam = (teamObj: TeamWithExtras): void => {
     if (teamObj.id !== '') {
-      void setCookie(
-        'auth-team',
-        teamObj.id,
-        process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-      );
+      void setCookie('auth-team', teamObj.id, cookieDomainOptions());
       setSelected(teamObj);
       router.push(`/team/${teamObj.id}`);
       void inviteMutate();

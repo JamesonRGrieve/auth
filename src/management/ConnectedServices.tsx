@@ -8,17 +8,7 @@ import { LuPlus as Plus, LuUnlink as Unlink } from 'react-icons/lu';
 import OAuth2Login from 'react-simple-oauth2-login';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import oAuth2ProvidersRaw from '../oauth2/OAuthProviders';
-
-interface OAuth2Provider {
-  client_id?: string;
-  scope: string;
-  uri: string;
-  params: Record<string, unknown>;
-  icon: ReactNode;
-}
-
-const oAuth2Providers = oAuth2ProvidersRaw as Record<string, OAuth2Provider>;
+import oAuth2Providers, { getOAuth2Provider } from '../oauth2/OAuthProviders';
 
 interface ConnectedService {
   provider: string;
@@ -65,9 +55,9 @@ export const ConnectedServices = (): ReactNode => {
 
   const fetchConnections = useCallback(async (): Promise<void> => {
     setLoading(true);
-    const baseServices = Object.keys(oAuth2Providers)
-      .filter((key) => oAuth2Providers[key]?.client_id !== undefined && oAuth2Providers[key]?.client_id !== '')
-      .map((key) => ({ provider: key, connected: false }));
+    const baseServices = Object.entries(oAuth2Providers)
+      .filter(([, config]) => config.client_id !== undefined && config.client_id !== '')
+      .map(([key]) => ({ provider: key, connected: false }));
 
     setConnectedServices(baseServices);
 
@@ -157,8 +147,10 @@ export const ConnectedServices = (): ReactNode => {
 
       <div className='grid gap-4'>
         {connectedServices.map((service) => {
-          const provider = oAuth2Providers[service.provider];
-          if (!provider) return null;
+          const provider = getOAuth2Provider(service.provider);
+          if (provider === undefined) {
+            return null;
+          }
           return (
             <div key={service.provider} className='flex flex-col space-y-4 p-4 border rounded-lg'>
               <div className='flex items-center justify-between'>

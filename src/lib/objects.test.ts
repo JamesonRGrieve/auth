@@ -32,7 +32,7 @@ describe('deepMergeJSON', () => {
     // A deep copy clones nested objects, so the nested references must differ
     // (mutating through `merged` therefore cannot reach `src`).
     expect(merged).not.toBe(src);
-    expect(merged['nested']).not.toBe(src['nested']);
+    expect(merged['nested']).not.toBe(src.nested);
     expect(merged).toEqual(src);
   });
 

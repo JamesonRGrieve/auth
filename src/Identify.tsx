@@ -19,6 +19,7 @@ import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
 import OAuth, { type OAuthProps } from './oauth2/OAuth';
 import { useAuthentication } from './useAuthentication';
+import { cookieDomainOptions } from './utils';
 
 const schema = z.object({
   email: z.email({ message: 'Please enter a valid E-Mail address.' }),
@@ -65,29 +66,17 @@ export default function Identify({
           email: formData.email.toLowerCase().trim(),
         },
       });
-      void setCookie(
-        'email',
-        formData.email,
-        process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-      );
+      void setCookie('email', formData.email, cookieDomainOptions());
       router.push(`${pathname}${redirectToOnNotExists}`);
     } catch (exception: unknown) {
       const axiosError = exception as AxiosError;
       if (axiosError.response?.status === 409) {
         // User exists
-        void setCookie(
-          'email',
-          formData.email,
-          process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-        );
+        void setCookie('email', formData.email, cookieDomainOptions());
         router.push(`${pathname}${redirectToOnExists}`);
       } else if (axiosError.response?.status === 422) {
         // User doesn't exist
-        void setCookie(
-          'email',
-          formData.email,
-          process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-        );
+        void setCookie('email', formData.email, cookieDomainOptions());
         router.push(`${pathname}${redirectToOnNotExists}`);
       } else {
         setError('email', { type: 'server', message: axiosError.message });

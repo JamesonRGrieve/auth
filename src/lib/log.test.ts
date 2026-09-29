@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import log from './log';
 
@@ -13,6 +14,15 @@ describe('log', () => {
 
   afterEach(() => {
     spy.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the client option, not the server one, when a window exists', () => {
+    vi.stubGlobal('window', {});
+    log(['server-only'], { server: 1 });
+    expect(spy).not.toHaveBeenCalled();
+    log(['client'], { client: 1 });
+    expect(spy).toHaveBeenCalledWith('client');
   });
 
   it('does nothing when neither client nor server verbosity is supplied', () => {

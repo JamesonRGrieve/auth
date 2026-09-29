@@ -5,6 +5,7 @@ import { deleteCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect } from 'react';
 import { useAuthentication } from './useAuthentication';
+import { cookieDomainOptions } from './utils';
 
 export type LogoutProps = { redirectTo?: string };
 
@@ -13,10 +14,7 @@ export default function Logout({ redirectTo = '/' }: LogoutProps): ReactNode {
   const authConfig = useAuthentication();
 
   useEffect(() => {
-    void deleteCookie(
-      'jwt',
-      process.env.NEXT_PUBLIC_COOKIE_DOMAIN !== undefined ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {},
-    );
+    void deleteCookie('jwt', cookieDomainOptions());
     router.refresh();
     router.replace(redirectTo);
     router.refresh();
