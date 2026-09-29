@@ -10,7 +10,11 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import unusedImports from 'eslint-plugin-unused-imports';
 import importPluginLegacy from 'eslint-plugin-import';
 import jsxA11yLegacy from 'eslint-plugin-jsx-a11y';
+import optimizeRegexLegacy from 'eslint-plugin-optimize-regex';
+import prettierPlugin from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
+import securityPlugin from 'eslint-plugin-security';
+import sonarjsPlugin from 'eslint-plugin-sonarjs';
 import vitest from '@vitest/eslint-plugin';
 import storybookPlugin from 'eslint-plugin-storybook';
 
@@ -19,6 +23,7 @@ import storybookPlugin from 'eslint-plugin-storybook';
 const reactPlugin = fixupPluginRules(reactPluginLegacy);
 const jsxA11y = fixupPluginRules(jsxA11yLegacy);
 const importPlugin = fixupPluginRules(importPluginLegacy);
+const optimizeRegexPlugin = fixupPluginRules(optimizeRegexLegacy);
 
 // Workspace §7.5 model: every rule is warn-level and ratcheted (lint:ratchet
 // forbids *any* error). Plugin "recommended" presets ship many rules at
@@ -413,6 +418,90 @@ export default [
       'react/no-unstable-nested-components': 'warn',
       'react/no-unused-state': 'warn',
       'react/self-closing-comp': 'warn',
+    },
+  },
+  {
+    // Rules carried over from the retired .eslintrc.json. Left out on purpose:
+    // no-underscore-dangle (contradicts the `^_` unused-binding convention above),
+    // react/jsx-closing-{bracket,tag}-location (formatting belongs to Prettier), and
+    // @typescript-eslint/no-empty-interface (deprecated for no-empty-object-type).
+    files: ['**/*.{ts,tsx}'],
+    plugins: {
+      'security': securityPlugin,
+      'sonarjs': sonarjsPlugin,
+      'optimize-regex': optimizeRegexPlugin,
+      'prettier': prettierPlugin,
+    },
+    rules: {
+      'prettier/prettier': 'warn',
+      'no-var': 'warn',
+      'prefer-const': 'warn',
+      'no-eq-null': 'warn',
+      'no-iterator': 'warn',
+      'no-lone-blocks': 'warn',
+      'no-loop-func': 'warn',
+      'no-multi-str': 'warn',
+      'no-return-assign': 'warn',
+      'no-script-url': 'warn',
+      'no-sequences': 'warn',
+      'no-unmodified-loop-condition': 'warn',
+      'no-unused-expressions': 'warn',
+      'yoda': ['warn', 'never'],
+      '@typescript-eslint/consistent-type-assertions': 'warn',
+      '@typescript-eslint/no-empty-object-type': 'warn',
+      '@typescript-eslint/no-empty-function': 'warn',
+      '@typescript-eslint/no-inferrable-types': 'warn',
+      '@typescript-eslint/no-namespace': 'warn',
+      'import/no-absolute-path': 'warn',
+      'import/no-dynamic-require': 'warn',
+      'import/extensions': ['warn', 'never'],
+      'import/no-unassigned-import': 'warn',
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'react/jsx-no-comment-textnodes': 'warn',
+      'react/jsx-boolean-value': 'warn',
+      'react/jsx-filename-extension': ['warn', { extensions: ['.jsx', '.tsx'] }],
+      'react/no-danger-with-children': 'warn',
+      'react/no-access-state-in-setstate': 'warn',
+      'react/no-string-refs': 'warn',
+      'react/prefer-stateless-function': 'warn',
+      'jsx-a11y/accessible-emoji': 'warn',
+      'security/detect-object-injection': 'warn',
+      'security/detect-buffer-noassert': 'warn',
+      'security/detect-child-process': 'warn',
+      'security/detect-disable-mustache-escape': 'warn',
+      'security/detect-eval-with-expression': 'warn',
+      'security/detect-new-buffer': 'warn',
+      'security/detect-no-csrf-before-method-override': 'warn',
+      'security/detect-non-literal-fs-filename': 'warn',
+      'security/detect-non-literal-regexp': 'warn',
+      'security/detect-non-literal-require': 'warn',
+      'security/detect-possible-timing-attacks': 'warn',
+      'security/detect-pseudoRandomBytes': 'warn',
+      'security/detect-unsafe-regex': 'warn',
+      'sonarjs/no-all-duplicated-branches': 'warn',
+      'sonarjs/no-duplicated-branches': 'warn',
+      'sonarjs/no-element-overwrite': 'warn',
+      'sonarjs/no-extra-arguments': 'warn',
+      'sonarjs/no-identical-conditions': 'warn',
+      'sonarjs/no-identical-expressions': 'warn',
+      'sonarjs/no-identical-functions': 'warn',
+      'sonarjs/no-inverted-boolean-check': 'warn',
+      'sonarjs/no-redundant-boolean': 'warn',
+      'sonarjs/no-small-switch': 'warn',
+      'sonarjs/no-unused-collection': 'warn',
+      'sonarjs/no-use-of-empty-return-value': 'warn',
+      'sonarjs/no-useless-catch': 'warn',
+      'sonarjs/prefer-immediate-return': 'warn',
+      'sonarjs/prefer-object-literal': 'warn',
+      'sonarjs/prefer-single-boolean-return': 'warn',
+      'sonarjs/prefer-while': 'warn',
+      'sonarjs/no-collapsible-if': 'warn',
+      'sonarjs/no-collection-size-mischeck': 'warn',
+      'sonarjs/no-redundant-jump': 'warn',
+      'sonarjs/no-same-line-conditional': 'warn',
+      'optimize-regex/optimize-regex': 'warn',
+      '@eslint-community/eslint-comments/no-unused-disable': 'warn',
     },
   },
   {
