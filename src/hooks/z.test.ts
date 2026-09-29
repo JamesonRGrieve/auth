@@ -24,6 +24,11 @@ describe('AgentSchema', () => {
     expect(AgentSchema.safeParse({ id: 'nope', name: 'Bot' }).success).toBe(false);
   });
 
+  it('accepts server sentinel ids that are GUID-shaped but not RFC 9562 UUIDs', () => {
+    const rootRole = { id: 'FFFFFFFF-FFFF-FFFF-AAAA-FFFFFFFFFFFF', name: 'Admin' };
+    expect(AgentSchema.parse(rootRole)).toMatchObject(rootRole);
+  });
+
   it('rejects an empty name', () => {
     expect(AgentSchema.safeParse({ id: '11111111-1111-1111-1111-111111111111', name: '' }).success).toBe(false);
   });

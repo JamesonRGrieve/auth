@@ -1,8 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,

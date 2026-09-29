@@ -1,6 +1,6 @@
 # Claude Code Instructions — @zephyrex/auth
 
-Authentication UI package for the Zephyrex framework. Consumed by `zephyrex` (client framework) as a sibling package via symlink.
+Authentication UI package for the Zephyrex framework, published as `@zephyrex/auth` and consumed by `zephyrex` (client framework) as a normal dependency. ESM, compiled to `dist/`; `react`, `react-dom`, `next` and `zod` are peers.
 
 ## Stack Standards
 
@@ -39,7 +39,9 @@ JWT stored in `jwt` cookie. Login via `Basic base64(email:password)` to `POST /v
 ### Dependencies
 
 - `@jgrieve/forms` — UI primitives (Button, Input, Label) and DynamicForm
-- `@zephyrex/zod2gql` — Zod schema → GraphQL query generation
+- `zod2gql` — Zod schema → GraphQL query generation (`toGQL(schema, type, options)`)
+
+Until those two are published, `pnpm-workspace.yaml` overrides them to the sibling checkouts as injected `file:` copies, so their peers resolve to this package's single React and zod. Drop the overrides once they are on npm.
 
 ---
 

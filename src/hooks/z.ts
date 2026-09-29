@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import z from '@zephyrex/zod2gql';
+import { z } from 'zod';
 
 export const RoleSchema = z.enum(['user', 'system', 'assistant', 'function']);
 
 // Define AgentSchema first to avoid circular references
 export const AgentSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.guid(),
     name: z.string().min(1),
-    //teamId: z.string().uuid().nullable().optional(), // Make teamId nullable as per backend schema
+    //teamId: z.guid().nullable().optional(), // Make teamId nullable as per backend schema
     // Remove default and status fields that aren't in the API
     // default: z.boolean(),
     // status: z.union([z.boolean(), z.literal(null)]),
@@ -18,17 +18,17 @@ export const AgentSchema = z
 // Create a simplified UserSchema for nested references
 const SimpleUserSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.guid(),
     firstName: z.string().optional().nullable(),
     lastName: z.string().optional().nullable(),
-    email: z.string().email(),
+    email: z.email(),
   })
   .describe('User');
 
 // Define TeamSchema for nested references
 const _SimpleTeamSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.guid(),
     name: z.string().min(1),
     agents: z.array(AgentSchema),
     userTeams: z.array(
@@ -59,7 +59,7 @@ export const UserTeamSchema = z
 
 export const TeamSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.guid(),
     name: z.string().min(1),
     description: z.string().optional().nullable(),
     // encryptionKey: z.string(),
@@ -68,7 +68,7 @@ export const TeamSchema = z
     // agentName: z.string().optional().nullable(),
     createdAt: z.string(),
     updatedAt: z.string().optional().nullable(),
-    parentId: z.union([z.string().uuid(), z.null()]).optional(),
+    parentId: z.union([z.guid(), z.null()]).optional(),
     // primary: z.boolean().optional(),
     // roleId: z.number().int().positive().optional(),
     // agents: z.array(AgentSchema),
@@ -91,8 +91,8 @@ export type UserTeam = z.infer<typeof UserTeamSchema>;
 
 export const UserSchema = z
   .object({
-    id: z.string().uuid(),
-    email: z.string().email(),
+    id: z.guid(),
+    email: z.email(),
     username: z.string().optional().nullable(),
     displayName: z.string().optional().nullable(),
     firstName: z.string().optional().nullable(),
@@ -120,22 +120,22 @@ export const NotificationSchema = z
   .describe('Notification');
 const _InviteeSchema = z
   .object({
-    id: z.string().uuid(),
-    email: z.string().email(),
+    id: z.guid(),
+    email: z.email(),
     isAccepted: z.boolean(),
-    acceptedAt: z.string().datetime().nullable(),
-    invitationId: z.string().uuid(),
+    acceptedAt: z.iso.datetime().nullable(),
+    invitationId: z.guid(),
     inviteeUser: SimpleUserSchema.nullable(),
   })
   .describe('Invitee');
 
 export const InvitationSchema = z
   .object({
-    id: z.string().uuid(),
-    teamId: z.string().uuid(),
+    id: z.guid(),
+    teamId: z.guid(),
     code: z.string().nullable(),
     roleId: z.string().nullable(),
-    // inviterId: z.string().uuid(),
+    // inviterId: z.guid(),
     createdAt: z.string(),
     updatedAt: z.string().nullable(),
     createdByUserId: z.string().nullable(),

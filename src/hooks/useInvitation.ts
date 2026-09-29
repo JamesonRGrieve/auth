@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import 'zod2gql';
 import axios from 'axios';
 import { getCookie } from 'cookies-next/client';
 import useSWR, { type SWRResponse } from 'swr';

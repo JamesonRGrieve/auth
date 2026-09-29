@@ -1,38 +1,18 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [
-    "src/**/index.{ts,tsx}",
-    "src/**/*.stories.{ts,tsx}",
-    "src/**/*.test.{ts,tsx}",
-    "tests/**/*.{ts,tsx}",
-    "src/app/**/page.{ts,tsx}",
-    "src/app/**/layout.{ts,tsx}"
-  ],
+  "entry": ["src/**/index.{ts,tsx}", "src/**/*.stories.{ts,tsx}", "src/**/*.test.{ts,tsx}", "tests/**/*.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx,js,jsx}"],
-  "ignore": ["dist/**", "node_modules/**", "**/*.d.ts"],
   "ignoreDependencies": [
-    "autoprefixer",
-    "postcss",
-    "tailwindcss",
-    "@tailwindcss/postcss",
-    "tailwindcss-animate",
-    "@jgrieve/forms",
-    "@zephyrex/zod2gql",
     "@biomejs/biome",
     "@eslint/eslintrc",
     "eslint-config-next",
     "eslint-config-prettier",
-    "eslint-plugin-eslint-comments",
-    "eslint-plugin-import",
-    "eslint-plugin-jsx-a11y",
     "eslint-plugin-no-use-extend-native",
     "eslint-plugin-optimize-regex",
     "eslint-plugin-prettier",
-    "eslint-plugin-promise",
     "eslint-plugin-react-perf",
     "eslint-plugin-security",
-    "eslint-plugin-sonarjs",
-    "eslint-plugin-storybook"
+    "eslint-plugin-sonarjs"
   ],
   "ignoreBinaries": ["gh-pages"]
 }

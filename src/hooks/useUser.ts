@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { GQLType } from '@zephyrex/zod2gql';
 import { getCookie } from 'cookies-next/client';
 import useSWR, { type SWRResponse } from 'swr';
+import { GQLType, toGQL } from 'zod2gql';
 import log from '../lib/log';
 import { createGraphQLClient } from './lib';
 import { type User, UserSchema } from './z';
@@ -20,7 +20,7 @@ export function useUser(): SWRResponse<User | null> {
         return null;
       }
       try {
-        const query = UserSchema.toGQL(GQLType.Query, { operationName: 'GetUser' });
+        const query = toGQL(UserSchema, GQLType.Query, { operationName: 'GetUser' });
         log(['GQL useUser() Query', query], {
           client: 3,
         });

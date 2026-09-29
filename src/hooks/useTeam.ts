@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import z, { GQLType } from '@zephyrex/zod2gql';
 import { getCookie, setCookie } from 'cookies-next/client';
 import useSWR, { type SWRResponse } from 'swr';
+import { z } from 'zod';
+import { GQLType, toGQL } from 'zod2gql';
 import log from '../lib/log';
 import { cookieDomainOptions } from '../utils';
 import { chainMutations, createGraphQLClient } from './lib';
@@ -20,7 +21,7 @@ export function useTeams(): SWRResponse<Team[]> {
     '/teams',
     async (): Promise<Team[]> => {
       try {
-        const query = z.array(TeamSchema).toGQL(GQLType.Query);
+        const query = toGQL(z.array(TeamSchema), GQLType.Query);
         const response = await client.request<{ teams: Team[] }>(query);
         const data = response.teams.filter((team) => team.id !== SYSTEM_TEAM_ID);
         const authTeam = getCookie('auth-team');
