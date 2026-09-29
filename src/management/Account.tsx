@@ -1,86 +1,90 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import PasswordField from '@jgrieve/forms/PasswordField';
-import { Separator } from '@jgrieve/forms/components/ui/separator';
-import axios, { type AxiosError } from 'axios';
-import { getCookie } from 'cookies-next';
-import type { SyntheticEvent } from 'react';
-import type { AuthenticationConfig } from '../Router';
+import { Button } from '@jgrieve/forms/components/ui/button';
+import { type ReactElement, type SyntheticEvent, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { passwordChangeProblem } from './profileModel';
 
-type PasswordChangeResponseBody = { detail?: string };
+type ChangeStatus = { failed: boolean; message: string } | null;
 
-const readJwtString = (): string => {
-  const jwt = getCookie('jwt');
-  return typeof jwt === 'string' ? jwt : '';
+const formText = (data: FormData, name: string): string => {
+  const value = data.get(name);
+  return typeof value === 'string' ? value : '';
 };
 
-export const Account = ({
-  authConfig,
-  data,
-  userPasswordChangeEndpoint = '/v1/user/password',
-  setResponseMessage,
+/** Change the signed-in user's password; the current password is required. */
+export function Account({
+  onChangePassword,
 }: {
-  authConfig: AuthenticationConfig;
-  data: Record<string, unknown>;
-  userPasswordChangeEndpoint?: string;
-  setResponseMessage: (message: string) => void;
-}): React.JSX.Element => {
-  return (
-    <div>
-      <div>
-        <h3 className='text-lg font-medium'>Account</h3>
-        <p className='text-sm text-muted-foreground'>Update your account information</p>
-      </div>
-      <Separator className='my-4' />
-      {authConfig.authModes.basic && (
-        <form
-          onSubmit={(event: SyntheticEvent<HTMLFormElement>): void => {
-            event.preventDefault();
-            const form = event.currentTarget;
-            void (async (): Promise<void> => {
-              const formData: Record<string, FormDataEntryValue | undefined> = Object.fromEntries(new FormData(form));
+  onChangePassword: (current: string, next: string) => Promise<string>;
+}): ReactElement {
+  const [status, setStatus] = useState<ChangeStatus>(null);
+  const [pending, setPending] = useState(false);
 
-              if (formData['password'] === undefined || formData['password'] === '') {
-                setResponseMessage('Please enter a password.');
-              }
-              if (formData['password-again'] === undefined || formData['password-again'] === '') {
-                setResponseMessage('Please enter your password again.');
-              }
-              if (formData['password'] !== formData['password-again']) {
-                setResponseMessage('Passwords do not match.');
-              }
-              const passwordResetResponse = await axios
-                .put<PasswordChangeResponseBody>(
-                  `${authConfig.authServer}${userPasswordChangeEndpoint}`,
-                  {
-                    ...data,
-                  },
-                  {
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${readJwtString()}`,
-                    },
-                  },
-                )
-                .catch((exception: AxiosError<PasswordChangeResponseBody>) => exception.response);
-              if (passwordResetResponse?.data.detail !== undefined) {
-                setResponseMessage(passwordResetResponse.data.detail);
-              }
-              if (passwordResetResponse?.status === 200) {
-                window.location.reload();
-              }
-            })();
+  const submit = async (form: HTMLFormElement): Promise<void> => {
+    const data = new FormData(form);
+    const current = formText(data, 'current-password');
+    const next = formText(data, 'new-password');
+    const problem = passwordChangeProblem(current, next, formText(data, 'new-password-again'));
+    if (problem !== null) {
+      setStatus({ failed: true, message: problem });
+      return;
+    }
+    setPending(true);
+    try {
+      setStatus({ failed: false, message: await onChangePassword(current, next) });
+      form.reset();
+    } catch (error) {
+      setStatus({ failed: true, message: error instanceof Error ? error.message : 'Your password could not be changed.' });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Password</CardTitle>
+        <CardDescription>Change the password you sign in with.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          aria-label='Change password'
+          className='grid gap-4 md:max-w-md'
+          onSubmit={(event: SyntheticEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            void submit(event.currentTarget);
           }}
         >
-          <PasswordField id='old-password' name='old-password' label='Your Old Password' />
-          <PasswordField id='new-password' name='new-password' label='Your New Password' />
-          <PasswordField id='new-password-again' name='new-password-again' label='Your New Password (Again)' />
+          <PasswordField id='current-password' name='current-password' label='Current password' />
+          <PasswordField
+            id='new-password'
+            name='new-password'
+            label='New password'
+            autoComplete='new-password'
+            placeholder='Enter a new password'
+          />
+          <PasswordField
+            id='new-password-again'
+            name='new-password-again'
+            label='New password (again)'
+            autoComplete='new-password'
+            placeholder='Enter the new password again'
+          />
+          <Button type='submit' disabled={pending}>
+            Change password
+          </Button>
+          {status !== null && (
+            <p
+              role={status.failed ? 'alert' : 'status'}
+              className={status.failed ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
+            >
+              {status.message}
+            </p>
+          )}
         </form>
-      )}
-      {
-        // TODO MFA management / backup codes.
-        // TODO Quota management for user mode.
-      }
-    </div>
+      </CardContent>
+    </Card>
   );
-};
+}

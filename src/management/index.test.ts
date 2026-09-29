@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /**
- * Surface test for the Manage sub-router. Manage owns the active page
- * tab state and delegates to Profile / Team / ConnectedServices /
- * Account. Endpoint props let downstream apps redirect SWR keys.
+ * Surface test for the Manage account page. The page talks to the fixed
+ * /v1/user contract; the only knob is where "Go to <app>" leads.
  *
  * Uses `import type` to avoid loading the runtime module — Manage
  * imports `@jgrieve/forms/*`.
@@ -16,12 +15,7 @@ describe('Manage (surface)', () => {
     expectTypeOf<typeof Manage>().toBeFunction();
   });
 
-  it('ManageProps exposes all four endpoint overrides as optional strings', () => {
-    expectTypeOf<ManageProps>().toEqualTypeOf<{
-      userDataSWRKey?: string;
-      userDataEndpoint?: string;
-      userUpdateEndpoint?: string;
-      userPasswordChangeEndpoint?: string;
-    }>();
+  it('ManageProps only exposes the optional return path', () => {
+    expectTypeOf<ManageProps>().toEqualTypeOf<{ returnPath?: string }>();
   });
 });

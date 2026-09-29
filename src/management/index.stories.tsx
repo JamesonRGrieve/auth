@@ -14,19 +14,13 @@ export default meta;
 
 type Story = StoryObj<typeof Manage>;
 
-// Manage is the management sub-router. It owns the active page tab
-// state and delegates to Profile / Team / ConnectedServices /
-// Account. Endpoint props let downstream apps redirect the SWR keys.
+// Manage is the account page: profile, password, teams and invitations for the
+// signed-in user, loaded from the configured auth server.
 
 export const Default: Story = {
   args: {},
 };
 
-export const CustomEndpoints: Story = {
-  args: {
-    userDataSWRKey: '/v2/user',
-    userDataEndpoint: '/v2/user',
-    userUpdateEndpoint: '/v2/user',
-    userPasswordChangeEndpoint: '/v2/user/password',
-  },
+export const CustomReturnPath: Story = {
+  args: { returnPath: '/dashboard' },
 };

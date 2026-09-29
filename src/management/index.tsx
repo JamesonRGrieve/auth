@@ -1,143 +1,101 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import type { DynamicFormFieldValueTypes } from '@jgrieve/forms/DynamicForm';
 import { Button } from '@jgrieve/forms/components/ui/button';
-import axios from 'axios';
-import { getCookie } from 'cookies-next';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useState } from 'react';
-import useSWR from 'swr';
-import { useAssertion } from '../lib/assert';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { useProfile } from '../hooks/useProfile';
+import { useTeams } from '../hooks/useTeam';
 import log from '../lib/log';
-import { validateURI } from '../lib/validation';
 import { useAuthentication } from '../useAuthentication';
+import { Account } from './Account';
+import { InvitationsTable } from './Invitations';
 import { Profile } from './Profile';
+import { detectTimezone } from './profileModel';
 
 export type ManageProps = {
-  userDataSWRKey?: string;
-  userDataEndpoint?: string;
-  userUpdateEndpoint?: string;
-  userPasswordChangeEndpoint?: string;
+  /** Where "Go to <app>" leads. */
+  returnPath?: string;
 };
-const MENU_ITEMS: ActivePage[] = ['Profile', 'Team', 'Connected Services']; // TODO get account into here in basic mode
 
-type ActivePage = 'Profile' | 'Team' | 'Account' | 'Connected Services'; //  | 'Appearance' | 'Notifications' |
-
-export default function Manage({
-  userDataSWRKey = '/user',
-  userDataEndpoint = '/v1/user',
-  userUpdateEndpoint = '/v1/user',
-  userPasswordChangeEndpoint: _userPasswordChangeEndpoint = '/v1/user/password',
-}: ManageProps): ReactNode {
-  const [responseMessage, setResponseMessage] = useState('');
-  const [_active, _setActive] = useState<ActivePage>('Profile');
-  log(['Menu Items', MENU_ITEMS], { client: 3 });
-  type User = {
-    missing_requirements?: {
-      [key: string]: {
-        type: 'number' | 'boolean' | 'text' | 'password';
-        value: DynamicFormFieldValueTypes;
-        validation?: (value: DynamicFormFieldValueTypes) => boolean;
-      };
-    };
-  };
-  const router = useRouter();
-  const authConfig = useAuthentication();
-  useAssertion(validateURI(authConfig.authServer + userDataEndpoint), 'Invalid identify endpoint.', [
-    authConfig.authServer,
-    userDataEndpoint,
-  ]);
-  useAssertion(validateURI(authConfig.authServer + userUpdateEndpoint), 'Invalid identify endpoint.', [
-    authConfig.authServer,
-    userUpdateEndpoint,
-  ]);
-  const { data, error, isLoading } = useSWR<User, Error, string>(userDataSWRKey, async () => {
-    const jwt = getCookie('jwt');
-    const bearer = typeof jwt === 'string' ? jwt : '';
-    const response = await axios.get<User>(`${authConfig.authServer}${userDataEndpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${bearer}`,
-      },
-      validateStatus: (status) => [200, 403].includes(status),
-    });
-    return response.data;
-  });
-
+function Teams(): ReactNode {
+  const { data: teams = [] } = useTeams();
   return (
-    <div className='w-full'>
-      <main className='flex min-h-[calc(100vh-(--spacing(16)))] flex-1 flex-col gap-4 bg-transparent p-4 md:gap-8 md:p-10'>
-        <div className='flex justify-between w-full max-w-6xl gap-2 mx-auto'>
-          {authConfig.manage.heading !== undefined && authConfig.manage.heading !== '' && (
-            <h2 className='text-3xl font-semibold'>{authConfig.manage.heading}</h2>
-          )}
-          <Button
-            key='done'
-            onClick={() => {
-              router.push('/chat');
-            }}
-          >
-            Go to {authConfig.appName}
-          </Button>
-        </div>
-        <Profile
-          {...{
-            isLoading,
-            error,
-            data,
-            router,
-            authConfig,
-            userDataSWRKey,
-            responseMessage,
-            userUpdateEndpoint,
-            setResponseMessage,
-          }}
-        />
-        {/* <div className='mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]'>
-          <Nav {...{ active, setActive }} />
-          <div className=''>
-            {active === 'Profile' && (
-              <Profile
-                {...{
-                  isLoading,
-                  error,
-                  data,
-                  router,
-                  authConfig,
-                  userDataSWRKey,
-                  responseMessage,
-                  userUpdateEndpoint,
-                  setResponseMessage,
-                }}
-              />
-            )}
-            {active === 'Account' && <Account {...{ authConfig, data, userPasswordChangeEndpoint, setResponseMessage }} />}
-            {/* {active === 'Appearance' && <Appearance />}
-            {active === 'Notifications' && <Notifications />} */}
-        {/* {active === 'Team' && <Companies {...{ authConfig, data, setResponseMessage }} />}
-            {active === 'Connected Services' && <ConnectedServices authConfig={authConfig} />}
-          </div> 
-        </div> */}
-      </main>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Teams</CardTitle>
+        <CardDescription>The teams you belong to.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {teams.length === 0 ? (
+          <p className='text-sm text-muted-foreground'>You are not a member of any team yet.</p>
+        ) : (
+          <ul className='divide-y rounded-md border'>
+            {teams.map((team) => (
+              <li key={team.id}>
+                <Link href={`/team/${team.id}`} className='block px-4 py-3 text-sm font-medium hover:bg-muted'>
+                  {team.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-// const Nav = ({ active, setActive }: { active: ActivePage; setActive: (page: ActivePage) => void }) => {
-//   const { data } = useTeam();
-//   return (
-//     <nav className='flex flex-col space-y-1'>
-//       {MENU_ITEMS.map((label) => (
-//         <Button
-//           key={label}
-//           variant='ghost'
-//           className={cn('justify-start', active === label ? 'bg-muted' : '')}
-//           disabled={label === 'Notifications'}
-//           onClick={() => setActive(label)}
-//         >
-//           {label === 'Team' ? data?.name || 'Team' : label}
-//         </Button>
-//       ))}
-//     </nav>
-//   );
-// };
+/** The signed-in user's account page: profile, password, teams and pending invitations. */
+export default function Manage({ returnPath = '/' }: ManageProps): ReactNode {
+  const router = useRouter();
+  const authConfig = useAuthentication();
+  const { profile, error, isLoading, update, changePassword } = useProfile(authConfig.authServer);
+
+  // A new account has no timezone; record the browser's once so times render locally.
+  const timezoneRecorded = useRef(false);
+  useEffect(() => {
+    if (profile === undefined || (profile.timezone ?? '') !== '' || timezoneRecorded.current) {
+      return;
+    }
+    timezoneRecorded.current = true;
+    void (async (): Promise<void> => {
+      try {
+        await update({ timezone: detectTimezone() });
+      } catch (failure) {
+        log(['Recording the browser timezone failed', failure], { client: 1 });
+      }
+    })();
+  }, [profile, update]);
+
+  return (
+    <main className='mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 md:p-10'>
+      <div className='flex items-center justify-between gap-2'>
+        {authConfig.manage.heading !== undefined && authConfig.manage.heading !== '' && (
+          <h2 className='text-3xl font-semibold'>{authConfig.manage.heading}</h2>
+        )}
+        <Button
+          onClick={() => {
+            router.push(returnPath);
+          }}
+        >
+          Go to {authConfig.appName}
+        </Button>
+      </div>
+      {isLoading ? (
+        <p className='text-sm text-muted-foreground'>Loading your account…</p>
+      ) : error !== undefined || profile === undefined ? (
+        <p role='alert' className='text-sm text-destructive'>
+          Your account could not be loaded{error === undefined ? '.' : `: ${error.message}`}
+        </p>
+      ) : (
+        <>
+          <Profile profile={profile} onSave={update} />
+          {authConfig.authModes.basic && <Account onChangePassword={changePassword} />}
+          <Teams />
+          <InvitationsTable userId={profile.id} />
+        </>
+      )}
+    </main>
+  );
+}
