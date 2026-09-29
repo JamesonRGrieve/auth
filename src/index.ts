@@ -14,7 +14,12 @@
 export { default as AuthCard, ResponseMessage } from './AuthCard';
 export { default as ErrorPage } from './ErrorPage';
 export { default as Identify } from './Identify';
-export { default as Login, CopyButton } from './Login';
+export { default as Login } from './Login';
+export { CopyButton } from './components/CopyButton';
+export { MfaSettings } from './mfa/MfaSettings';
+export { MfaChallenge } from './mfa/MfaChallenge';
+export { mfaApi, passwordLogin, completeMfaLogin, isMfaChallenge } from './mfa/mfaApi';
+export type { MfaMethod, MfaChallenge as MfaLoginChallenge, TotpProvisioning, LoginAnswer } from './mfa/mfaApi';
 export { default as Logout } from './Logout';
 export { default as Register } from './Register';
 export { default as Subscribe } from './Subscribe';

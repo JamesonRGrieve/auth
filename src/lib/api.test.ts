@@ -37,6 +37,16 @@ describe('authRequest', () => {
     });
   });
 
+  it('sends the given authorization instead of the session, e.g. Basic credentials', async () => {
+    setCookie('jwt', 'token-1');
+    const fetchMock = respond(new Response('{}', { status: HTTP_OK }));
+    await authRequest(API_URL, z.object({}), { method: 'POST', authorization: 'Basic YTpi' });
+    expect(fetchMock).toHaveBeenCalledWith(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic YTpi' },
+    });
+  });
+
   it('sends no Authorization header when signed out', async () => {
     const fetchMock = respond(new Response('{}', { status: HTTP_OK }));
     await authRequest(API_URL, z.object({}));

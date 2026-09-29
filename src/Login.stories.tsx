@@ -14,27 +14,13 @@ export default meta;
 
 type Story = StoryObj<typeof Login>;
 
-// Login renders the password / MFA form gated by AuthenticationContext +
-// reCAPTCHA env. The stories below pin the searchParams matrix Next.js
-// passes in; live submission requires a backing API and is out of scope
-// for Storybook.
+// Login is the password step; an account with a second factor continues to the
+// MfaChallenge step (see Auth/MFA/MfaChallenge). Live submission needs a backing API.
 
 export const Default: Story = {
-  args: { searchParams: {} },
+  args: {},
 };
 
 export const CustomEndpoint: Story = {
-  args: { searchParams: {}, userLoginEndpoint: '/v2/user/authorize' },
-};
-
-export const WithOtpUri: Story = {
-  args: {
-    searchParams: {
-      otp_uri: 'otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example',
-    },
-  },
-};
-
-export const WithUnknownSearchParam: Story = {
-  args: { searchParams: { redirect: '/dashboard' } },
+  args: { userLoginEndpoint: '/v2/user/authorize' },
 };

@@ -119,7 +119,7 @@ export default function AuthRouter({
 
   const pages = new Map<string, ReactNode>()
     .set(mergedConfig.identify.path, <User {...mergedConfig.identify.props} />)
-    .set(mergedConfig.login.path, <Login searchParams={searchParamsObject} {...mergedConfig.login.props} />)
+    .set(mergedConfig.login.path, <Login {...mergedConfig.login.props} />)
     .set(mergedConfig.manage.path, <Manage {...mergedConfig.manage.props} />)
     .set(mergedConfig.register.path, <Register {...mergedConfig.register.props} />)
     .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)

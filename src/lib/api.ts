@@ -11,6 +11,8 @@ export type AuthApiJson = string | number | boolean | null | AuthApiJson[] | { [
 export interface AuthApiInit {
   method?: AuthApiMethod;
   body?: AuthApiJson;
+  /** Replaces the session's Authorization, e.g. Basic credentials for a password login. */
+  authorization?: string;
 }
 
 /** A non-2xx answer from the auth server; `detail` is the server's message when it sent one. */
@@ -44,10 +46,13 @@ const errorDetail = async (response: Response): Promise<string> => {
   return text === '' ? response.statusText : text;
 };
 
-const send = async (url: string, { method = 'GET', body }: AuthApiInit): Promise<Response> => {
+const send = async (url: string, { method = 'GET', body, authorization }: AuthApiInit): Promise<Response> => {
   const response = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authorization === undefined ? sessionHeaders() : { Authorization: authorization }),
+    },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (!response.ok) {

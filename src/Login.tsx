@@ -4,178 +4,139 @@
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
-import axios, { type AxiosError } from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation.js';
 import { type ReactNode, type SyntheticEvent, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { LuCheck as Check, LuCopy as Copy } from 'react-icons/lu';
-import { QRCode } from 'react-qr-code';
 import AuthCard from './AuthCard';
+import { AuthApiError } from './lib/api';
 import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
-import { AuthenticatorHelp as MissingAuthenticator } from './mfa/MissingAuthenticator';
+import { MfaChallenge } from './mfa/MfaChallenge';
+import { completeMfaLogin, isMfaChallenge, passwordLogin } from './mfa/mfaApi';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
 
 export type LoginProps = {
   userLoginEndpoint?: string;
 };
-export const CopyButton = ({ content, label = 'Copy' }: { content: string; label?: string }): React.JSX.Element => {
-  const [isCopied, setIsCopied] = useState(false);
 
-  return (
-    <Button
-      variant='outline'
-      size='sm'
-      type='button'
-      className='flex items-center gap-2 mx-auto'
-      onClick={() => {
-        setIsCopied(true);
-        void navigator.clipboard.writeText(content);
-        setTimeout(() => setIsCopied(false), 2000);
-      }}
-    >
-      {isCopied ? <Check className='w-4 h-4' /> : <Copy className='w-4 h-4' />}
-      {isCopied ? 'Copied!' : label}
-    </Button>
-  );
+const UNAUTHORIZED = 401;
+
+const cookieText = (name: string): string => {
+  const value = getCookie(name);
+  return typeof value === 'string' ? value : '';
 };
 
-export default function Login({
-  searchParams,
-  userLoginEndpoint = '/v1/user/authorize',
-}: { searchParams: Record<string, string | string[] | undefined> } & LoginProps): ReactNode {
+const formText = (data: FormData, name: string): string => {
+  const value = data.get(name);
+  return typeof value === 'string' ? value : '';
+};
+
+/** Keep the session and continue where the user was headed (a pending invitation first). */
+function finishLogin(token: string): void {
+  // biome-ignore lint/suspicious/noDocumentCookie: CookieStore API not widely available; document.cookie is required for legacy compatibility
+  document.cookie = `jwt=${token}; path=/`;
+  const invitation = cookieText('invitation');
+  const appUri = process.env.NEXT_PUBLIC_APP_URI ?? '';
+  if (invitation !== '') {
+    void deleteCookie('invitation', cookieDomainOptions());
+    window.location.href = `${appUri}/invite/${invitation}`;
+    return;
+  }
+  const destination = cookieText('href');
+  const fallback = appUri === '' ? `${window.location.protocol}//${window.location.hostname}/user` : `${appUri}/user`;
+  window.location.href = destination === '' ? fallback : destination;
+}
+
+const refusal = (error: Error | null, fallback: string): string => error?.message ?? fallback;
+
+export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: LoginProps): ReactNode {
   const [responseMessage, setResponseMessage] = useState('');
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const authConfig = useAuthentication();
-  const _router = useRouter();
   const [captcha, setCaptcha] = useState<string | null>(null);
+  const needsCaptcha = typeof authConfig.recaptchaSiteKey === 'string' && authConfig.recaptchaSiteKey !== '';
 
   useAssertion(validateURI(authConfig.authServer + userLoginEndpoint), 'Invalid login endpoint.', [
     authConfig.authServer,
     userLoginEndpoint,
   ]);
-  const submitForm = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
+
+  const submitPassword = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-    if (
-      authConfig.recaptchaSiteKey !== undefined &&
-      authConfig.recaptchaSiteKey !== '' &&
-      (captcha === null || captcha === '')
-    ) {
+    if (needsCaptcha && (captcha === null || captcha === '')) {
       setResponseMessage('Please complete the reCAPTCHA.');
       return;
     }
-
     const formData = new FormData(event.currentTarget);
-    const email = (formData.get('email') as string).toLowerCase().trim();
-    const password = formData.get('password') as string;
-
+    const email = formText(formData, 'email').toLowerCase().trim();
     try {
-      const authString = `${email}:${password}`;
-      const encodedAuth = `Basic ${Buffer.from(authString, 'utf-8').toString('base64')}`;
-
-      const response = await axios
-        .post<{ detail?: string; token?: string }>(`${authConfig.authServer}${userLoginEndpoint}`, null, {
-          headers: {
-            Authorization: encodedAuth,
-          },
-        })
-        .catch((exception: AxiosError) => exception.response);
-
-      if (response !== undefined) {
-        const responseData = response.data as { detail?: string; token?: string };
-        if (response.status !== 200) {
-          setResponseMessage(responseData.detail ?? '');
-        } else {
-          const token = responseData.token;
-          if (token !== undefined && token !== '') {
-            // Store the token and redirect
-            // biome-ignore lint/suspicious/noDocumentCookie: CookieStore API not widely available; document.cookie is required for legacy compatibility
-            document.cookie = `jwt=${token}; path=/`;
-            //If detail property used in future
-            // if (validateURI(response.data.detail)) {
-            //   window.location.href = response.data.detail;
-            // } else {
-            //   setResponseMessage(response.data.detail);
-            // }
-            const invitation = getCookie('invitation');
-            if (typeof invitation === 'string' && invitation !== '') {
-              void deleteCookie('invitation', cookieDomainOptions());
-              window.location.href = `${process.env.NEXT_PUBLIC_APP_URI ?? ''}/invite/${invitation}`;
-              return;
-            }
-            const hrefCookie = await getCookie('href');
-            const appUri = process.env.NEXT_PUBLIC_APP_URI;
-            const href2 =
-              appUri !== undefined && appUri !== ''
-                ? `${appUri}/user`
-                : `${window.location.protocol}//${window.location.hostname}/user`;
-            window.location.href = typeof hrefCookie === 'string' && hrefCookie !== '' ? hrefCookie : href2;
-          } else {
-            setResponseMessage('Login failed: No token received');
-          }
-        }
+      const answer = await passwordLogin(authConfig.authServer, email, formText(formData, 'password'), userLoginEndpoint);
+      if (isMfaChallenge(answer)) {
+        setResponseMessage('');
+        setChallengeToken(answer.challenge_token);
+        return;
       }
-    } catch (exception: unknown) {
-      console.error(exception);
+      finishLogin(answer.token);
+    } catch (error) {
+      setResponseMessage(refusal(error instanceof Error ? error : null, 'Login failed.'));
     }
   };
-  const otpUri = searchParams['otp_uri'];
+
+  const submitCode = async (code: string): Promise<string | null> => {
+    if (challengeToken === null) {
+      return 'Start over and sign in again.';
+    }
+    try {
+      finishLogin((await completeMfaLogin(authConfig.authServer, challengeToken, code)).token);
+      return null;
+    } catch (error) {
+      if (error instanceof AuthApiError && error.status === UNAUTHORIZED) {
+        return `${error.detail}. Try the current code, or start over if it keeps failing.`;
+      }
+      return refusal(error instanceof Error ? error : null, 'The code could not be checked.');
+    }
+  };
+
+  if (challengeToken !== null) {
+    return (
+      <AuthCard title='Two-factor authentication' description='One more step to sign in.' showBackButton>
+        <MfaChallenge
+          onSubmit={submitCode}
+          onStartOver={() => {
+            setChallengeToken(null);
+          }}
+        />
+      </AuthCard>
+    );
+  }
+
   return (
     <AuthCard title='Login' description='Please login to your account.' showBackButton>
       <form
-        onSubmit={(e) => {
-          void submitForm(e);
+        aria-label='Login'
+        onSubmit={(event) => {
+          void submitPassword(event);
         }}
         className='flex flex-col gap-4'
       >
-        {typeof otpUri === 'string' && otpUri !== '' && (
-          <div className='flex flex-col max-w-xs gap-2 mx-auto text-center'>
-            <div
-              style={{
-                padding: '0.5rem',
-                backgroundColor: 'white',
-              }}
-            >
-              <QRCode
-                size={256}
-                style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
-                value={otpUri}
-                viewBox={`0 0 256 256`}
-              />
-            </div>
-            <p className='text-sm text-center text-muted-foreground'>
-              Scan the above QR code with Microsoft Authenticator, Google Authenticator or equivalent (or click the copy
-              button if you are using your Authenticator device).
-            </p>
-            <CopyButton content={otpUri} label={'Copy Link'} />
-          </div>
-        )}
-        <input type='hidden' id='email' name='email' value={(getCookie('email') as string | undefined) ?? ''} />
+        <input type='hidden' id='email' name='email' value={cookieText('email')} />
         {authConfig.authModes.basic && (
           <>
             <Label htmlFor='password'>Password</Label>
-            <Input id='password' placeholder='Password' name='password' type='password' autoComplete='password' />
+            <Input id='password' placeholder='Password' name='password' type='password' autoComplete='current-password' />
           </>
         )}
-        {typeof otpUri === 'string' && otpUri !== '' && (
-          <>
-            <Label htmlFor='token'>Multi-Factor Code</Label>
-            <Input id='token' placeholder='Enter your 6 digit code' name='token' autoComplete='one-time-code' />
-            <MissingAuthenticator />
-          </>
-        )}
-        {typeof authConfig.recaptchaSiteKey === 'string' && authConfig.recaptchaSiteKey !== '' && (
+        {needsCaptcha && (
           <div className='my-3'>
             <ReCAPTCHA
-              sitekey={authConfig.recaptchaSiteKey}
+              sitekey={authConfig.recaptchaSiteKey ?? ''}
               onChange={(token: string | null) => {
                 setCaptcha(token);
               }}
             />
           </div>
         )}
-
         <Button type='submit'>{responseMessage !== '' ? 'Continue' : 'Login'}</Button>
         {responseMessage !== '' && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
       </form>

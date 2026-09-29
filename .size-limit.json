@@ -41,7 +41,7 @@
     "gzip": false,
     "limit": "15 KB"
   },
-  { "name": "mfa/Authenticator", "path": "dist/mfa/Authenticator.js", "brotli": false, "gzip": false, "limit": "7 KB" },
-  { "name": "mfa/EMail", "path": "dist/mfa/EMail.js", "brotli": false, "gzip": false, "limit": "6 KB" },
-  { "name": "mfa/SMS", "path": "dist/mfa/SMS.js", "brotli": false, "gzip": false, "limit": "4 KB" }
+  { "name": "mfa/MfaSettings", "path": "dist/mfa/MfaSettings.js", "brotli": false, "gzip": false, "limit": "14 KB" },
+  { "name": "mfa/MfaChallenge", "path": "dist/mfa/MfaChallenge.js", "brotli": false, "gzip": false, "limit": "4 KB" },
+  { "name": "mfa/mfaApi", "path": "dist/mfa/mfaApi.js", "brotli": false, "gzip": false, "limit": "7 KB" }
 ]
