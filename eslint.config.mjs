@@ -451,11 +451,13 @@ export default [
       '@typescript-eslint/no-empty-object-type': 'warn',
       '@typescript-eslint/no-empty-function': 'warn',
       '@typescript-eslint/no-inferrable-types': 'warn',
-      '@typescript-eslint/no-namespace': 'warn',
+      // `declare module` augmentation (e.g. JSX intrinsic elements) needs a namespace.
+      '@typescript-eslint/no-namespace': ['warn', { allowDeclarations: true }],
       'import/no-absolute-path': 'warn',
       'import/no-dynamic-require': 'warn',
       'import/extensions': ['warn', 'never'],
-      'import/no-unassigned-import': 'warn',
+      // Side-effect imports are allowed only for stylesheets and test-matcher setup.
+      'import/no-unassigned-import': ['warn', { allow: ['**/*.css', '@testing-library/jest-dom/vitest'] }],
       'import/no-named-as-default': 'warn',
       'import/no-named-as-default-member': 'warn',
       'react/jsx-no-comment-textnodes': 'warn',

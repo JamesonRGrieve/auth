@@ -16,6 +16,15 @@ describe('deepMerge', () => {
     expect(deepMerge({ list: [1, 2, 3] }, { list: [9] })).toEqual({ list: [9] });
   });
 
+  it('ignores inherited keys and treats __proto__ as plain data', () => {
+    const inherited = Object.create({ leaked: true }) as Record<string, unknown>;
+    expect(deepMerge({ a: 1 }, inherited)).toEqual({ a: 1 });
+    const hostile = JSON.parse('{"__proto__": {"polluted": true}}') as Record<string, unknown>;
+    const merged = deepMerge({}, hostile);
+    expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+  });
+
   it('preserves left-hand keys when right-hand omits them', () => {
     expect(deepMerge({ a: 1 }, {})).toEqual({ a: 1 });
   });

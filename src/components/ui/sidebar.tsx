@@ -43,7 +43,7 @@ const SidebarContext = React.createContext<SidebarContextMap>({});
 
 function useSidebar(side: SidebarSide = 'left'): SidebarContextValue {
   const context = React.useContext(SidebarContext);
-  const sidebarContext = context[side];
+  const sidebarContext = side === 'left' ? context.left : context.right;
 
   if (!sidebarContext) {
     throw new Error(`useSidebar must be used with a SidebarProvider with side="${side}"`);

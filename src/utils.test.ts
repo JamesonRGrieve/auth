@@ -1,6 +1,82 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { AuthMode, cookieDomainOptions, generateCookieString, getAuthMode } from './utils';
+import { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  AuthMode,
+  cookieDomainOptions,
+  generateCookieString,
+  getAuthMode,
+  getJWT,
+  getRequestedURI,
+  verifyJWT,
+} from './utils';
+
+describe('getRequestedURI', () => {
+  const originalAppUri = process.env.APP_URI;
+
+  beforeEach(() => {
+    process.env.APP_URI = 'https://app.example.com/';
+  });
+
+  afterEach(() => {
+    process.env.APP_URI = originalAppUri;
+  });
+
+  it('keeps the origin and query of a public (multi-label) host', () => {
+    expect(getRequestedURI(new NextRequest('https://app.example.com:8443/user/login?x=1'))).toBe(
+      'https://app.example.com:8443?x=1',
+    );
+  });
+
+  it('maps an internal single-label host onto APP_URI plus the path', () => {
+    expect(getRequestedURI(new NextRequest('http://0f86ff25b193:1109/user/login?x=1'))).toBe(
+      'https://app.example.com/user/login?x=1',
+    );
+  });
+
+  it('does not repeat a path APP_URI already ends with', () => {
+    process.env.APP_URI = 'https://app.example.com/user';
+    expect(getRequestedURI(new NextRequest('http://localhost:1109/user'))).toBe('https://app.example.com/user');
+  });
+});
+
+describe('getJWT', () => {
+  it('strips any Bearer prefix from the jwt cookie and never logs the token', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const req = new NextRequest('https://app.example.com/');
+    req.cookies.set('jwt', 'Bearer tok.en.value');
+    expect(getJWT(req)).toBe('tok.en.value');
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('returns an empty string without a jwt cookie', () => {
+    expect(getJWT(new NextRequest('https://app.example.com/'))).toBe('');
+  });
+});
+
+describe('verifyJWT', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('reports an unreachable auth server as 502, never as a successful verification', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const response = await verifyJWT('secret.jwt.token');
+    expect(response.status).toBe(502);
+    expect(error.mock.calls.flat().join(' ')).not.toContain('secret.jwt.token');
+  });
+
+  it('sends the token as a Bearer credential and returns the server response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const response = await verifyJWT('tok');
+    expect(response.status).toBe(204);
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ headers: { Authorization: 'Bearer tok' } });
+  });
+});
 
 describe('cookieDomainOptions', () => {
   const originalDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;

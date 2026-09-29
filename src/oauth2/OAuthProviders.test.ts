@@ -26,7 +26,7 @@ describe('OAuthProviders', () => {
       // OAuth.tsx applies. We test it here so a future "fancy unicode name"
       // entry does not silently break the close handler.
       const slug = name.replaceAll('.', '-').replaceAll(' ', '-').replaceAll('_', '-').toLowerCase();
-      expect(slug).toMatch(/^[a-z0-9-]+$/);
+      expect(slug).toMatch(/^[\da-z-]+$/);
     }
   });
 

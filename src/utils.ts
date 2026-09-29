@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { NextRequest } from 'next/server';
+import log from './lib/log';
 
 /**
  * Read a required environment variable, throwing a descriptive error if it is
@@ -8,7 +9,7 @@ import type { NextRequest } from 'next/server';
  * fast here is preferable to a downstream `undefined.split(...)` crash.
  */
 export const requireEnv = (name: string): string => {
-  const value = process.env[name];
+  const value = new Map(Object.entries(process.env)).get(name);
   if (value === undefined) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
@@ -68,65 +69,49 @@ export const getQueryParams = (req: NextRequest): Record<string, string | undefi
       ) as Record<string, string | undefined>)
     : {};
 
+const SINGLE_LABEL_HOST = /^[\dA-Za-z-]+$/;
+
 export const getRequestedURI = (req: NextRequest): string => {
-  console.warn(`Processing: ${req.url}`);
+  log([`Processing: ${req.url}`], { server: 3 });
 
-  const appUri = process.env.APP_URI ?? '';
-  const singleWordDomainRegex = /^[a-zA-Z\d-]+$/; // Match single word domains (no TLD)
-
-  // Parse the URL
   const url = new URL(req.url);
-
-  // Match the protocol, domain, and optional port
-  const processedUrl = url.origin.replace(/https?:\/\/([a-zA-Z\d.-]+)(?::\d+)?/, (match: string, domain: string) => {
-    // If the domain is a single word (like localhost or 0f86ff25b193), replace it with APP_URI
-    if (singleWordDomainRegex.test(domain)) {
-      // Remove trailing slash from appUri if it exists
-      const cleanAppUri = appUri.replace(/\/$/, '');
-
-      // Get the path without leading slash
-      const path = url.pathname.replace(/^\//, '');
-
-      // Check if the path is already included in the APP_URI
-      if (cleanAppUri.endsWith(path)) {
-        return cleanAppUri;
-      }
-
-      // Rebuild the URL with the APP_URI and path
-      return `${cleanAppUri}/${path}`;
-    }
-    return match; // Return the match as is if the domain is not a single word
-  });
-
-  // Combine the processed URL with the original path and search params
-  return `${processedUrl}${url.search}`;
+  // A single-label host (localhost, a container id) is an internal address; the public
+  // address is APP_URI, which may already carry the requested path.
+  if (!SINGLE_LABEL_HOST.test(url.hostname)) {
+    return `${url.origin}${url.search}`;
+  }
+  const cleanAppUri = (process.env.APP_URI ?? '').replace(/\/$/, '');
+  const path = url.pathname.replace(/^\//, '');
+  const base = cleanAppUri.endsWith(path) ? cleanAppUri : `${cleanAppUri}/${path}`;
+  return `${base}${url.search}`;
 };
 
 export const getJWT = (req: NextRequest): string => {
   const rawJWT = req.cookies.get('jwt')?.value;
   // Strip any and all 'Bearer 's off of JWT.
   const parts = rawJWT !== undefined && rawJWT !== '' ? rawJWT.split(' ') : [];
-  const jwt = parts.length > 0 ? (parts[parts.length - 1] ?? '') : (rawJWT ?? '');
-  console.warn('JWT:', jwt);
-  return jwt;
+  return parts.length > 0 ? (parts[parts.length - 1] ?? '') : (rawJWT ?? '');
 };
+
+const BAD_GATEWAY = 502;
+
+/**
+ * Ask the auth server whether `jwt` is valid. An unreachable server is reported as 502
+ * (Bad Gateway), which the middleware routes to the "down" page; it must never look like
+ * a successful verification. The token itself is never logged.
+ */
 export const verifyJWT = async (jwt: string): Promise<Response> => {
   const appUri = process.env.APP_URI ?? '';
   const authEndpoint = `${appUri.includes('localhost') ? process.env.API_URI : process.env.SERVERSIDE_API_URI}/v1`;
-  let response: Response;
-  console.warn(`Verifying JWT Bearer ${jwt} with server at ${authEndpoint}...`);
   try {
-    response = await fetch(authEndpoint, {
+    return await fetch(authEndpoint, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${jwt}`,
       },
     });
-
-    console.warn(`Successfully contacted server at ${authEndpoint}!`);
-    return response;
   } catch (exception: unknown) {
-    console.warn(`Failed to contact server at ${authEndpoint} - ${String(exception)}.`);
-    return new Response();
+    console.error(`Failed to contact auth server at ${authEndpoint}: ${String(exception)}`);
+    return new Response(null, { status: BAD_GATEWAY });
   }
 };

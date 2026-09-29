@@ -108,38 +108,30 @@ export default function AuthRouter({
   // Use Next.js 15 hooks for search params if not provided directly
   const routeSearchParams = useSearchParams();
 
-  // Convert searchParams to a regular object
-  const searchParamsObject: Record<string, string> = {};
-
   const paramsToUse = searchParams instanceof URLSearchParams ? searchParams : routeSearchParams;
-  paramsToUse.forEach((value, key) => {
-    searchParamsObject[key] = value;
-  });
-  if (searchParams !== undefined && !(searchParams instanceof URLSearchParams)) {
-    Object.assign(searchParamsObject, searchParams);
-  }
-
-  console.warn('AuthRouter searchParams:', searchParamsObject);
-  console.warn('AuthRouter params:', params);
+  const searchParamsObject: Record<string, string> = {
+    ...Object.fromEntries(paramsToUse.entries()),
+    ...(searchParams !== undefined && !(searchParams instanceof URLSearchParams) ? searchParams : {}),
+  };
 
   // Merge configs - ensure deep merge works with partial config
   const mergedConfig = deepMerge(pageConfigDefaults, corePagesConfig) as AuthenticationConfig;
 
-  // Define pages with components
-  const pages = {
-    [mergedConfig.identify.path]: <User {...mergedConfig.identify.props} />,
-    [mergedConfig.login.path]: <Login searchParams={searchParamsObject} {...mergedConfig.login.props} />,
-    [mergedConfig.manage.path]: <Manage {...mergedConfig.manage.props} />,
-    [mergedConfig.register.path]: <Register {...mergedConfig.register.props} />,
-    [mergedConfig.close.path]: <Close {...mergedConfig.close.props} />,
-    [mergedConfig.subscribe.path]: <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />,
-    [mergedConfig.logout.path]: <Logout {...mergedConfig.logout.props} />,
-    ...(mergedConfig.enableOU
-      ? { [mergedConfig.ou.path]: <OrganizationalUnit searchParams={searchParamsObject} {...mergedConfig.ou.props} /> }
-      : {}),
-    [mergedConfig.error.path]: <ErrorPage {...mergedConfig.error.props} />,
-    ...additionalPages,
-  };
+  const pages = new Map<string, ReactNode>()
+    .set(mergedConfig.identify.path, <User {...mergedConfig.identify.props} />)
+    .set(mergedConfig.login.path, <Login searchParams={searchParamsObject} {...mergedConfig.login.props} />)
+    .set(mergedConfig.manage.path, <Manage {...mergedConfig.manage.props} />)
+    .set(mergedConfig.register.path, <Register {...mergedConfig.register.props} />)
+    .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)
+    .set(mergedConfig.subscribe.path, <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />)
+    .set(mergedConfig.logout.path, <Logout {...mergedConfig.logout.props} />)
+    .set(mergedConfig.error.path, <ErrorPage {...mergedConfig.error.props} />);
+  if (mergedConfig.enableOU) {
+    pages.set(mergedConfig.ou.path, <OrganizationalUnit searchParams={searchParamsObject} {...mergedConfig.ou.props} />);
+  }
+  for (const [pagePath, page] of Object.entries(additionalPages)) {
+    pages.set(pagePath, page);
+  }
 
   // Determine current path from slug
   let path = '/';
@@ -153,28 +145,15 @@ export default function AuthRouter({
     }
   }
 
-  console.warn('Raw path from params:', path);
-  console.warn('Parsed params:', params);
-
   // Special handling for register path
   if (path === '/register' || path.endsWith('/register')) {
     path = mergedConfig.register.path;
   }
 
-  console.warn('Final path to render:', path);
-  console.warn('Available paths in router:', Object.keys(pages));
-
-  // Render appropriate component based on path
-  if (path in pages || path.startsWith(mergedConfig.close.path)) {
-    console.warn('Rendering component for path:', path);
-    return (
-      <AuthenticationContext.Provider value={mergedConfig}>
-        {path.startsWith(mergedConfig.close.path) ? pages[mergedConfig.close.path] : pages[path]}
-      </AuthenticationContext.Provider>
-    );
-  } else {
-    console.warn('Path not found in pages, returning 404. Path:', path);
-    console.warn('Available paths:', Object.keys(pages));
+  // The OAuth close page also serves every sub-path under it (provider callbacks).
+  const pageKey = path.startsWith(mergedConfig.close.path) ? mergedConfig.close.path : path;
+  if (!pages.has(pageKey)) {
     return notFound();
   }
+  return <AuthenticationContext.Provider value={mergedConfig}>{pages.get(pageKey)}</AuthenticationContext.Provider>;
 }

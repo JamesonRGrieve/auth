@@ -21,7 +21,7 @@ describe('MiddlewareHook', () => {
   });
 
   it('reports activated as a boolean', async () => {
-    const stub: MiddlewareHook = async () =>
+    const stub: MiddlewareHook = async (_request) =>
       Promise.resolve({
         activated: false,
         response: {} as never,

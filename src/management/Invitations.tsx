@@ -113,9 +113,7 @@ export function useInvitationsByUserId(userId?: string): SWRResponse<DisplayInvi
           client: 3,
         });
 
-        const data = convertInvitationsData(response.data.invitations ?? [], userId);
-
-        return data;
+        return convertInvitationsData(response.data.invitations ?? [], userId);
       } catch (error: unknown) {
         log(['REST useInvitationsByUserId() Error', error], {
           client: 3,

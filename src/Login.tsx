@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { type ReactNode, type SyntheticEvent, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { LuCheck as Check, LuCopy as Copy } from 'react-icons/lu';
-import QRCode from 'react-qr-code';
+import { QRCode } from 'react-qr-code';
 import AuthCard from './AuthCard';
 import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';

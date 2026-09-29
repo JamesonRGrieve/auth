@@ -10,25 +10,19 @@ export function deepMergeJSON(...objects: PlainObject[]): PlainObject {
   return result;
 }
 
+const isPlainObject = (value: PlainObject[string]): value is PlainObject =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * Merge `obj2` over `obj1`, recursing into nested plain objects. Only own enumerable
+ * keys are read (a `for...in` would also walk inherited ones), and the result is built
+ * with Object.fromEntries, so a `__proto__` key becomes plain data, not a prototype.
+ */
 export default function deepMerge(obj1: PlainObject, obj2: PlainObject): PlainObject {
-  const result: PlainObject = { ...obj1 };
-
-  for (const key in obj2) {
-    const next = obj2[key];
-    const prev = obj1[key];
-    if (
-      next !== null &&
-      typeof next === 'object' &&
-      !Array.isArray(next) &&
-      prev !== null &&
-      typeof prev === 'object' &&
-      !Array.isArray(prev)
-    ) {
-      result[key] = deepMerge(prev as PlainObject, next as PlainObject);
-    } else {
-      result[key] = next;
-    }
+  const merged = new Map(Object.entries(obj1));
+  for (const [key, next] of Object.entries(obj2)) {
+    const prev = merged.get(key);
+    merged.set(key, isPlainObject(next) && prev !== undefined && isPlainObject(prev) ? deepMerge(prev, next) : next);
   }
-
-  return result;
+  return Object.fromEntries(merged);
 }
