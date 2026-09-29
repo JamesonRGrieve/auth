@@ -10,7 +10,7 @@ import { useTeams } from '../hooks/useTeam';
 import log from '../lib/log';
 import { useAuthentication } from '../useAuthentication';
 import { Account } from './Account';
-import { InvitationsTable } from './Invitations';
+import { PendingInvitations } from './Invitations';
 import { Profile } from './Profile';
 import { detectTimezone } from './profileModel';
 
@@ -96,7 +96,7 @@ export default function Manage({ returnPath = '/', sections }: ManageProps): Rea
           {authConfig.authModes.basic && <Account onChangePassword={changePassword} />}
           {sections}
           <Teams />
-          <InvitationsTable userId={profile.id} />
+          <PendingInvitations />
         </>
       )}
     </main>

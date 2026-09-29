@@ -2,34 +2,16 @@
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { TEST_AUTH_SERVER as SERVER, testAuthConfig } from '../tests/fixtures/authConfig';
 import { AuthenticationContext } from './AuthenticationContext';
 import Login, { type LoginProps } from './Login';
-import type { AuthenticationConfig } from './Router';
 
-const SERVER = 'https://api.example.com';
 const HTTP_OK = 200;
 const HTTP_UNAUTHORIZED = 401;
 
-const authConfig: AuthenticationConfig = {
-  identify: { path: '/', heading: 'Welcome' },
-  login: { path: '/login', heading: 'Please Authenticate' },
-  manage: { path: '/manage', heading: 'Account Management' },
-  register: { path: '/register', heading: 'Welcome, Please Register' },
-  close: { path: '/close', heading: '' },
-  subscribe: { path: '/subscribe', heading: 'Please Subscribe' },
-  logout: { path: '/logout', heading: '', props: { redirectTo: '/' } },
-  ou: { path: '/ou', heading: 'OU' },
-  error: { path: '/error', heading: 'Error' },
-  appName: 'Test',
-  authBaseURI: 'https://auth.example.com',
-  authServer: SERVER,
-  authModes: { basic: true, oauth2: false, magical: false },
-  enableOU: false,
-};
-
 const renderLogin = (): ReturnType<typeof render> =>
   render(
-    <AuthenticationContext value={authConfig}>
+    <AuthenticationContext value={testAuthConfig}>
       <Login />
     </AuthenticationContext>,
   );
