@@ -187,7 +187,7 @@
     "tsc-alias": "^1.9.5",
     "type-coverage": "^2.30.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.6",
+    "vitest": "^5.0.2",
     "zod": "^4.6.5"
   },
   "dependenciesMeta": {
