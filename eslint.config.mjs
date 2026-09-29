@@ -1,28 +1,24 @@
-// Minimal ESLint v10 flat config.
-//
-// The legacy .eslintrc.json in this repo references plugins/configs that are
-// incompatible with ESLint v10's flat config (e.g. older `plugin:.../recommended`
-// shapes that fail schema validation). Migrating the full legacy ruleset is
-// tracked debt; in the meantime this flat config exists so:
-//   - `pnpm lint` produces a runnable result
-//   - `pnpm lint:ratchet` can seed and gate a baseline
-//   - regressions in basic code health are still caught
-//
-// As rules are migrated from .eslintrc.json into here (or a dedicated module),
-// the warning baseline ratchets up; once parity is achieved the legacy file
-// can be deleted.
+// ESLint 10 flat config.
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
+import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import { fixupPluginRules } from '@eslint/compat';
 import js from '@eslint/js';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
-import reactPlugin from 'eslint-plugin-react';
+import reactPluginLegacy from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import unusedImports from 'eslint-plugin-unused-imports';
-import importPlugin from 'eslint-plugin-import';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
-import eslintComments from 'eslint-plugin-eslint-comments';
+import importPluginLegacy from 'eslint-plugin-import';
+import jsxA11yLegacy from 'eslint-plugin-jsx-a11y';
 import promise from 'eslint-plugin-promise';
 import vitest from '@vitest/eslint-plugin';
 import storybookPlugin from 'eslint-plugin-storybook';
+
+// These plugins have no ESLint 10 release yet; the official compat shim restores the
+// context APIs (getFilename, getScope, ...) their rules still call.
+const reactPlugin = fixupPluginRules(reactPluginLegacy);
+const jsxA11y = fixupPluginRules(jsxA11yLegacy);
+const importPlugin = fixupPluginRules(importPluginLegacy);
 
 // Workspace §7.5 model: every rule is warn-level and ratcheted (lint:ratchet
 // forbids *any* error). Plugin "recommended" presets ship many rules at
@@ -39,7 +35,17 @@ const demote = (rules = {}) =>
 
 export default [
   {
-    ignores: ['node_modules/**', 'dist/**', 'storybook-static/**', '.next/**', 'coverage/**', '.storybook/**'],
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'storybook-static/**',
+      '.next/**',
+      'coverage/**',
+      '.storybook/**',
+      'scripts/**',
+      '*.config.{js,cjs,mjs,ts}',
+      'playwright.storybook.config.ts',
+    ],
   },
   { ...js.configs.recommended, rules: demote(js.configs.recommended.rules) },
   {
@@ -117,7 +123,7 @@ export default [
       'unused-imports': unusedImports,
       'import': importPlugin,
       'jsx-a11y': jsxA11y,
-      'eslint-comments': eslintComments,
+      '@eslint-community/eslint-comments': eslintComments,
       promise,
     },
     settings: {
@@ -162,7 +168,7 @@ export default [
       // Workspace §7.5 recommended rulesets — merged from the named
       // plugins. All effectively warn-level via the lint ratchet.
       ...demote(jsxA11y.configs.recommended.rules),
-      ...demote(eslintComments.configs.recommended.rules),
+      ...demote(eslintCommentsConfigs.recommended.rules),
       ...demote(promise.configs.recommended.rules),
 
       // Workspace §7.4 ruleset (foundry-parity). All warn-level, absorbed

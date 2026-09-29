@@ -3,7 +3,6 @@
   "entry": ["src/**/index.{ts,tsx}", "src/**/*.stories.{ts,tsx}", "src/**/*.test.{ts,tsx}", "tests/**/*.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx,js,jsx}"],
   "ignoreDependencies": [
-    "@biomejs/biome",
     "@eslint/eslintrc",
     "eslint-config-next",
     "eslint-config-prettier",
