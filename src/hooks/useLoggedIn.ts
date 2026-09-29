@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import axios from 'axios';
 import { getCookie } from 'cookies-next/client';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation.js';
 import { useEffect, useState } from 'react';
 
 export default function useLoggedIn(): { isLoggedIn: boolean } {

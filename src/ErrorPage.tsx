@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Button } from '@jgrieve/forms/components/ui/button';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation.js';
 import type { ReactNode } from 'react';
 
 export type ErrorPageProps = {

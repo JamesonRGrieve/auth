@@ -6,7 +6,7 @@ import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import axios, { type AxiosError, type AxiosResponse } from 'axios';
 import { type CookieValueTypes, deleteCookie, getCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation.js';
 import { type ChangeEvent, type ReactNode, type SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
 import AuthCard from './AuthCard';

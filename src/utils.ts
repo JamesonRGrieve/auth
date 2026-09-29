@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server.js';
 import log from './lib/log';
 
 /**

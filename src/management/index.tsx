@@ -1,8 +1,8 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Button } from '@jgrieve/forms/components/ui/button';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link.js';
+import { useRouter } from 'next/navigation.js';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useProfile } from '../hooks/useProfile';

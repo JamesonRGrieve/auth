@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { deleteCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation.js';
 import { type ReactNode, useEffect } from 'react';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';

@@ -8,7 +8,7 @@ import { Label } from '@jgrieve/forms/components/ui/label';
 import { Separator } from '@jgrieve/forms/components/ui/separator';
 import axios, { type AxiosError } from 'axios';
 import { setCookie } from 'cookies-next';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation.js';
 import type { ReactNode } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 import { LuUser } from 'react-icons/lu';

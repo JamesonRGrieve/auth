@@ -5,7 +5,7 @@ import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import axios from 'axios';
 import { getCookie } from 'cookies-next/client';
-import Link from 'next/link';
+import Link from 'next/link.js';
 import { useState, type ChangeEvent } from 'react';
 import { LuCheck as CheckIcon, LuMinus as MinusIcon } from 'react-icons/lu';
 import { Badge } from '../components/ui/badge';

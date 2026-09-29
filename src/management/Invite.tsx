@@ -15,7 +15,7 @@ import {
 import { useToast } from '@jgrieve/forms/hooks/useToast';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
-import { useParams } from 'next/navigation';
+import { useParams } from 'next/navigation.js';
 import { useCallback, useEffect, useState } from 'react';
 import { LuUsers } from 'react-icons/lu';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';

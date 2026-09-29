@@ -1,7 +1,7 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { notFound, useSearchParams } from 'next/navigation';
+import { notFound, useSearchParams } from 'next/navigation.js';
 import type { ReactNode } from 'react';
 import { AuthenticationContext } from './AuthenticationContext';
 import ErrorPage, { type ErrorPageProps } from './ErrorPage';

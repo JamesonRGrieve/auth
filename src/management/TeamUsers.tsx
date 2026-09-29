@@ -9,7 +9,7 @@ import { useToast as useToastUntyped } from '@jgrieve/forms/hooks/useToast';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { Mail, MoreHorizontal } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation.js';
 import { useState, type ChangeEvent } from 'react';
 import { DataTable } from '../components/data/data-table';
 import { DataTableColumnHeader } from '../components/data/data-table-column-header';

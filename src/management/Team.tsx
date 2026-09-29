@@ -16,7 +16,7 @@ import {
 import { useToast } from '@jgrieve/forms/hooks/useToast';
 import axios from 'axios';
 import { getCookie, setCookie } from 'cookies-next';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation.js';
 import { useCallback, useEffect, useState } from 'react';
 import { LuPencil, LuPlus } from 'react-icons/lu';
 import useSWR from 'swr';
