@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ColumnDef, getCoreRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { DataTableColumnHeader } from './data-table-column-header';
+import { type DataTableColumnDef, dataTableFeatures } from './features';
 
 interface Row {
   id: string;
   email: string;
 }
 
-const buildColumn = ({ enableSorting = true }: { enableSorting?: boolean } = {}): ColumnDef<Row>[] => [
+const buildColumn = ({ enableSorting = true }: { enableSorting?: boolean } = {}): DataTableColumnDef<Row>[] => [
   { accessorKey: 'email', header: 'Email', enableSorting },
 ];
 
@@ -22,18 +23,17 @@ const HeaderHarness = ({
   enableSorting?: boolean;
   initialSort?: 'asc' | 'desc';
 }): ReactNode => {
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data: [
       { id: '1', email: 'alice@example.com' },
       { id: '2', email: 'bob@example.com' },
     ],
     columns: buildColumn({ enableSorting }),
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    ...(initialSort ? { initialState: { sorting: [{ id: 'email', desc: initialSort === 'desc' }] } } : {}),
+    ...(initialSort !== undefined ? { initialState: { sorting: [{ id: 'email', desc: initialSort === 'desc' }] } } : {}),
   });
   const column = table.getColumn('email');
-  if (!column) {
+  if (column === undefined) {
     return <div>missing column</div>;
   }
   return (

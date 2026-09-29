@@ -1,35 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { DataTablePagination } from './data-table-pagination';
+import { type DataTableColumnDef, dataTableFeatures } from './features';
 
 interface Row {
   id: string;
   email: string;
 }
 
-const columns: ColumnDef<Row>[] = [{ accessorKey: 'email', header: 'Email' }];
+const columns: DataTableColumnDef<Row>[] = [{ accessorKey: 'email', header: 'Email' }];
 
 const makeRows = (count: number): Row[] =>
   Array.from({ length: count }, (_, i) => ({ id: String(i), email: `user${i}@example.com` }));
 
-// Story wrapper: build a useReactTable instance and pass it to the
-// pagination component. The wrapper lives inside the story file because
-// the pagination component cannot exist without a Table context.
+// Story wrapper: build a table instance and pass it to the pagination component.
+// The wrapper lives inside the story file because the pagination component
+// cannot exist without a Table.
 const PaginationHarness = ({ rowCount, pageSize }: { rowCount: number; pageSize: number }): ReactNode => {
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data: makeRows(rowCount),
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     initialState: { pagination: { pageSize, pageIndex: 0 } },
   });
   return <DataTablePagination table={table} />;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Separator } from '@jgrieve/forms/components/ui/separator';
-import type { Column } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { Check, PlusCircle } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '../../lib/utils';
@@ -16,9 +16,10 @@ import {
   CommandSeparator,
 } from '../ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import type { DataTableColumn } from './features';
 
-interface DataTableFacetedFilterProps<TData, TValue> {
-  column?: Column<TData, TValue>;
+interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
+  column?: DataTableColumn<TData, TValue>;
   title?: string;
   options: {
     label: string;
@@ -27,13 +28,15 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   }[];
 }
 
-export function DataTableFacetedFilter<TData, TValue>({
+export function DataTableFacetedFilter<TData extends RowData, TValue>({
   column,
   title,
   options,
 }: DataTableFacetedFilterProps<TData, TValue>): React.JSX.Element {
   const facets = column?.getFacetedUniqueValues();
-  const selectedValues = new Set(column?.getFilterValue() as string[]);
+  const filterValue = column?.getFilterValue();
+  // The filter value is the array of option values this component sets below.
+  const selectedValues = new Set<string>(Array.isArray(filterValue) ? filterValue.map(String) : []);
 
   return (
     <Popover>

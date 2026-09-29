@@ -5,17 +5,18 @@ import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@jgrieve/forms/components/ui/select';
-import type { Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { Filter } from 'lucide-react';
 import { useState, type ChangeEvent } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import type { DataTableInstance } from './features';
 
 interface FilterState {
   column: string;
   value: string;
 }
 
-export function DataTableFilter<TData>({ table }: { table: Table<TData> }): React.JSX.Element {
+export function DataTableFilter<TData extends RowData>({ table }: { table: DataTableInstance<TData> }): React.JSX.Element {
   const columns = table.getAllColumns().filter((col) => col.getCanFilter());
   const [filter, setFilter] = useState<FilterState>({
     column: '',
@@ -67,7 +68,6 @@ export function DataTableFilter<TData>({ table }: { table: Table<TData> }): Reac
               <SelectContent>
                 {columns.map((column) => (
                   <SelectItem key={column.id} value={column.id}>
-                    {/* @ts-expect-error TODO: Figure out better solution */}
                     {column.columnDef.meta?.headerName}
                   </SelectItem>
                 ))}

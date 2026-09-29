@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { DataTableViewOptions } from './data-table-view-options';
+import { type DataTableColumnDef, dataTableFeatures } from './features';
 
 interface Row {
   id: string;
@@ -12,7 +13,7 @@ interface Row {
   department: string;
 }
 
-const columnsAll: ColumnDef<Row>[] = [
+const columnsAll: DataTableColumnDef<Row>[] = [
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'role', header: 'Role' },
@@ -23,13 +24,13 @@ const ViewOptionsHarness = ({
   columns,
   hidden = {},
 }: {
-  columns: ColumnDef<Row>[];
+  columns: DataTableColumnDef<Row>[];
   hidden?: Record<string, boolean>;
 }): ReactNode => {
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data: [],
     columns,
-    getCoreRowModel: getCoreRowModel(),
     initialState: { columnVisibility: Object.fromEntries(Object.entries(hidden).map(([k, v]) => [k, !v])) },
   });
   return (

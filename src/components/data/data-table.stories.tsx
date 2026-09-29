@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
-import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from './data-table';
+import type { DataTableColumnDef } from './features';
 
 interface Row {
   id: string;
@@ -10,7 +10,7 @@ interface Row {
   role: string;
 }
 
-const columns: ColumnDef<Row>[] = [
+const columns: DataTableColumnDef<Row>[] = [
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'role', header: 'Role' },
@@ -24,9 +24,9 @@ const sampleRows: Row[] = [
   { id: '5', email: 'eve@example.com', status: 'active', role: 'Member' },
 ];
 
-const meta: Meta<typeof DataTable<Row, unknown>> = {
+const meta: Meta<typeof DataTable<Row>> = {
   title: 'Auth/Data/DataTable',
-  component: DataTable as typeof DataTable<Row, unknown>,
+  component: DataTable<Row>,
   parameters: {
     docs: {
       description: {
@@ -38,7 +38,7 @@ const meta: Meta<typeof DataTable<Row, unknown>> = {
 };
 export default meta;
 
-type Story = StoryObj<typeof DataTable<Row, unknown>>;
+type Story = StoryObj<typeof DataTable<Row>>;
 
 export const Default: Story = {
   args: { columns, data: sampleRows },

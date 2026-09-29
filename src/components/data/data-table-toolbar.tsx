@@ -1,23 +1,18 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Button } from '@jgrieve/forms/components/ui/button';
-import type { Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { X } from 'lucide-react';
 import { DataTableFilter } from './data-table-filter';
 import { DataTableViewOptions } from './data-table-view-options';
+import type { DataTableInstance } from './features';
 
-interface DataTableToolbarProps<TData> {
-  table: Table<TData> & {
-    options: {
-      meta?: {
-        title?: string;
-      };
-    };
-  };
+interface DataTableToolbarProps<TData extends RowData> {
+  table: DataTableInstance<TData>;
 }
 
-export function DataTableToolbar<TData>({ table }: DataTableToolbarProps<TData>): React.JSX.Element {
-  const isFiltered = table.getState().columnFilters.length > 0;
+export function DataTableToolbar<TData extends RowData>({ table }: DataTableToolbarProps<TData>): React.JSX.Element {
+  const isFiltered = table.store.state.columnFilters.length > 0;
   const title = table.options.meta?.title;
 
   return (

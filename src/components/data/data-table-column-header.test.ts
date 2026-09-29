@@ -8,9 +8,9 @@
  * Uses `import type` to avoid loading the runtime module — the source
  * imports `@jgrieve/forms/*` for its button + dropdown menu.
  */
-import type { Column } from '@tanstack/react-table';
 import { describe, expectTypeOf, it } from 'vitest';
 import type { DataTableColumnHeader } from './data-table-column-header';
+import type { DataTableColumn } from './features';
 
 describe('DataTableColumnHeader (surface)', () => {
   it('is the named export and a callable component', () => {
@@ -23,6 +23,6 @@ describe('DataTableColumnHeader (surface)', () => {
     // row / value generics.
     type RowShape = { id: string; name: string };
     expectTypeOf<typeof DataTableColumnHeader<RowShape, unknown>>().toBeFunction();
-    expectTypeOf<Column<RowShape>>().not.toBeAny();
+    expectTypeOf<DataTableColumn<RowShape>>().not.toBeAny();
   });
 });

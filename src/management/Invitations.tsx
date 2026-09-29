@@ -2,12 +2,12 @@
 /* eslint-disable react/no-unstable-nested-components -- column cell/header renderers are tanstack render props, not React components. */
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { useToast } from '@jgrieve/forms/hooks/useToast';
-import type { ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import useSWR, { type SWRResponse } from 'swr';
 import { DataTable } from '../components/data/data-table';
 import { DataTableColumnHeader } from '../components/data/data-table-column-header';
+import type { DataTableColumnDef } from '../components/data/features';
 import type { Invitation } from '../hooks/z';
 import log from '../lib/log';
 
@@ -51,7 +51,7 @@ export function InvitationsTable({ userId }: { userId?: string }): React.JSX.Ele
     }
   };
 
-  const columns: ColumnDef<DisplayInvitation>[] = [
+  const columns: DataTableColumnDef<DisplayInvitation>[] = [
     {
       accessorKey: 'team.name',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Team' />,

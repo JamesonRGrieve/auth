@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ColumnDef, getCoreRowModel, getFilteredRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
 import { DataTableToolbar } from './data-table-toolbar';
+import { type DataTableColumnDef, dataTableFeatures } from './features';
 
 interface Row {
   id: string;
@@ -10,7 +11,7 @@ interface Row {
   status: string;
 }
 
-const columns: ColumnDef<Row>[] = [
+const columns: DataTableColumnDef<Row>[] = [
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'status', header: 'Status' },
 ];
@@ -22,13 +23,14 @@ const ToolbarHarness = ({
   title?: string;
   preFilter?: { columnId: string; value: string };
 }): ReactNode => {
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data: [{ id: '1', email: 'alice@example.com', status: 'active' }],
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     ...(title !== undefined && title !== '' ? { meta: { title } } : {}),
-    ...(preFilter ? { initialState: { columnFilters: [{ id: preFilter.columnId, value: preFilter.value }] } } : {}),
+    ...(preFilter !== undefined
+      ? { initialState: { columnFilters: [{ id: preFilter.columnId, value: preFilter.value }] } }
+      : {}),
   });
   return (
     <div style={{ padding: 16 }}>

@@ -7,7 +7,6 @@ import { Separator } from '@jgrieve/forms/components/ui/separator';
 import { toast as toastUntyped } from '@jgrieve/forms/hooks/useToast';
 import { DropdownMenu, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
-import type { CellContext, Column, ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { type ReactElement, useCallback, useEffect, useMemo } from 'react';
@@ -15,6 +14,7 @@ import { mutate } from 'swr';
 import type { AuthenticationConfig } from '../Router';
 import { DataTable } from '../components/data/data-table';
 import { DataTableColumnHeader } from '../components/data/data-table-column-header';
+import type { DataTableCellContext, DataTableColumn, DataTableColumnDef } from '../components/data/features';
 import { useTeams } from '../hooks/useTeam';
 import log from '../lib/log';
 import VerifySMS from '../mfa/SMS';
@@ -58,23 +58,23 @@ type ProfileUserData = {
 
 type ProfileRouter = { push: (path: string) => void };
 
-const TeamNameHeader = ({ column }: { column: Column<Team> }): ReactElement => (
+const TeamNameHeader = ({ column }: { column: DataTableColumn<Team> }): ReactElement => (
   <DataTableColumnHeader column={column} title='Team' />
 );
-const TeamNameCell = ({ row }: CellContext<Team, unknown>): ReactElement => (
+const TeamNameCell = ({ row }: DataTableCellContext<Team>): ReactElement => (
   <div className='flex space-x-2'>
     <span className='max-w-[500px] truncate font-medium'>{row.getValue('name')}</span>
   </div>
 );
-const TeamRoleHeader = ({ column }: { column: Column<Team> }): ReactElement => (
+const TeamRoleHeader = ({ column }: { column: DataTableColumn<Team> }): ReactElement => (
   <DataTableColumnHeader column={column} title='Role' />
 );
-const TeamRoleCell = ({ row }: CellContext<Team, unknown>): ReactElement => (
+const TeamRoleCell = ({ row }: DataTableCellContext<Team>): ReactElement => (
   <div className='flex w-[100px] items-center'>
     <span>{row.getValue('role')}</span>
   </div>
 );
-const TeamActionHeader = ({ column }: { column: Column<Team> }): ReactElement => (
+const TeamActionHeader = ({ column }: { column: DataTableColumn<Team> }): ReactElement => (
   <DataTableColumnHeader column={column} title='Action' />
 );
 
@@ -209,9 +209,9 @@ export const Profile = ({
     }
   }, [data, authConfig, userUpdateEndpoint, userDataSWRKey, readUserField]);
 
-  const userTeamsColumns: ColumnDef<Team>[] = useMemo(() => {
+  const userTeamsColumns: DataTableColumnDef<Team>[] = useMemo(() => {
     // eslint-disable-next-line react/no-unstable-nested-components -- closes over router; memoized via useMemo
-    const TeamActionCell = ({ row }: CellContext<Team, unknown>): ReactElement => (
+    const TeamActionCell = ({ row }: DataTableCellContext<Team>): ReactElement => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='flex h-8 w-8 p-0' onClick={() => router.push(`/team/${row.original.id}`)}>

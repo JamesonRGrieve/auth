@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
-import { type ColumnDef, getCoreRowModel, getFilteredRowModel, useReactTable } from '@tanstack/react-table';
+import { useTable } from '@tanstack/react-table';
 import { DataTableFilter } from './data-table-filter';
+import { type DataTableColumnDef, dataTableFeatures } from './features';
 
 interface Row {
   id: string;
@@ -10,7 +11,7 @@ interface Row {
   role: string;
 }
 
-const columns: ColumnDef<Row>[] = [
+const columns: DataTableColumnDef<Row>[] = [
   { accessorKey: 'email', header: 'Email', enableColumnFilter: true },
   { accessorKey: 'status', header: 'Status', enableColumnFilter: true },
   { accessorKey: 'role', header: 'Role', enableColumnFilter: true },
@@ -24,12 +25,7 @@ const sampleRows: Row[] = [
 // Storybook decorator wires up a real TanStack table so the filter dialog
 // has columns to render. Without it the component crashes on getAllColumns.
 function HostedFilter(): React.ReactElement {
-  const table = useReactTable<Row>({
-    data: sampleRows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
+  const table = useTable({ features: dataTableFeatures, data: sampleRows, columns });
   return <DataTableFilter table={table} />;
 }
 

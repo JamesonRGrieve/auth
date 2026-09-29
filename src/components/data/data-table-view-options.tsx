@@ -3,7 +3,7 @@
 
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import type { Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { Settings2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -12,12 +12,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '../ui/dropdown-menu';
+import type { DataTableInstance } from './features';
 
-interface DataTableViewOptionsProps<TData> {
-  table: Table<TData>;
+interface DataTableViewOptionsProps<TData extends RowData> {
+  table: DataTableInstance<TData>;
 }
 
-export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>): React.JSX.Element {
+export function DataTableViewOptions<TData extends RowData>({ table }: DataTableViewOptionsProps<TData>): React.JSX.Element {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -40,7 +41,6 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {/* @ts-expect-error TODO: Figure out better solution */}
                 {column.columnDef.meta?.headerName}
               </DropdownMenuCheckboxItem>
             );

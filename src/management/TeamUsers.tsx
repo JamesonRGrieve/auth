@@ -6,7 +6,6 @@ import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@jgrieve/forms/components/ui/select';
 import { useToast as useToastUntyped } from '@jgrieve/forms/hooks/useToast';
-import type { ColumnDef } from '@tanstack/react-table';
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 import { Mail, MoreHorizontal } from 'lucide-react';
@@ -14,6 +13,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, type ChangeEvent } from 'react';
 import { DataTable } from '../components/data/data-table';
 import { DataTableColumnHeader } from '../components/data/data-table-column-header';
+import type { DataTableColumnDef } from '../components/data/features';
 import { Badge } from '../components/ui/badge';
 import { Checkbox } from '../components/ui/checkbox';
 import {
@@ -157,7 +157,7 @@ export const Team = (): React.JSX.Element => {
     return list;
   }
 
-  const usersColumns: ColumnDef<User>[] = [
+  const usersColumns: DataTableColumnDef<User>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -311,7 +311,7 @@ export const Team = (): React.JSX.Element => {
       },
     },
   ];
-  const invitationsColumns: ColumnDef<Invitee>[] = [
+  const invitationsColumns: DataTableColumnDef<Invitee>[] = [
     {
       id: 'select',
       header: ({ table }) => (
