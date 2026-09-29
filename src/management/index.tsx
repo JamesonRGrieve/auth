@@ -17,6 +17,8 @@ import { detectTimezone } from './profileModel';
 export type ManageProps = {
   /** Where "Go to <app>" leads. */
   returnPath?: string;
+  /** Extra account sections an app or its extensions add below the built-in ones (e.g. two-factor authentication). */
+  sections?: ReactNode;
 };
 
 function Teams(): ReactNode {
@@ -47,7 +49,7 @@ function Teams(): ReactNode {
 }
 
 /** The signed-in user's account page: profile, password, teams and pending invitations. */
-export default function Manage({ returnPath = '/' }: ManageProps): ReactNode {
+export default function Manage({ returnPath = '/', sections }: ManageProps): ReactNode {
   const router = useRouter();
   const authConfig = useAuthentication();
   const { profile, error, isLoading, update, changePassword } = useProfile(authConfig.authServer);
@@ -92,6 +94,7 @@ export default function Manage({ returnPath = '/' }: ManageProps): ReactNode {
         <>
           <Profile profile={profile} onSave={update} />
           {authConfig.authModes.basic && <Account onChangePassword={changePassword} />}
+          {sections}
           <Teams />
           <InvitationsTable userId={profile.id} />
         </>

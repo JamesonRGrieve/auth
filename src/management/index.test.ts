@@ -6,6 +6,7 @@
  * Uses `import type` to avoid loading the runtime module — Manage
  * imports `@jgrieve/forms/*`.
  */
+import type { ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
 import type Manage from './index';
 import type { ManageProps } from './index';
@@ -15,7 +16,7 @@ describe('Manage (surface)', () => {
     expectTypeOf<typeof Manage>().toBeFunction();
   });
 
-  it('ManageProps only exposes the optional return path', () => {
-    expectTypeOf<ManageProps>().toEqualTypeOf<{ returnPath?: string }>();
+  it('ManageProps exposes the optional return path and extension sections', () => {
+    expectTypeOf<ManageProps>().toEqualTypeOf<{ returnPath?: string; sections?: ReactNode }>();
   });
 });
