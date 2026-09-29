@@ -35,7 +35,7 @@ const TooltipContent = React.forwardRef<
     {...props}
   />
 ));
-TooltipContent.displayName = TooltipPrimitive.Content.displayName;
+TooltipContent.displayName = 'TooltipContent';
 
 // For basic use case where more control is not needed.
 // For more complex use cases, use the standard tooltip component.

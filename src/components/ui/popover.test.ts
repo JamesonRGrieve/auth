@@ -14,9 +14,8 @@ describe('Popover exports', () => {
     expectTypeOf(PopoverContent).toBeObject();
   });
 
-  it('PopoverContent preserves a Radix-derived displayName', () => {
-    expect(typeof PopoverContent.displayName).toBe('string');
-    expect(String(PopoverContent.displayName).length).toBeGreaterThan(0);
+  it('PopoverContent is named for devtools', () => {
+    expect(PopoverContent.displayName).toBe('PopoverContent');
   });
 
   it('PopoverContent accepts align (start | center | end | undefined)', () => {

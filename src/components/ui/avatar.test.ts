@@ -17,11 +17,10 @@ describe('Avatar exports', () => {
     expectTypeOf(AvatarFallback).toBeObject();
   });
 
-  it('preserves Radix-derived displayName values so devtools show meaningful labels', () => {
-    expect(typeof Avatar.displayName).toBe('string');
-    expect(typeof AvatarImage.displayName).toBe('string');
-    expect(typeof AvatarFallback.displayName).toBe('string');
-    expect(String(Avatar.displayName).length).toBeGreaterThan(0);
+  it('names each wrapper for devtools (Radix no longer sets displayName itself)', () => {
+    expect(Avatar.displayName).toBe('Avatar');
+    expect(AvatarImage.displayName).toBe('AvatarImage');
+    expect(AvatarFallback.displayName).toBe('AvatarFallback');
   });
 
   it('AvatarImage accepts an alt prop (a11y guarantee)', () => {

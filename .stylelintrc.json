@@ -28,6 +28,26 @@
           "reference"
         ]
       }
+    ],
+    "at-rule-prelude-no-invalid": [
+      true,
+      {
+        "ignoreAtRules": [
+          "tailwind",
+          "apply",
+          "variants",
+          "responsive",
+          "screen",
+          "layer",
+          "config",
+          "theme",
+          "source",
+          "plugin",
+          "utility",
+          "custom-variant",
+          "reference"
+        ]
+      }
     ]
   },
   "ignoreFiles": ["dist/**", "node_modules/**"]

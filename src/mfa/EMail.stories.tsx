@@ -16,12 +16,8 @@ type Story = StoryObj<typeof VerifyEmail>;
 
 export const Default: Story = {
   args: {
-    verifiedCallback: (verified: boolean) => {
-      // Stories can't usefully log into the test pane without bringing
-      // in @storybook/test bindings; the no-op default exercises the
-      // callback type contract.
-      void verified;
-    },
+    // A no-op default that still satisfies the callback's type contract.
+    verifiedCallback: (_verified: boolean) => undefined,
   },
 };
 
