@@ -33,10 +33,12 @@ interface ServiceRowProps {
   provider: string;
   connection: Connection | undefined;
   onConnect: (provider: string) => void;
+  /** A link is being started; connecting again would open a second round trip. */
+  connecting: boolean;
   onDisconnect: (provider: string) => void;
 }
 
-function ServiceRow({ provider, connection, onConnect, onDisconnect }: ServiceRowProps): ReactElement {
+function ServiceRow({ provider, connection, onConnect, onDisconnect, connecting }: ServiceRowProps): ReactElement {
   const name = label(provider);
   const account = connection?.account_email ?? connection?.account_name ?? '';
   return (
@@ -52,7 +54,7 @@ function ServiceRow({ provider, connection, onConnect, onDisconnect }: ServiceRo
           </div>
         </div>
         {connection === undefined ? (
-          <Button variant='outline' onClick={() => onConnect(provider)} className='space-x-1'>
+          <Button variant='outline' disabled={connecting} onClick={() => onConnect(provider)} className='space-x-1'>
             <Plus className='mr-2 h-4 w-4' aria-hidden />
             Connect<span className='sr-only'> {name}</span>
           </Button>
@@ -78,17 +80,20 @@ export const ConnectedServices = (): ReactElement => {
   const linked = useSWR<Connection[], Error>([authServer, 'oauth2-connections'], async () => connections(authServer));
   const [problem, setProblem] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
   const loadError = providers.error ?? linked.error;
   const shownProblem =
     problem ?? (loadError === undefined ? null : `Connected services could not be loaded: ${loadError.message}`);
 
   const connect = (provider: string): void => {
+    setConnecting(true);
     void (async (): Promise<void> => {
       try {
         const authorizeUrl = await beginLink(authServer, provider, window.sessionStorage);
         window.location.assign(authorizeUrl);
       } catch (error) {
         setProblem(error instanceof Error ? error.message : `${label(provider)} could not be connected.`);
+        setConnecting(false);
       }
     })();
   };
@@ -123,6 +128,7 @@ export const ConnectedServices = (): ReactElement => {
             connection={(linked.data ?? []).find((connection) => connection.provider === provider)}
             onConnect={connect}
             onDisconnect={setDisconnecting}
+            connecting={connecting}
           />
         ))}
       </ul>

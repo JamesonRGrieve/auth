@@ -139,6 +139,26 @@ describe('Login', () => {
     expect(view.getByLabelText('Authenticator or recovery code')).toBeInTheDocument();
   });
 
+  it('allows one attempt at a time', async () => {
+    let answer: ((response: Response) => void) | undefined;
+    const fetchMock = vi.fn(
+      async () =>
+        new Promise<Response>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    const view = renderLogin();
+    await user.type(view.getByLabelText('Password'), 'pw');
+    await user.click(view.getByRole('button', { name: 'Login' }));
+    expect(view.getByRole('button', { name: 'Login' })).toBeDisabled();
+    answer?.(new Response('{"detail":"Invalid credentials"}', { status: HTTP_UNAUTHORIZED }));
+    expect(await view.findByText('Invalid credentials')).toBeInTheDocument();
+    expect(view.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the server’s reason for a refused password', async () => {
     reply([HTTP_UNAUTHORIZED, { detail: 'Invalid credentials' }]);
     const user = userEvent.setup();

@@ -28,6 +28,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const EMAIL_ERROR_ID = 'identify-email-error';
 const HTTP_CONFLICT = 409;
 const HTTP_UNPROCESSABLE = 422;
 
@@ -87,6 +88,7 @@ export default function Identify({
     }
   };
 
+  const emailProblem = errors.email?.message ?? '';
   const showEmail = authConfig.authModes.basic || authConfig.authModes.magical;
   const showOAuth = authConfig.oauthProviders.length > 0;
 
@@ -103,10 +105,19 @@ export default function Identify({
       >
         {showEmail && (
           <>
-            <Label htmlFor='E-Mail Address'>E-Mail Address</Label>
-            <Input id='email' autoComplete='username' placeholder='your@example.com' {...register('email')} />
-            {errors.email?.message !== undefined && errors.email.message !== '' && (
-              <Alert variant='destructive'>{errors.email.message}</Alert>
+            <Label htmlFor='email'>E-Mail Address</Label>
+            <Input
+              id='email'
+              autoComplete='username'
+              placeholder='your@example.com'
+              aria-invalid={emailProblem !== ''}
+              {...(emailProblem === '' ? {} : { 'aria-describedby': EMAIL_ERROR_ID })}
+              {...register('email')}
+            />
+            {emailProblem !== '' && (
+              <Alert id={EMAIL_ERROR_ID} variant='destructive'>
+                {emailProblem}
+              </Alert>
             )}
 
             <Button variant='default' disabled={isSubmitting} className='w-full space-x-1'>

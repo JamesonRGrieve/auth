@@ -4,13 +4,14 @@ import { toTitleCase } from '@jgrieve/forms/DynamicForm';
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
-import { type CookieValueTypes, deleteCookie, getCookie } from 'cookies-next';
+import { deleteCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation.js';
 import { type ChangeEvent, type ReactNode, type SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
 import { authRequest } from './lib/api';
 import { useAssertion } from './lib/assert';
+import { cookieText } from './lib/cookies';
 import { validateURI } from './lib/validation';
 import { loginRedirectPath, RegisterResponseSchema } from './registerRedirect';
 import { useAuthentication } from './useAuthentication';
@@ -21,6 +22,8 @@ export type RegisterProps = {
   userRegisterEndpoint?: string;
 };
 
+const PASSWORD_MATCH_ID = 'register-password-match';
+
 export default function Register({ additionalFields = [], userRegisterEndpoint = '/v1/user' }: RegisterProps): ReactNode {
   const formRef = useRef<HTMLFormElement | null>(null);
   const router = useRouter();
@@ -29,6 +32,10 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const [responseMessage, setResponseMessage] = useState('');
   const [passwords, setPasswords] = useState({ password: '', passwordAgain: '' });
   const [passwordsMatch, setPasswordsMatch] = useState(false);
+  const [pending, setPending] = useState(false);
+  const mismatch = passwords.passwordAgain !== '' && !passwordsMatch;
+  /** Set by the auth middleware from an invite link. */
+  const invite = cookieText('invitation');
 
   const authConfig = useAuthentication();
   useAssertion(validateURI(authConfig.authServer + userRegisterEndpoint), 'Invalid login endpoint.', [
@@ -47,9 +54,8 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
         (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[0] !== 'password-again',
       ),
     );
-    const invitationCookie = getCookie('invitation');
-    const invitation =
-      typeof invitationCookie === 'string' && invitationCookie !== '' ? { invitation_code: invitationCookie } : {};
+    const invitation = invite === '' ? {} : { invitation_code: invite };
+    setPending(true);
     try {
       const flags = await authRequest(`${authConfig.authServer}${userRegisterEndpoint}`, RegisterResponseSchema, {
         method: 'POST',
@@ -61,6 +67,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       router.push(loginRedirectPath(`${authConfig.authPath}${authConfig.login.path}`, flags));
     } catch (exception: unknown) {
       setResponseMessage(exception instanceof Error ? exception.message : 'Registration failed.');
+      setPending(false);
     }
   };
   useEffect(() => {
@@ -70,9 +77,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     }
   }, [submitted, authConfig.authModes.magical, additionalFields.length]);
 
-  const [invite, _setInvite] = useState<CookieValueTypes | Promise<CookieValueTypes> | undefined>(getCookie('invitation'));
-  const teamNameCookie = getCookie('team');
-  const teamName = typeof teamNameCookie === 'string' ? teamNameCookie : '';
+  const teamName = cookieText('team');
 
   const registerHeader = {
     title: 'Sign Up',
@@ -82,11 +87,11 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const inviteHeader = {
     title: 'Accept Invitation',
     description:
-      typeof invite === 'string' && invite !== ''
+      teamName !== ''
         ? `You've been invited to join ${teamName}. Please complete your registration to join the team.`
         : `You've been invited to join a team. Please complete your registration to join the team.`,
   };
-  const hasInvite = typeof invite === 'string' && invite !== '';
+  const hasInvite = invite !== '';
 
   return (
     <div className={additionalFields.length === 0 && authConfig.authModes.magical ? ' invisible' : ''}>
@@ -102,12 +107,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
           className='flex flex-col gap-4'
           ref={formRef}
         >
-          <input
-            type='hidden'
-            id='email'
-            name='email'
-            value={((getCookie('email') as string | undefined) ?? '').toLowerCase().trim()}
-          />
+          <input type='hidden' id='email' name='email' value={cookieText('email').toLowerCase().trim()} />
           {authConfig.authModes.basic && (
             <>
               <Label htmlFor='password'>Password</Label>
@@ -129,11 +129,16 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
                 name='password-again'
                 type='password'
                 required
+                aria-invalid={mismatch}
+                aria-describedby={PASSWORD_MATCH_ID}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   setPasswords((prev) => ({ ...prev, passwordAgain: e.target.value }));
                   setPasswordsMatch(e.target.value === passwords.password);
                 }}
               />
+              <p id={PASSWORD_MATCH_ID} className={mismatch ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}>
+                {mismatch ? 'The passwords do not match.' : 'Type the same password again.'}
+              </p>
             </>
           )}
           {additionalFields.length > 0 &&
@@ -157,12 +162,11 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
               />
             </div>
           )}
-          <Button type='submit' disabled={authConfig.authModes.basic && !passwordsMatch}>
+          <Button type='submit' disabled={pending || (authConfig.authModes.basic && !passwordsMatch)}>
             {hasInvite ? 'Accept Invitation' : 'Register'}
           </Button>
           {responseMessage !== '' && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
         </form>
-        {/* {invite && <OAuth />} */}
       </AuthCard>
     </div>
   );

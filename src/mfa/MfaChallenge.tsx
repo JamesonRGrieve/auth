@@ -5,6 +5,9 @@ import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import { type ReactElement, useState } from 'react';
 
+const HINT_ID = 'mfa-code-hint';
+const PROBLEM_ID = 'mfa-code-problem';
+
 /** The second login step: a current authenticator code, or a recovery code if the phone is out of reach. */
 export function MfaChallenge({
   onSubmit,
@@ -33,8 +36,15 @@ export function MfaChallenge({
       }}
     >
       <Label htmlFor='mfa-code'>Authenticator or recovery code</Label>
-      <Input id='mfa-code' name='code' autoComplete='one-time-code' required />
-      <p className='text-sm text-muted-foreground'>
+      <Input
+        id='mfa-code'
+        name='code'
+        autoComplete='one-time-code'
+        required
+        aria-invalid={problem !== null}
+        aria-describedby={problem === null ? HINT_ID : `${HINT_ID} ${PROBLEM_ID}`}
+      />
+      <p id={HINT_ID} className='text-sm text-muted-foreground'>
         Enter the 6-digit code from your authenticator app, or one of your recovery codes.
       </p>
       <Button type='submit' disabled={pending}>
@@ -44,7 +54,7 @@ export function MfaChallenge({
         Start over
       </Button>
       {problem !== null && (
-        <p role='alert' className='text-sm text-destructive'>
+        <p id={PROBLEM_ID} role='alert' className='text-sm text-destructive'>
           {problem}
         </p>
       )}

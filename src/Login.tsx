@@ -4,13 +4,13 @@
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
-import { getCookie } from 'cookies-next/client';
 import { type ReactNode, type SyntheticEvent, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
 import type { AuthenticationConfig } from './Router';
 import { signedInDestination } from './lib/afterSignIn';
 import { useAssertion } from './lib/assert';
+import { cookieText } from './lib/cookies';
 import { validateURI } from './lib/validation';
 import { MfaChallenge } from './mfa/MfaChallenge';
 import { answerMfaChallenge, isMfaChallenge, passwordLogin, requestMagicLink } from './mfa/mfaApi';
@@ -21,10 +21,7 @@ export type LoginProps = {
 };
 
 /** The address the identify step remembered, to sign in as. */
-const rememberedEmail = (): string => {
-  const value = getCookie('email');
-  return typeof value === 'string' ? value : '';
-};
+const rememberedEmail = (): string => cookieText('email');
 
 const formText = (data: FormData, name: string): string => {
   const value = data.get(name);
@@ -50,6 +47,23 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
   // Magic-link mode signs in by email alone: the link lands on the magic page.
   const byEmailLink = authConfig.authModes.magical && !authConfig.authModes.basic;
   const [linkSent, setLinkSent] = useState(false);
+  // One attempt at a time: a double submit would spend a rate-limited login twice.
+  const [pending, setPending] = useState(false);
+
+  const signIn = async (email: string, password: string): Promise<void> => {
+    if (byEmailLink) {
+      await requestMagicLink(authConfig.authServer, email);
+      setLinkSent(true);
+      return;
+    }
+    const answer = await passwordLogin(authConfig.authServer, email, password, userLoginEndpoint);
+    if (isMfaChallenge(answer)) {
+      setResponseMessage('');
+      setChallengeToken(answer.challenge_token);
+      return;
+    }
+    finishLogin(authConfig);
+  };
 
   const submitPassword = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -58,26 +72,14 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
       return;
     }
     const formData = new FormData(event.currentTarget);
-    const email = formText(formData, 'email').toLowerCase().trim();
-    if (byEmailLink) {
-      try {
-        await requestMagicLink(authConfig.authServer, email);
-        setLinkSent(true);
-      } catch (error) {
-        setResponseMessage(error instanceof Error ? error.message : 'The sign-in link could not be sent.');
-      }
-      return;
-    }
+    setPending(true);
     try {
-      const answer = await passwordLogin(authConfig.authServer, email, formText(formData, 'password'), userLoginEndpoint);
-      if (isMfaChallenge(answer)) {
-        setResponseMessage('');
-        setChallengeToken(answer.challenge_token);
-        return;
-      }
-      finishLogin(authConfig);
+      await signIn(formText(formData, 'email').toLowerCase().trim(), formText(formData, 'password'));
     } catch (error) {
-      setResponseMessage(error instanceof Error ? error.message : 'Login failed.');
+      const fallback = byEmailLink ? 'The sign-in link could not be sent.' : 'Login failed.';
+      setResponseMessage(error instanceof Error ? error.message : fallback);
+    } finally {
+      setPending(false);
     }
   };
 
@@ -141,7 +143,7 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
             />
           </div>
         )}
-        <Button type='submit'>
+        <Button type='submit' disabled={pending}>
           {byEmailLink ? 'Email me a sign-in link' : responseMessage !== '' ? 'Continue' : 'Login'}
         </Button>
         {responseMessage !== '' && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
