@@ -44,6 +44,7 @@ const sampleConfig: AuthenticationConfig = {
   register: { path: '/register', heading: 'Register' },
   close: { path: '/close', heading: '' },
   magic: { path: '/magic', heading: '' },
+  pair: { path: '/pair/approve', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Subscribe' },
   logout: { path: '/logout', heading: '', props: {} },
   ou: { path: '/ou', heading: 'OU' },

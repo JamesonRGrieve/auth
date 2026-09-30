@@ -16,6 +16,7 @@ import Subscribe, { type SubscribeProps } from './Subscribe';
 import deepMerge from './lib/objects';
 import Manage, { type ManageProps } from './management';
 import Close, { type CloseProps } from './oauth2/Close';
+import PairApprove, { type PairApproveProps } from './pairing/PairApprove';
 
 export { useAuthentication } from './useAuthentication';
 
@@ -32,6 +33,8 @@ export type AuthenticationConfig = {
   close: RouterPageProps & { props?: CloseProps };
   /** Where sign-in links land; point the server's MAGIC_LINK_BASE_URL at `<app><authPath><path>`. */
   magic: RouterPageProps & { props?: MagicLinkProps };
+  /** Where a pairing QR code lands; point the server's PAIRING_BASE_URL at `<app><authPath>/pair`. */
+  pair: RouterPageProps & { props?: PairApproveProps };
   subscribe: RouterPageProps & { props?: SubscribeProps };
   logout: RouterPageProps & { props?: LogoutProps };
   ou: RouterPageProps & { props?: OrganizationalUnitProps };
@@ -77,6 +80,10 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
   },
   magic: {
     path: '/magic',
+    heading: '',
+  },
+  pair: {
+    path: '/pair/approve',
     heading: '',
   },
   subscribe: {
@@ -136,6 +143,7 @@ export default function AuthRouter({
     .set(mergedConfig.register.path, <Register {...mergedConfig.register.props} />)
     .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)
     .set(mergedConfig.magic.path, <MagicLink {...mergedConfig.magic.props} />)
+    .set(mergedConfig.pair.path, <PairApprove {...mergedConfig.pair.props} />)
     .set(mergedConfig.subscribe.path, <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />)
     .set(mergedConfig.logout.path, <Logout {...mergedConfig.logout.props} />)
     .set(mergedConfig.error.path, <ErrorPage {...mergedConfig.error.props} />);

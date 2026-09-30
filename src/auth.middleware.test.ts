@@ -66,10 +66,13 @@ describe('createAuthMiddleware', () => {
     expect(fetchMock).toHaveBeenCalledWith(`${API}/v1/user`, expect.anything());
   });
 
-  it('always guards the account page', async () => {
+  it('always guards the account page and device pairing approval, remembering where to return', async () => {
     const { activated, response } = await guard(request('/user/manage'));
     expect(activated).toBe(true);
     expect(location(response)).toBe(`${ORIGIN}/user`);
+    const pairing = await guard(request('/user/pair/approve?token=pair-1'));
+    expect(location(pairing.response)).toBe(`${ORIGIN}/user`);
+    expect(pairing.response.cookies.get('href')?.value).toBe('/user/pair/approve?token=pair-1');
   });
 
   it('sends an unpaid account to subscribe', async () => {

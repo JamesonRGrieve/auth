@@ -21,7 +21,10 @@ export interface AuthMiddlewareOptions {
    * the session cookie along.
    */
   apiBase: string;
-  /** Path prefixes that need a signed-in user. The account page (`<authPath>/manage`) always does. */
+  /**
+   * Path prefixes that need a signed-in user. The account page (`<authPath>/manage`) and device
+   * pairing approval (`<authPath>/pair`) always do.
+   */
   privateRoutes: readonly string[];
   /** Serve only `/`, sending every other path there (a pre-launch landing page). */
   landingOnly?: boolean;
@@ -92,6 +95,8 @@ export function createAuthMiddleware({
   landingOnly = false,
 }: AuthMiddlewareOptions): MiddlewareHook {
   const managePath = `${authPath}/manage`;
+  // Approving a device pairing signs another device in as the user, so it always needs a session.
+  const alwaysPrivate = [managePath, `${authPath}/pair`];
   return async (req) => {
     const { pathname } = req.nextUrl;
     if (landingOnly && pathname !== '/') {
@@ -101,7 +106,7 @@ export function createAuthMiddleware({
     if (invite !== null) {
       return { activated: true, response: invite };
     }
-    const needsSession = pathname.startsWith(managePath) || privateRoutes.some((route) => pathname.startsWith(route));
+    const needsSession = [...alwaysPrivate, ...privateRoutes].some((route) => pathname.startsWith(route));
     if (!needsSession) {
       return pass();
     }
