@@ -95,6 +95,8 @@ export interface TeamActions {
   invite: (teamId: string, roleId: string, emails: string[]) => Promise<void>;
   revokeInvitation: (invitationId: string) => Promise<void>;
   changeRole: (teamId: string, userId: string, roleId: string) => Promise<void>;
+  /** Remove a member; given your own id, leave the team. The team's last admin cannot go (409). */
+  removeMember: (teamId: string, userId: string) => Promise<void>;
 }
 
 /** The team management writes, on the app's API server. Callers revalidate what they show. */
@@ -120,5 +122,7 @@ export function useTeamActions(): TeamActions {
         method: 'PATCH',
         body: { user_team: { role_id: roleId } },
       }),
+    removeMember: async (teamId, userId) =>
+      authSend(`${authServer}/v1/team/${segment(teamId)}/user/${segment(userId)}`, { method: 'DELETE' }),
   };
 }

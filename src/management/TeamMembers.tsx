@@ -11,23 +11,91 @@ import { useUser } from '../hooks/useUser';
 import { InviteForm } from './InviteForm';
 import { inviteeStatus, inviteLink, type Membership, memberName, type Role, roleLabel } from './teamModel';
 
+/**
+ * Remove a member, or leave the team from your own row, in two steps: the first press asks, the
+ * second does it.
+ */
+function RemoveMember({
+  name,
+  isSelf,
+  onRemove,
+}: {
+  name: string;
+  isSelf: boolean;
+  onRemove: () => Promise<void>;
+}): ReactElement {
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  if (!confirming) {
+    return (
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        aria-label={isSelf ? 'Leave the team' : `Remove ${name} from the team`}
+        onClick={() => {
+          setConfirming(true);
+        }}
+      >
+        {isSelf ? 'Leave' : 'Remove'}
+      </Button>
+    );
+  }
+  return (
+    <span className='flex items-center gap-2'>
+      <Button
+        type='button'
+        variant='destructive'
+        size='sm'
+        disabled={pending}
+        onClick={() => {
+          setPending(true);
+          void onRemove().finally(() => {
+            setPending(false);
+            setConfirming(false);
+          });
+        }}
+      >
+        {isSelf ? 'Yes, leave' : `Yes, remove ${name}`}
+      </Button>
+      <Button
+        type='button'
+        variant='ghost'
+        size='sm'
+        disabled={pending}
+        onClick={() => {
+          setConfirming(false);
+        }}
+      >
+        Cancel
+      </Button>
+    </span>
+  );
+}
+
 function MemberRow({
   member,
   isSelf,
   assignable,
   onChangeRole,
+  onRemove,
 }: {
   member: Membership;
   isSelf: boolean;
   /** Roles the viewer may give this member; empty when they can't change it. */
   assignable: Role[];
   onChangeRole: (member: Membership, roleId: string) => Promise<string | null>;
+  onRemove: (member: Membership) => Promise<string | null>;
 }): ReactElement {
   const selectId = useId();
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const name = memberName(member);
+  // The server lets an admin act on members up to their own rank, and anyone leave; nobody changes
+  // their own membership any other way.
   const canChange = !isSelf && assignable.some((option) => option.id === member.role_id);
+  const canRemove = isSelf || canChange;
 
   return (
     <li className='flex flex-wrap items-center justify-between gap-2 p-4'>
@@ -66,6 +134,15 @@ function MemberRow({
         </div>
       ) : (
         <Badge variant='outline'>{roleLabel(member.role)}</Badge>
+      )}
+      {canRemove && (
+        <RemoveMember
+          name={name}
+          isSelf={isSelf}
+          onRemove={async () => {
+            setProblem(await onRemove(member));
+          }}
+        />
       )}
       {problem !== null && (
         <p role='alert' className='w-full text-sm text-destructive'>
@@ -234,7 +311,7 @@ export function TeamMembers({ teamId }: TeamMembersProps): ReactElement {
   const resolvedTeamId = teamId ?? activeTeam?.id;
   const { data: user } = useUser();
   const { members, roles, admin, assignable } = useTeamAccess(resolvedTeamId);
-  const { changeRole } = useTeamActions();
+  const { changeRole, removeMember } = useTeamActions();
 
   if (resolvedTeamId === undefined || resolvedTeamId === '') {
     return <p className='text-sm text-muted-foreground'>Choose or create a team to manage its members.</p>;
@@ -250,13 +327,26 @@ export function TeamMembers({ teamId }: TeamMembersProps): ReactElement {
     }
   };
 
+  // A refusal (the team's last admin, or a member above the viewer) keeps the row and says why.
+  const onRemove = async (member: Membership): Promise<string | null> => {
+    try {
+      await removeMember(resolvedTeamId, member.user_id);
+      await members.mutate();
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'The member could not be removed.';
+    }
+  };
+
   return (
     <div className='grid gap-6'>
       <Card>
         <CardHeader>
           <CardTitle>Members{activeTeam?.name === undefined ? '' : ` of ${activeTeam.name}`}</CardTitle>
           <CardDescription>
-            {admin ? 'Everyone on this team. You can change the role of members up to your own.' : 'Everyone on this team.'}
+            {admin
+              ? 'Everyone on this team. You can change or remove members up to your own role.'
+              : 'Everyone on this team.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -277,6 +367,7 @@ export function TeamMembers({ teamId }: TeamMembersProps): ReactElement {
                   isSelf={member.user_id === user?.id}
                   assignable={assignable}
                   onChangeRole={onChangeRole}
+                  onRemove={onRemove}
                 />
               ))}
             </ul>
