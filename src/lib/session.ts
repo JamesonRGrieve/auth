@@ -15,11 +15,25 @@ export const SESSION_CREDENTIALS: RequestCredentials = 'same-origin';
 
 const SAFE_METHODS: ReadonlySet<string> = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+const csrfToken = (): string | null => {
+  const token = getCookie(CSRF_COOKIE);
+  return typeof token === 'string' && token !== '' ? token : null;
+};
+
+/**
+ * Whether this browser holds a session. The session cookie itself is HttpOnly; the readable CSRF
+ * cookie the server sets beside it is the signal. Use it to skip requests that need a session
+ * (they would only 401) for signed-out visitors.
+ */
+export function hasSession(): boolean {
+  return csrfToken() !== null;
+}
+
 /** The CSRF header a cookie-authenticated `method` needs; empty for safe methods or with no session. */
 export function csrfHeaders(method: string): Record<string, string> {
   if (SAFE_METHODS.has(method.toUpperCase())) {
     return {};
   }
-  const token = getCookie(CSRF_COOKIE);
-  return typeof token === 'string' && token !== '' ? { [CSRF_HEADER]: token } : {};
+  const token = csrfToken();
+  return token === null ? {} : { [CSRF_HEADER]: token };
 }
