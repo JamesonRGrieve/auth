@@ -75,6 +75,11 @@ describe('createAuthMiddleware', () => {
     expect(pairing.response.cookies.get('href')?.value).toBe('/user/pair/approve?token=pair-1');
   });
 
+  it('lets a signed-out device ask to be paired', async () => {
+    const { activated } = await guard(request('/user/pair'));
+    expect(activated).toBe(false);
+  });
+
   it('sends an unpaid account to subscribe', async () => {
     apiAnswers(HTTP_PAYMENT_REQUIRED);
     const { response } = await guard(request('/chat', 'sess-1'));

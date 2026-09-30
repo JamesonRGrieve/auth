@@ -23,10 +23,6 @@ export const Default: Story = {
   args: {},
 };
 
-export const CustomEndpoint: Story = {
-  args: { identifyEndpoint: '/v2/user/exists' },
-};
-
 export const RedirectMatrix: Story = {
   args: {
     redirectToOnExists: '/auth/login',

@@ -45,6 +45,7 @@ const sampleConfig: AuthenticationConfig = {
   close: { path: '/close', heading: '' },
   magic: { path: '/magic', heading: '' },
   pair: { path: '/pair/approve', heading: '' },
+  pairRequest: { path: '/pair', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Subscribe' },
   logout: { path: '/logout', heading: '', props: {} },
   ou: { path: '/ou', heading: 'OU' },

@@ -28,9 +28,18 @@ describe('Identify', () => {
     expect(email).toHaveAccessibleDescription('Please enter a valid E-Mail address.');
   });
 
-  it('keeps its three optional config props', () => {
+  it('offers signing in with another device only when pairing is on', () => {
+    expect(renderIdentify().queryByRole('link', { name: 'Sign in with another device' })).toBeNull();
+    const view = render(
+      <AuthenticationContext value={{ ...testAuthConfig, authModes: { ...testAuthConfig.authModes, pairing: true } }}>
+        <Identify />
+      </AuthenticationContext>,
+    );
+    expect(view.getByRole('link', { name: 'Sign in with another device' })).toHaveAttribute('href', '/user/pair');
+  });
+
+  it('keeps its two optional config props', () => {
     expectTypeOf<IdentifyProps>().toEqualTypeOf<{
-      identifyEndpoint?: string;
       redirectToOnExists?: string;
       redirectToOnNotExists?: string;
     }>();

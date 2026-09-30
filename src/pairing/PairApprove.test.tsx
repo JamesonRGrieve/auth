@@ -31,7 +31,7 @@ describe('PairApprove', () => {
   });
 
   it('approves the other device only when asked, with the token from the code', async () => {
-    const fetchMock = serve(HTTP_OK, { pairing_id: 'p1', state: 'approved', session_key: 'k', user_id: 'u1' });
+    const fetchMock = serve(HTTP_OK, { pairing_id: 'p1', state: 'approved', user_id: 'u1' });
     const user = userEvent.setup();
     const view = renderAt('?token=pair-1');
     expect(fetchMock).not.toHaveBeenCalled();

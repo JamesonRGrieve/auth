@@ -17,6 +17,7 @@ import deepMerge from './lib/objects';
 import Manage, { type ManageProps } from './management';
 import Close, { type CloseProps } from './oauth2/Close';
 import PairApprove, { type PairApproveProps } from './pairing/PairApprove';
+import PairRequest, { type PairRequestProps } from './pairing/PairRequest';
 
 export { useAuthentication } from './useAuthentication';
 
@@ -35,6 +36,8 @@ export type AuthenticationConfig = {
   magic: RouterPageProps & { props?: MagicLinkProps };
   /** Where a pairing QR code lands; point the server's PAIRING_BASE_URL at `<app><authPath>/pair`. */
   pair: RouterPageProps & { props?: PairApproveProps };
+  /** Where a signed-out device asks to be signed in by one that is (it shows the pairing code). */
+  pairRequest: RouterPageProps & { props?: PairRequestProps };
   subscribe: RouterPageProps & { props?: SubscribeProps };
   logout: RouterPageProps & { props?: LogoutProps };
   ou: RouterPageProps & { props?: OrganizationalUnitProps };
@@ -42,6 +45,8 @@ export type AuthenticationConfig = {
   authModes: {
     basic: boolean;
     magical: boolean;
+    /** Offer signing in by scanning a code with another, signed-in device (auth_device_pairing). */
+    pairing?: boolean | undefined;
   };
   /**
    * Identity providers offered for sign-in (the server's oauth_consumer names, e.g. `google`).
@@ -84,6 +89,10 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
   },
   pair: {
     path: '/pair/approve',
+    heading: '',
+  },
+  pairRequest: {
+    path: '/pair',
     heading: '',
   },
   subscribe: {
@@ -144,6 +153,7 @@ export default function AuthRouter({
     .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)
     .set(mergedConfig.magic.path, <MagicLink {...mergedConfig.magic.props} />)
     .set(mergedConfig.pair.path, <PairApprove {...mergedConfig.pair.props} />)
+    .set(mergedConfig.pairRequest.path, <PairRequest {...mergedConfig.pairRequest.props} />)
     .set(mergedConfig.subscribe.path, <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />)
     .set(mergedConfig.logout.path, <Logout {...mergedConfig.logout.props} />)
     .set(mergedConfig.error.path, <ErrorPage {...mergedConfig.error.props} />);

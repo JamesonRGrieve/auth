@@ -12,6 +12,7 @@ export const testAuthConfig: AuthenticationConfig = {
   close: { path: '/close', heading: '' },
   magic: { path: '/magic', heading: '' },
   pair: { path: '/pair/approve', heading: '' },
+  pairRequest: { path: '/pair', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Please Subscribe' },
   logout: { path: '/logout', heading: '', props: { redirectTo: '/' } },
   ou: { path: '/ou', heading: 'OU' },

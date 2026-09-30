@@ -7,6 +7,7 @@ import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import { Separator } from '@jgrieve/forms/components/ui/separator';
 import { setCookie } from 'cookies-next';
+import Link from 'next/link.js';
 import { usePathname, useRouter } from 'next/navigation.js';
 import type { ReactNode } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
@@ -15,8 +16,6 @@ import { z } from 'zod';
 import AuthCard from './AuthCard';
 import { Alert } from './components/ui/alert';
 import { AuthApiError, authSend } from './lib/api';
-import { useAssertion } from './lib/assert';
-import { validateURI } from './lib/validation';
 import OAuth from './oauth2/OAuth';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
@@ -33,24 +32,18 @@ const HTTP_CONFLICT = 409;
 const HTTP_UNPROCESSABLE = 422;
 
 export type IdentifyProps = {
-  identifyEndpoint?: string;
   redirectToOnExists?: string;
+  /** A new address registers; in magic-link mode the register step sends the link by itself. */
   redirectToOnNotExists?: string;
 };
 
 export default function Identify({
-  identifyEndpoint = '/v1/user/exists',
   redirectToOnExists = '/login',
-  redirectToOnNotExists = '/register', // TODO Default this to /register if in basic mode, and /login in magical mode
+  redirectToOnNotExists = '/register',
 }: IdentifyProps): ReactNode {
   const router = useRouter();
   const authConfig = useAuthentication();
   const pathname = usePathname();
-
-  useAssertion(validateURI(authConfig.authServer + identifyEndpoint), 'Invalid identify endpoint.', [
-    authConfig.authServer,
-    identifyEndpoint,
-  ]);
 
   const {
     register,
@@ -136,6 +129,12 @@ export default function Identify({
         ) : null}
 
         {showOAuth && <OAuth />}
+
+        {authConfig.authModes.pairing === true && (
+          <Link href={`${authConfig.authPath}${authConfig.pairRequest.path}`} className='text-sm text-center underline'>
+            Sign in with another device
+          </Link>
+        )}
       </form>
     </AuthCard>
   );

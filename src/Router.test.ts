@@ -31,10 +31,11 @@ describe('AuthRouter (surface)', () => {
     expectTypeOf<AuthenticationConfig['error']>().not.toBeAny();
   });
 
-  it('AuthenticationConfig.authModes carries the basic/magical email modes', () => {
+  it('AuthenticationConfig.authModes carries the basic/magical email modes, and optional pairing', () => {
     expectTypeOf<AuthenticationConfig['authModes']>().toEqualTypeOf<{
       basic: boolean;
       magical: boolean;
+      pairing?: boolean | undefined;
     }>();
   });
 
