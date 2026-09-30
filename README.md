@@ -31,7 +31,9 @@ Guard pages in Next middleware with `createAuthMiddleware` from `@zephyrex/auth/
 ```ts
 const guard = createAuthMiddleware({
   authPath: '/user',
-  apiBase: (req) => `${req.nextUrl.origin}/api`, // where the Next server can reach the API
+  // Where the Next server reaches the API: fixed configuration, never the request's Host, because
+  // the session check sends the user's cookie there.
+  apiBase: 'http://localhost:1996',
   privateRoutes: ['/chat'],
 });
 ```

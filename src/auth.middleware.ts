@@ -15,8 +15,12 @@ export type MiddlewareHook = (req: NextRequest) => Promise<MiddlewareResult>;
 export interface AuthMiddlewareOptions {
   /** Where the auth pages live on the app's origin, e.g. `/user`. */
   authPath: string;
-  /** The API base the Next server can reach for request `req` (absolute), to check a session. */
-  apiBase: (req: NextRequest) => string;
+  /**
+   * Where the Next server reaches the API (absolute), to check a session. It is fixed configuration,
+   * never derived from the request: the Host header is the client's to choose, and the check sends
+   * the session cookie along.
+   */
+  apiBase: string;
   /** Path prefixes that need a signed-in user. The account page (`<authPath>/manage`) always does. */
   privateRoutes: readonly string[];
   /** Serve only `/`, sending every other path there (a pre-launch landing page). */
@@ -105,7 +109,7 @@ export function createAuthMiddleware({
     if (session === undefined || session === '') {
       return { activated: true, response: rememberReturn(req, redirect(req, authPath)) };
     }
-    const status = await sessionStatus(apiBase(req), session);
+    const status = await sessionStatus(apiBase.replace(/\/$/, ''), session);
     if (status === HTTP_OK) {
       return pass();
     }

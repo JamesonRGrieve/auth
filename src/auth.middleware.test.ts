@@ -11,7 +11,7 @@ const HTTP_PAYMENT_REQUIRED = 402;
 const HTTP_FORBIDDEN = 403;
 const HTTP_UNAVAILABLE = 503;
 
-const guard = createAuthMiddleware({ authPath: '/user', apiBase: () => API, privateRoutes: ['/chat'] });
+const guard = createAuthMiddleware({ authPath: '/user', apiBase: `${API}/`, privateRoutes: ['/chat'] });
 
 const request = (path: string, session?: string): NextRequest => {
   const req = new NextRequest(`${ORIGIN}${path}`);
@@ -56,6 +56,14 @@ describe('createAuthMiddleware', () => {
       `${API}/v1/user`,
       expect.objectContaining({ headers: { Cookie: 'zx_session=sess-1' } }),
     );
+  });
+
+  it('sends the session cookie only to the configured API, whatever host the request names', async () => {
+    const fetchMock = apiAnswers(HTTP_OK);
+    const forged = new NextRequest(`${ORIGIN}/chat`, { headers: { host: 'attacker.example' } });
+    forged.cookies.set('zx_session', 'sess-1');
+    await guard(forged);
+    expect(fetchMock).toHaveBeenCalledWith(`${API}/v1/user`, expect.anything());
   });
 
   it('always guards the account page', async () => {
@@ -112,7 +120,7 @@ describe('createAuthMiddleware', () => {
   });
 
   it('serves only the landing page before launch', async () => {
-    const landing = createAuthMiddleware({ authPath: '/user', apiBase: () => API, privateRoutes: [], landingOnly: true });
+    const landing = createAuthMiddleware({ authPath: '/user', apiBase: API, privateRoutes: [], landingOnly: true });
     expect((await landing(request('/'))).activated).toBe(false);
     expect(location((await landing(request('/pricing'))).response)).toBe(`${ORIGIN}/`);
   });
