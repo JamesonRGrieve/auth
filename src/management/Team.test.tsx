@@ -61,7 +61,20 @@ describe('Team', () => {
           return Promise.resolve(json({ team: { id: 't-new' } }, HTTP_CREATED));
         }
         if (url.endsWith('/user')) {
-          return Promise.resolve(json({ user_teams: [{ id: 'm1', user_id: ME, team_id: ALPHA, role_id: myRole }] }));
+          return Promise.resolve(
+            json({
+              user_teams: [
+                {
+                  id: 'm1',
+                  user_id: ME,
+                  team_id: ALPHA,
+                  role_id: myRole,
+                  user: { id: ME, email: 'me@example.com' },
+                  role: { id: myRole, name: myRole === 'r-admin' ? 'admin' : 'user' },
+                },
+              ],
+            }),
+          );
         }
         if (url.startsWith(`${SERVER}/v1/role`)) {
           return Promise.resolve(

@@ -13,14 +13,11 @@ import { inviteeStatus, inviteLink, type Membership, memberName, type Role, role
 
 function MemberRow({
   member,
-  role,
   isSelf,
   assignable,
   onChangeRole,
 }: {
   member: Membership;
-  /** The member's role from the role list, for when the row doesn't embed it. */
-  role: Role | undefined;
   isSelf: boolean;
   /** Roles the viewer may give this member; empty when they can't change it. */
   assignable: Role[];
@@ -39,7 +36,7 @@ function MemberRow({
           {name}
           {isSelf && <span className='font-normal text-muted-foreground'> (you)</span>}
         </p>
-        {(member.user?.email ?? '') !== name && <p className='text-sm text-muted-foreground'>{member.user?.email}</p>}
+        {(member.user.email ?? '') !== name && <p className='text-sm text-muted-foreground'>{member.user.email}</p>}
       </div>
       {canChange ? (
         <div className='flex items-center gap-2'>
@@ -68,7 +65,7 @@ function MemberRow({
           </select>
         </div>
       ) : (
-        <Badge variant='outline'>{roleLabel(member.role ?? role)}</Badge>
+        <Badge variant='outline'>{roleLabel(member.role)}</Badge>
       )}
       {problem !== null && (
         <p role='alert' className='w-full text-sm text-destructive'>
@@ -277,7 +274,6 @@ export function TeamMembers({ teamId }: TeamMembersProps): ReactElement {
                 <MemberRow
                   key={member.id}
                   member={member}
-                  role={roles.find((candidate) => candidate.id === member.role_id)}
                   isSelf={member.user_id === user?.id}
                   assignable={assignable}
                   onChangeRole={onChangeRole}

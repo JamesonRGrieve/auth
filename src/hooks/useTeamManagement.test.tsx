@@ -36,7 +36,20 @@ describe('useTeamManagement', () => {
           );
         }
         if (url === `${SERVER}/v1/team/${TEAM}/user`) {
-          return Promise.resolve(json({ user_teams: [{ id: 'm1', user_id: ME, team_id: TEAM, role_id: 'r-admin' }] }));
+          return Promise.resolve(
+            json({
+              user_teams: [
+                {
+                  id: 'm1',
+                  user_id: ME,
+                  team_id: TEAM,
+                  role_id: 'r-admin',
+                  user: { id: ME, email: 'me@example.com' },
+                  role: { id: 'r-admin', name: 'admin', parent_id: 'r-user' },
+                },
+              ],
+            }),
+          );
         }
         if (url.startsWith(`${SERVER}/v1/role`)) {
           return Promise.resolve(json({ roles: ROLES, pagination: { has_more: false } }));

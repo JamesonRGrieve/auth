@@ -28,8 +28,7 @@ const member = (id: string, userId: string, roleId: string, email: string): obje
   team_id: TEAM,
   role_id: roleId,
   user: { id: userId, email },
-  // The server does not embed the role yet; the page names it from the role list.
-  role: null,
+  role: ROLES.find((role) => role.id === roleId),
 });
 
 interface Server {

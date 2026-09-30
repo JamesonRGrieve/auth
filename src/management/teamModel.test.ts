@@ -47,8 +47,15 @@ describe('isTeamAdmin', () => {
     expect(isTeamAdmin(ROLES, undefined)).toBe(false);
   });
 
-  it('ranks by depth alone, as the server does: a team role extending user ranks with admin', () => {
-    expect(isTeamAdmin(ROLES, 'r-editor')).toBe(true);
+  it('counts only the admin role’s subtree, as the server does: a role extending user is not an admin', () => {
+    expect(isTeamAdmin(ROLES, 'r-editor')).toBe(false);
+    const lead: Role = { id: 'r-lead', name: 'lead', parent_id: 'r-admin', team_id: 't1' };
+    expect(isTeamAdmin([...ROLES, lead], 'r-lead')).toBe(true);
+  });
+
+  it('stops at a cycle in the role chain', () => {
+    const loop: Role[] = [ADMIN, { id: 'a', name: 'a', parent_id: 'b' }, { id: 'b', name: 'b', parent_id: 'a' }];
+    expect(isTeamAdmin(loop, 'a')).toBe(false);
   });
 
   it('never holds when the admin role is not known', () => {
@@ -84,13 +91,20 @@ describe('inviteeStatus', () => {
 });
 
 describe('labels', () => {
-  const member = (user: Membership['user']): Membership => ({ id: 'm', user_id: 'u', team_id: 't', role_id: 'r', user });
+  const member = (user: Membership['user']): Membership => ({
+    id: 'm',
+    user_id: 'u',
+    team_id: 't',
+    role_id: USER.id,
+    user,
+    role: USER,
+  });
 
   it('names a member by display name, then full name, then email', () => {
     expect(memberName(member({ id: 'u', display_name: 'Ada L', first_name: 'Ada', email: 'a@x.io' }))).toBe('Ada L');
     expect(memberName(member({ id: 'u', first_name: 'Ada', last_name: 'Lovelace', email: 'a@x.io' }))).toBe('Ada Lovelace');
     expect(memberName(member({ id: 'u', email: 'a@x.io' }))).toBe('a@x.io');
-    expect(memberName(member(null))).toBe('');
+    expect(memberName(member({ id: 'u' }))).toBe('');
   });
 
   it('labels a role by its friendly name', () => {

@@ -25,8 +25,8 @@ export const MembershipSchema = z.object({
   user_id: z.string(),
   team_id: z.string(),
   role_id: z.string(),
-  user: MemberUserSchema.nullable().optional(),
-  role: RoleSchema.nullable().optional(),
+  user: MemberUserSchema,
+  role: RoleSchema,
 });
 export type Membership = z.infer<typeof MembershipSchema>;
 
@@ -75,12 +75,24 @@ export function roleRanks(roles: readonly Role[]): Map<string, number> {
   return new Map(roles.map((role) => [role.id, rank(role, new Set([role.id]))]));
 }
 
-/** Whether `roleId` may manage the team: an admin or higher. */
+/**
+ * Whether `roleId` may manage the team: the admin role or one that extends it (the admin role's
+ * subtree), as the server decides who may invite. A role that only extends `user` is not an admin,
+ * however deep it sits.
+ */
 export function isTeamAdmin(roles: readonly Role[], roleId: string | undefined): boolean {
-  const ranks = roleRanks(roles);
   const admin = roles.find((role) => role.name === ADMIN_ROLE_NAME && (role.team_id ?? null) === null);
-  const own = roleId === undefined ? undefined : ranks.get(roleId);
-  return admin !== undefined && own !== undefined && own >= (ranks.get(admin.id) ?? Number.POSITIVE_INFINITY);
+  if (admin === undefined || roleId === undefined) {
+    return false;
+  }
+  const byId = new Map(roles.map((role) => [role.id, role]));
+  const extendsAdmin = (id: string | null | undefined, seen: ReadonlySet<string>): boolean => {
+    if (id === null || id === undefined || seen.has(id)) {
+      return false;
+    }
+    return id === admin.id || extendsAdmin(byId.get(id)?.parent_id, new Set([...seen, id]));
+  };
+  return extendsAdmin(roleId, new Set());
 }
 
 /** The roles an issuer holding `roleId` may invite into `teamId`: system or that team's, never above their own. */
@@ -99,8 +111,8 @@ export function invitableRoles(roles: readonly Role[], roleId: string | undefine
 export const roleLabel = (role: Role | null | undefined): string => role?.friendly_name ?? role?.name ?? 'Unknown role';
 
 export const memberName = ({ user }: Membership): string => {
-  const fullName = [user?.first_name, user?.last_name].filter((part) => (part ?? '') !== '').join(' ');
-  return (user?.display_name ?? '') !== '' ? (user?.display_name ?? '') : fullName !== '' ? fullName : (user?.email ?? '');
+  const fullName = [user.first_name, user.last_name].filter((part) => (part ?? '') !== '').join(' ');
+  return (user.display_name ?? '') !== '' ? (user.display_name ?? '') : fullName !== '' ? fullName : (user.email ?? '');
 };
 
 /** At most this many addresses per invitation, the same cap the invite form has always had. */
