@@ -2,7 +2,16 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { withApi } from '../../tests/fixtures/apiWrapper';
+import { withSession } from '../../tests/fixtures/session';
 import { useTeamAccess, useTeamActions, useTeamInvitations } from './useTeamManagement';
+
+let signOut: () => void = () => undefined;
+beforeEach(() => {
+  signOut = withSession();
+});
+afterEach(() => {
+  signOut();
+});
 
 const SERVER = 'https://app.example.com/api';
 const TEAM = 't1';

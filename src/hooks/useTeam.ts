@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { GQLType, toGQL } from 'zod2gql';
 import { useAuthServer } from '../AuthServerContext';
 import log from '../lib/log';
+import { hasSession } from '../lib/session';
 import { cookieDomainOptions } from '../utils';
 import { chainMutations, createGraphQLClient } from './lib';
 import { type Team, TeamSchema } from './z';
@@ -13,15 +14,15 @@ import { type Team, TeamSchema } from './z';
 export const SYSTEM_TEAM_ID = 'FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF';
 
 /**
- * Hook to fetch and manage team data
- * @returns SWR response containing array of teams
+ * The signed-in user's teams (the system team left out); empty, without asking, when there is no
+ * session.
  */
 export function useTeams(): SWRResponse<Team[]> {
   const authServer = useAuthServer();
   const client = useMemo(() => createGraphQLClient(authServer), [authServer]);
 
   return useSWR<Team[]>(
-    [authServer, '/teams'],
+    hasSession() ? [authServer, '/teams'] : null,
     async (): Promise<Team[]> => {
       try {
         const query = toGQL(z.array(TeamSchema), GQLType.Query);

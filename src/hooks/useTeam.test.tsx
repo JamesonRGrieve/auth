@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { renderHook, waitFor } from '@testing-library/react';
 import { deleteCookie, getCookie, setCookie } from 'cookies-next/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { withApi } from '../../tests/fixtures/apiWrapper';
+import { withSession } from '../../tests/fixtures/session';
 import { SYSTEM_TEAM_ID, useTeam, useTeams } from './useTeam';
+
+let signOut: () => void = () => undefined;
+beforeEach(() => {
+  signOut = withSession();
+});
+afterEach(() => {
+  signOut();
+});
 
 const SERVER = 'https://app.example.com';
 const HTTP_OK = 200;
@@ -54,13 +63,22 @@ describe('useTeams', () => {
     expect(getCookie('auth-team')).toBe(beta.id);
   });
 
-  it('is empty without a session', async () => {
+  it('is empty when the API refuses the session', async () => {
     serveTeams(HTTP_UNAUTHORIZED, { detail: 'Not authenticated' });
     const { result } = renderHook(() => useTeams(), { wrapper });
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
     expect(result.current.data).toEqual([]);
+  });
+
+  it('asks nothing, and is empty, without a session', () => {
+    signOut();
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = renderHook(() => useTeams(), { wrapper });
+    expect(result.current.data).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

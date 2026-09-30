@@ -3,8 +3,17 @@ import { render, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SWRConfig } from 'swr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { withSession } from '../../tests/fixtures/session';
 import { AuthServerProvider } from '../AuthServerContext';
 import { TeamMembers } from './TeamMembers';
+
+let signOut: () => void = () => undefined;
+beforeEach(() => {
+  signOut = withSession();
+});
+afterEach(() => {
+  signOut();
+});
 
 const SERVER = 'https://app.example.com/api';
 const TEAM = '11111111-1111-1111-1111-111111111111';

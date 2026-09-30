@@ -46,7 +46,15 @@ describe('useUser', () => {
     expect(new Headers(init.headers).get('Authorization')).toBeNull();
   });
 
-  it('is null without a session', async () => {
+  it('is null, asking nothing, without a session', () => {
+    const fetchMock = answer(HTTP_OK, { data: { user } });
+    const { result } = renderHook(() => useUser(), { wrapper });
+    expect(result.current.data).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('is null when the API refuses the session', async () => {
+    setCookie('zx_csrf', 'csrf-stale');
     answer(HTTP_UNAUTHORIZED, { detail: 'Not authenticated' });
     const { result } = renderHook(() => useUser(), { wrapper });
     await waitFor(() => {

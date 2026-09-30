@@ -4,9 +4,18 @@ import userEvent from '@testing-library/user-event';
 import { deleteCookie, getCookie } from 'cookies-next/client';
 import { SWRConfig } from 'swr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { withSession } from '../../tests/fixtures/session';
 import { AuthServerProvider } from '../AuthServerContext';
 import { SidebarProvider } from '../components/ui/sidebar';
 import { Team } from './Team';
+
+let signOut: () => void = () => undefined;
+beforeEach(() => {
+  signOut = withSession();
+});
+afterEach(() => {
+  signOut();
+});
 
 const push = vi.fn();
 vi.mock('next/navigation.js', () => ({ useRouter: () => ({ push }) }));
