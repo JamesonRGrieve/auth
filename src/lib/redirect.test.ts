@@ -14,6 +14,16 @@ describe('safeRedirectPath', () => {
     }
   });
 
+  it('refuses paths a browser would resolve to another host', () => {
+    for (const target of ['/\\evil.example', '/\\/evil.example', '/\t/evil.example', '/\n/evil.example']) {
+      expect(safeRedirectPath(target)).toBe('/');
+    }
+  });
+
+  it('keeps a same-site path in its normalised form', () => {
+    expect(safeRedirectPath('/team/../chat?x=1#top')).toBe('/chat?x=1#top');
+  });
+
   it('falls back to the given path', () => {
     expect(safeRedirectPath('', '/user')).toBe('/user');
     expect(safeRedirectPath('/chat', '/user')).toBe('/chat');
