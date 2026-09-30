@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { testAuthConfig } from '../tests/fixtures/authConfig';
 import { AuthenticationContext } from './AuthenticationContext';
-import Subscribe from './Subscribe';
+import Subscribe, { STRIPE_PRICING_TABLE_SCRIPT } from './Subscribe';
 
 const renderSubscribe = (searchParams: Record<string, string | undefined> = {}): ReturnType<typeof render> =>
   render(
@@ -15,6 +15,24 @@ const renderSubscribe = (searchParams: Record<string, string | undefined> = {}):
 describe('Subscribe', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    document.head.querySelectorAll(`script[src="${STRIPE_PRICING_TABLE_SCRIPT}"]`).forEach((script) => {
+      script.remove();
+    });
+  });
+
+  const stripeScripts = (): number => document.head.querySelectorAll(`script[src="${STRIPE_PRICING_TABLE_SCRIPT}"]`).length;
+
+  it('loads Stripe’s script from the app’s code, once, and only when a table is configured', () => {
+    vi.stubEnv('NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID', '');
+    renderSubscribe().unmount();
+    expect(stripeScripts()).toBe(0);
+
+    vi.stubEnv('NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID', 'prctbl_1');
+    const view = renderSubscribe();
+    // Not a server-rendered tag, which would carry no CSP nonce.
+    expect(view.container.querySelector('script')).toBeNull();
+    renderSubscribe();
+    expect(stripeScripts()).toBe(1);
   });
 
   it('says subscribing is not available when no hosted pricing table is configured', () => {

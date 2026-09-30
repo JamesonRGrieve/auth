@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { getCookie } from 'cookies-next/client';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { firstSearchParam } from './lib/searchParams';
 import { useAuthentication } from './useAuthentication';
 
@@ -17,6 +17,26 @@ declare module 'react/jsx-runtime' {
 
 export type SubscribeProps = { redirectTo?: string };
 
+/** Stripe's pricing-table element. Stripe updates it in place, so it cannot carry an integrity hash. */
+export const STRIPE_PRICING_TABLE_SCRIPT = 'https://js.stripe.com/v3/pricing-table.js';
+
+/**
+ * Loads Stripe's pricing-table script once. It is added from script rather than rendered as a tag:
+ * a server-rendered tag has no CSP nonce and 'strict-dynamic' would block it, whereas a script
+ * added by the app's own (trusted) code is allowed.
+ */
+function useStripePricingTableScript(enabled: boolean): void {
+  useEffect(() => {
+    if (!enabled || document.querySelector(`script[src="${STRIPE_PRICING_TABLE_SCRIPT}"]`) !== null) {
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = STRIPE_PRICING_TABLE_SCRIPT;
+    script.async = true;
+    document.head.append(script);
+  }, [enabled]);
+}
+
 /**
  * Where a user without a subscription lands (the API answered 402). Plans live in the payment
  * provider: this shows the provider's hosted pricing table when one is configured, and otherwise
@@ -28,20 +48,20 @@ export default function Subscribe({
   searchParams: Record<string, string | string[] | undefined>;
 }): React.JSX.Element {
   const authConfig = useAuthentication();
+  const pricingTableId = process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID ?? '';
+  useStripePricingTableScript(pricingTableId !== '');
 
   return (
     <>
       {authConfig.subscribe.heading !== undefined && authConfig.subscribe.heading !== '' && (
         <h2 className='text-3xl'>{authConfig.subscribe.heading}</h2>
       )}
-      {process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID !== undefined &&
-      process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID !== '' ? (
+      {pricingTableId !== '' ? (
         <Suspense fallback={<p>Loading pricing...</p>}>
           <h1>Subscribe</h1>
           <div id='stripe-box'>
-            <script async src='https://js.stripe.com/v3/pricing-table.js' />
             <stripe-pricing-table
-              pricing-table-id={process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID}
+              pricing-table-id={pricingTableId}
               publishable-key={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
               customer-session-client-secret={firstSearchParam(searchParams['customer_session'])}
               customer-email={
