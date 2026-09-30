@@ -14,9 +14,8 @@ export default meta;
 
 type Story = StoryObj<typeof Subscribe>;
 
-// Subscribe wraps either Stripe's pricing-table web component (when
-// NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID is set) or the local PricingTable.
-// The stories below feed it the searchParam payloads it expects.
+// Subscribe shows Stripe's hosted pricing table when NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID is set,
+// and otherwise says subscribing is not available. The stories feed it the searchParams it reads.
 
 export const Default: Story = {
   args: { searchParams: {} },

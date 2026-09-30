@@ -3,7 +3,6 @@
 
 import { getCookie } from 'cookies-next/client';
 import { Suspense } from 'react';
-import PricingTable from './Stripe/PricingTable';
 import { firstSearchParam } from './lib/searchParams';
 import { useAuthentication } from './useAuthentication';
 
@@ -18,6 +17,11 @@ declare module 'react/jsx-runtime' {
 
 export type SubscribeProps = { redirectTo?: string };
 
+/**
+ * Where a user without a subscription lands (the API answered 402). Plans live in the payment
+ * provider: this shows the provider's hosted pricing table when one is configured, and otherwise
+ * says subscribing is not available here.
+ */
 export default function Subscribe({
   searchParams,
 }: {
@@ -49,7 +53,9 @@ export default function Subscribe({
           </div>
         </Suspense>
       ) : (
-        <PricingTable />
+        <p role='status' className='text-sm text-muted-foreground'>
+          Subscriptions are not available here yet. Contact the administrator for access.
+        </p>
       )}
     </>
   );

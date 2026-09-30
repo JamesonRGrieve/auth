@@ -21,11 +21,11 @@ src/
   auth.middleware.ts    createAuthMiddleware({ authPath, apiBase, privateRoutes, landingOnly }) for Next middleware
   lib/api.ts            authRequest / authSend / authList: every call rides the session cookie
   lib/session.ts        Cookie names and the CSRF header for writes
-  hooks/                useUser, useTeam(s), useTeamManagement, useUserInvitations, useProducts, …
+  hooks/                useUser, useTeam(s), useTeamManagement, useUserInvitations, …
   management/           Profile, Account, Team (switcher), TeamMembers, InviteForm, Invitations, ConnectedServices
   mfa/                  Authenticator (TOTP), Email, SMS verification
   oauth2/               OAuth sign-in (oauth_consumer), account linking (auth_oauth2_client), the close page
-  Stripe/               PricingTable integration
+  Subscribe.tsx         The 402 landing page: the payment provider's hosted pricing table when configured
   components/           shadcn/ui primitives, data-table components
 ```
 
