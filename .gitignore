@@ -170,6 +170,9 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+# compile builds here and swaps it in for dist
+dist.next
+dist.old
 
 # Gatsby files
 .cache/

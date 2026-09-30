@@ -44,6 +44,8 @@ export default [
     ignores: [
       'node_modules/**',
       'dist/**',
+      'dist.next/**',
+      'dist.old/**',
       'storybook-static/**',
       '.next/**',
       'coverage/**',
