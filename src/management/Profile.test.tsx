@@ -46,4 +46,22 @@ describe('Profile', () => {
     await user.click(view.getByRole('button', { name: 'Save profile' }));
     expect(await view.findByRole('alert')).toHaveTextContent('username: already taken');
   });
+
+  it('holds the form while a save is in flight', async () => {
+    let finish: () => void = () => undefined;
+    const onSave = vi.fn(async () => {
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const user = userEvent.setup();
+    const view = render(<Profile profile={profile} onSave={onSave} />);
+    await user.type(view.getByLabelText('Username'), 'ada');
+    await user.click(view.getByRole('button', { name: 'Save profile' }));
+    expect(view.getByRole('button', { name: 'Save profile' })).toBeDisabled();
+    expect(view.getByLabelText('Username')).toBeDisabled();
+    finish();
+    expect(await view.findByRole('status')).toHaveTextContent('Profile saved.');
+    expect(view.getByRole('button', { name: 'Save profile' })).toBeEnabled();
+  });
 });

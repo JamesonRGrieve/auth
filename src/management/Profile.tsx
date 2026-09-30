@@ -71,13 +71,7 @@ export function Profile({
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <DynamicForm
-          fields={fields}
-          submitButtonText='Save profile'
-          onConfirm={(submitted) => {
-            void save(submitted);
-          }}
-        />
+        <DynamicForm fields={fields} submitButtonText='Save profile' onConfirm={save} />
         {status !== null && (
           <p
             role={status.kind === 'failed' ? 'alert' : 'status'}
