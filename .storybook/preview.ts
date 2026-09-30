@@ -1,4 +1,7 @@
 import type { Preview } from '@storybook/nextjs';
+import { createElement } from 'react';
+import { AuthServerProvider } from '../src/AuthServerContext';
+import { TEST_AUTH_SERVER } from '../tests/fixtures/authConfig';
 import './../src/app/globals.css';
 
 export const globalTypes = {
@@ -21,6 +24,8 @@ export const globalTypes = {
 };
 
 const preview: Preview = {
+  // Components that call the API find it the way an app provides it; stories have no server behind it.
+  decorators: [(Story) => createElement(AuthServerProvider, { baseUrl: TEST_AUTH_SERVER }, createElement(Story))],
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
     controls: {

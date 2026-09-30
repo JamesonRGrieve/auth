@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { z } from 'zod';
-import { authRequest, authSend } from '../lib/api';
+import { AuthApiError, authRequest, authSend } from '../lib/api';
 
 export const MFA_ENDPOINT = '/v1/user/mfa';
 const AUTHORIZE_ENDPOINT = '/v1/user/authorize';
@@ -101,5 +101,38 @@ export async function completeMfaLogin(authServer: string, challengeToken: strin
   return authRequest(`${authServer}${AUTHORIZE_MFA_ENDPOINT}`, LoginSessionSchema, {
     method: 'POST',
     body: { challenge_token: challengeToken, code: code.trim() },
+  });
+}
+
+const UNAUTHORIZED = 401;
+
+/**
+ * Answer a second-factor challenge, whichever sign-in raised it. Resolves with why the code was
+ * refused, or null once the server has set the session cookies.
+ */
+export async function answerMfaChallenge(authServer: string, challengeToken: string, code: string): Promise<string | null> {
+  try {
+    await completeMfaLogin(authServer, challengeToken, code);
+    return null;
+  } catch (error) {
+    if (error instanceof AuthApiError && error.status === UNAUTHORIZED) {
+      return `${error.detail}. Try the current code, or start over if it keeps failing.`;
+    }
+    return error instanceof Error ? error.message : 'The code could not be checked.';
+  }
+}
+
+export const MAGIC_LINK_ENDPOINT = '/v1/auth/magic-link';
+
+/** Email a sign-in link to `email`. The server answers the same whether or not it has an account. */
+export async function requestMagicLink(authServer: string, email: string): Promise<void> {
+  await authSend(`${authServer}${MAGIC_LINK_ENDPOINT}/request`, { method: 'POST', body: { email } });
+}
+
+/** Redeem the token from a sign-in link: a session, or a challenge for the second factor. */
+export async function verifyMagicLink(authServer: string, token: string): Promise<LoginAnswer> {
+  return authRequest(`${authServer}${MAGIC_LINK_ENDPOINT}/verify`, LoginAnswerSchema, {
+    method: 'POST',
+    body: { token },
   });
 }

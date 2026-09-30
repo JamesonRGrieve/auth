@@ -3,18 +3,19 @@
 
 import { notFound, useSearchParams } from 'next/navigation.js';
 import type { ReactNode } from 'react';
+import { useAuthServer } from './AuthServerContext';
 import { AuthenticationContext } from './AuthenticationContext';
 import ErrorPage, { type ErrorPageProps } from './ErrorPage';
 import User, { type IdentifyProps } from './Identify';
 import Login, { type LoginProps } from './Login';
 import Logout, { type LogoutProps } from './Logout';
+import MagicLink, { type MagicLinkProps } from './MagicLink';
 import OrganizationalUnit, { type OrganizationalUnitProps } from './OU';
 import Register, { type RegisterProps } from './Register';
 import Subscribe, { type SubscribeProps } from './Subscribe';
 import deepMerge from './lib/objects';
 import Manage, { type ManageProps } from './management';
 import Close, { type CloseProps } from './oauth2/Close';
-import oAuth2Providers from './oauth2/OAuthProviders';
 
 export { useAuthentication } from './useAuthentication';
 
@@ -29,23 +30,31 @@ export type AuthenticationConfig = {
   manage: RouterPageProps & { props?: ManageProps };
   register: RouterPageProps & { props?: RegisterProps };
   close: RouterPageProps & { props?: CloseProps };
+  /** Where sign-in links land; point the server's MAGIC_LINK_BASE_URL at `<app><authPath><path>`. */
+  magic: RouterPageProps & { props?: MagicLinkProps };
   subscribe: RouterPageProps & { props?: SubscribeProps };
   logout: RouterPageProps & { props?: LogoutProps };
   ou: RouterPageProps & { props?: OrganizationalUnitProps };
   error: RouterPageProps & { props?: ErrorPageProps };
   authModes: {
     basic: boolean;
-    oauth2: boolean;
     magical: boolean;
   };
+  /**
+   * Identity providers offered for sign-in (the server's oauth_consumer names, e.g. `google`).
+   * None means no OAuth sign-in; with no email mode either, the welcome page offers only these.
+   */
+  oauthProviders: readonly string[];
   authServer: string;
   appName: string;
-  authBaseURI: string;
+  /** Where these pages are mounted on the app's origin, e.g. `/user`. */
+  authPath: string;
   recaptchaSiteKey?: string | undefined;
   enableOU: boolean;
 };
 
-const pageConfigDefaults: AuthenticationConfig = {
+// `authServer` comes from the app's AuthServerProvider, its single configured API base.
+const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
   identify: {
     path: '/',
     heading: 'Welcome',
@@ -66,6 +75,10 @@ const pageConfigDefaults: AuthenticationConfig = {
     path: '/close',
     heading: '',
   },
+  magic: {
+    path: '/magic',
+    heading: '',
+  },
   subscribe: {
     path: '/subscribe',
     heading: 'Please Subscribe to Access The Application',
@@ -82,15 +95,13 @@ const pageConfigDefaults: AuthenticationConfig = {
     path: '/error',
     heading: 'Error',
   },
-  appName: process.env.NEXT_PUBLIC_APP_NAME ?? '',
-  authBaseURI: process.env.NEXT_PUBLIC_AUTH_URI ?? '',
-  authServer: process.env.NEXT_PUBLIC_API_URI ?? '',
+  appName: '',
+  authPath: '/user',
   authModes: {
     basic: true,
-    oauth2: Object.values(oAuth2Providers).some((provider) => (provider.client_id ?? '') !== ''),
     magical: false,
   },
-  recaptchaSiteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+  oauthProviders: [],
   enableOU: false,
 };
 
@@ -115,7 +126,8 @@ export default function AuthRouter({
   };
 
   // Merge configs - ensure deep merge works with partial config
-  const mergedConfig = deepMerge(pageConfigDefaults, corePagesConfig) as AuthenticationConfig;
+  const authServer = useAuthServer();
+  const mergedConfig = deepMerge({ ...pageConfigDefaults, authServer }, corePagesConfig) as AuthenticationConfig;
 
   const pages = new Map<string, ReactNode>()
     .set(mergedConfig.identify.path, <User {...mergedConfig.identify.props} />)
@@ -123,6 +135,7 @@ export default function AuthRouter({
     .set(mergedConfig.manage.path, <Manage {...mergedConfig.manage.props} />)
     .set(mergedConfig.register.path, <Register {...mergedConfig.register.props} />)
     .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)
+    .set(mergedConfig.magic.path, <MagicLink {...mergedConfig.magic.props} />)
     .set(mergedConfig.subscribe.path, <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />)
     .set(mergedConfig.logout.path, <Logout {...mergedConfig.logout.props} />)
     .set(mergedConfig.error.path, <ErrorPage {...mergedConfig.error.props} />);

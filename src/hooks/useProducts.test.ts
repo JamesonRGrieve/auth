@@ -1,26 +1,48 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-/**
- * useProducts wraps an axios GET behind SWR. The real network behaviour
- * needs a happy-dom env + axios mock (tracked in todo.json). For now we
- * pin the public surface: the export is the default, it's a hook
- * (function), and its return type is an SWRResponse over an array.
- */
-
-import { describe, expectTypeOf, it } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { withApi } from '../../tests/fixtures/apiWrapper';
 import useProducts from './useProducts';
 
-describe('useProducts (surface)', () => {
-  it('is the default export and a callable hook', () => {
-    expectTypeOf(useProducts).toBeFunction();
+const SERVER = 'https://app.example.com/api';
+const HTTP_OK = 200;
+
+const product = (name: string): object => ({
+  name,
+  description: `${name} plan`,
+  prices: [
+    { id: `price-${name}`, amount: 900, currency: 'cad', interval: 'month', interval_count: 1, usage_type: 'licensed' },
+  ],
+  marketing_features: [{ name: 'Support' }],
+});
+
+const wrapper = withApi(SERVER);
+
+describe('useProducts', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it('takes no arguments', () => {
-    expectTypeOf(useProducts).parameters.toEqualTypeOf<[]>();
+  it('loads the plans on the session cookie, sorted by name', async () => {
+    const fetchMock = vi.fn(async () =>
+      Promise.resolve(new Response(JSON.stringify([product('Team'), product('Pro')]), { status: HTTP_OK })),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = renderHook(() => useProducts(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.data?.map((item) => item.name)).toEqual(['Pro', 'Team']);
+    });
+    expect(fetchMock).toHaveBeenCalledWith(`${SERVER}/v1/products`, expect.objectContaining({ credentials: 'same-origin' }));
   });
 
-  it('returns an SWR response shape (data + mutate)', () => {
-    type R = ReturnType<typeof useProducts>;
-    expectTypeOf<R>().toHaveProperty('data');
-    expectTypeOf<R>().toHaveProperty('mutate');
+  it('reports an answer that is not a product list', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Promise.resolve(new Response('{"products":[]}', { status: HTTP_OK }))),
+    );
+    const { result } = renderHook(() => useProducts(), { wrapper });
+    await waitFor(() => {
+      expect(result.current.error).toBeDefined();
+    });
   });
 });

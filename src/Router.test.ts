@@ -31,21 +31,24 @@ describe('AuthRouter (surface)', () => {
     expectTypeOf<AuthenticationConfig['error']>().not.toBeAny();
   });
 
-  it('AuthenticationConfig.authModes carries basic/oauth2/magical booleans', () => {
+  it('AuthenticationConfig.authModes carries the basic/magical email modes', () => {
     expectTypeOf<AuthenticationConfig['authModes']>().toEqualTypeOf<{
       basic: boolean;
-      oauth2: boolean;
       magical: boolean;
     }>();
+  });
+
+  it('AuthenticationConfig.oauthProviders names the sign-in providers', () => {
+    expectTypeOf<AuthenticationConfig['oauthProviders']>().toEqualTypeOf<readonly string[]>();
   });
 
   it('AuthenticationConfig.enableOU is a boolean flag (gates the OU sub-page)', () => {
     expectTypeOf<AuthenticationConfig['enableOU']>().toEqualTypeOf<boolean>();
   });
 
-  it('appName / authBaseURI / authServer are strings (env-sourced)', () => {
+  it('appName / authPath / authServer are strings', () => {
     expectTypeOf<AuthenticationConfig['appName']>().toEqualTypeOf<string>();
-    expectTypeOf<AuthenticationConfig['authBaseURI']>().toEqualTypeOf<string>();
+    expectTypeOf<AuthenticationConfig['authPath']>().toEqualTypeOf<string>();
     expectTypeOf<AuthenticationConfig['authServer']>().toEqualTypeOf<string>();
   });
 

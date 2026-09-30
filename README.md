@@ -19,8 +19,25 @@ pnpm add @zephyrex/auth react react-dom next zod
 ## Usage
 
 ```tsx
-import { AuthRouter, useUser } from '@zephyrex/auth';
+import { AuthRouter, AuthServerProvider, useUser } from '@zephyrex/auth';
+
+// Every hook and page calls the API through the provider's base: '' or '/api' when the app
+// proxies the API on its own origin (required: sessions are HttpOnly same-origin cookies).
+<AuthServerProvider baseUrl='/api'>{children}</AuthServerProvider>;
 ```
+
+Guard pages in Next middleware with `createAuthMiddleware` from `@zephyrex/auth/auth.middleware`:
+
+```ts
+const guard = createAuthMiddleware({
+  authPath: '/user',
+  apiBase: (req) => `${req.nextUrl.origin}/api`, // where the Next server can reach the API
+  privateRoutes: ['/chat'],
+});
+```
+
+For OAuth sign-in, list the providers in the router config (`oauthProviders: ['google']`) and allow
+`<app>/user/close/<provider>` as a redirect URI on the server.
 
 The root export carries the primary components, hooks and helpers. Less common modules are importable by path, e.g. `@zephyrex/auth/management/Team` or `@zephyrex/auth/auth.middleware`.
 

@@ -43,14 +43,16 @@ const sampleConfig: AuthenticationConfig = {
   manage: { path: '/manage', heading: 'Account Management' },
   register: { path: '/register', heading: 'Register' },
   close: { path: '/close', heading: '' },
+  magic: { path: '/magic', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Subscribe' },
   logout: { path: '/logout', heading: '', props: {} },
   ou: { path: '/ou', heading: 'OU' },
   error: { path: '/error', heading: 'Error' },
-  authModes: { basic: true, oauth2: false, magical: false },
+  authModes: { basic: true, magical: false },
+  oauthProviders: [],
   authServer: 'https://api.example.com',
   appName: 'Storybook',
-  authBaseURI: 'https://auth.example.com',
+  authPath: '/user',
   enableOU: false,
 };
 

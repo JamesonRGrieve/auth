@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { z } from 'zod';
 
-export type RegisterResponseFlags = {
-  verify_email?: boolean;
-  verify_sms?: boolean;
-};
+/** The follow-up steps a successful registration may ask for. Other fields are ignored. */
+export const RegisterResponseSchema = z
+  .object({
+    verify_email: z.boolean().optional(),
+    verify_sms: z.boolean().optional(),
+  })
+  .nullish();
 
-const LOGIN_PATH = '/user/login';
+export type RegisterResponseFlags = z.infer<typeof RegisterResponseSchema>;
 
-/** Login URL a freshly registered user is sent to, carrying any follow-up steps the server requested. */
-export const loginRedirectPath = (flags: RegisterResponseFlags | undefined): string => {
+/** The login page (`loginPath`) a freshly registered user is sent to, carrying any follow-up steps the server requested. */
+export const loginRedirectPath = (loginPath: string, flags: RegisterResponseFlags): string => {
   const params = new URLSearchParams();
   if (flags?.verify_email === true) {
     params.set('verify_email', 'true');
@@ -17,5 +21,5 @@ export const loginRedirectPath = (flags: RegisterResponseFlags | undefined): str
     params.set('verify_sms', 'true');
   }
   const query = params.toString();
-  return query === '' ? LOGIN_PATH : `${LOGIN_PATH}?${query}`;
+  return query === '' ? loginPath : `${loginPath}?${query}`;
 };

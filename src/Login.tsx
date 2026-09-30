@@ -4,26 +4,25 @@
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
-import { deleteCookie, getCookie } from 'cookies-next';
+import { getCookie } from 'cookies-next/client';
 import { type ReactNode, type SyntheticEvent, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
-import { AuthApiError } from './lib/api';
+import type { AuthenticationConfig } from './Router';
+import { signedInDestination } from './lib/afterSignIn';
 import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
 import { MfaChallenge } from './mfa/MfaChallenge';
-import { completeMfaLogin, isMfaChallenge, passwordLogin } from './mfa/mfaApi';
+import { answerMfaChallenge, isMfaChallenge, passwordLogin, requestMagicLink } from './mfa/mfaApi';
 import { useAuthentication } from './useAuthentication';
-import { cookieDomainOptions } from './utils';
 
 export type LoginProps = {
   userLoginEndpoint?: string;
 };
 
-const UNAUTHORIZED = 401;
-
-const cookieText = (name: string): string => {
-  const value = getCookie(name);
+/** The address the identify step remembered, to sign in as. */
+const rememberedEmail = (): string => {
+  const value = getCookie('email');
   return typeof value === 'string' ? value : '';
 };
 
@@ -32,23 +31,9 @@ const formText = (data: FormData, name: string): string => {
   return typeof value === 'string' ? value : '';
 };
 
-/** Keep the session and continue where the user was headed (a pending invitation first). */
-function finishLogin(token: string): void {
-  // biome-ignore lint/suspicious/noDocumentCookie: CookieStore API not widely available; document.cookie is required for legacy compatibility
-  document.cookie = `jwt=${token}; path=/`;
-  const invitation = cookieText('invitation');
-  const appUri = process.env.NEXT_PUBLIC_APP_URI ?? '';
-  if (invitation !== '') {
-    void deleteCookie('invitation', cookieDomainOptions());
-    window.location.href = `${appUri}/invite/${invitation}`;
-    return;
-  }
-  const destination = cookieText('href');
-  const fallback = appUri === '' ? `${window.location.protocol}//${window.location.hostname}/user` : `${appUri}/user`;
-  window.location.href = destination === '' ? fallback : destination;
-}
-
-const refusal = (error: Error | null, fallback: string): string => error?.message ?? fallback;
+const finishLogin = (authConfig: AuthenticationConfig): void => {
+  window.location.href = signedInDestination(authConfig);
+};
 
 export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: LoginProps): ReactNode {
   const [responseMessage, setResponseMessage] = useState('');
@@ -62,6 +47,10 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     userLoginEndpoint,
   ]);
 
+  // Magic-link mode signs in by email alone: the link lands on the magic page.
+  const byEmailLink = authConfig.authModes.magical && !authConfig.authModes.basic;
+  const [linkSent, setLinkSent] = useState(false);
+
   const submitPassword = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     if (needsCaptcha && (captcha === null || captcha === '')) {
@@ -70,6 +59,15 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     }
     const formData = new FormData(event.currentTarget);
     const email = formText(formData, 'email').toLowerCase().trim();
+    if (byEmailLink) {
+      try {
+        await requestMagicLink(authConfig.authServer, email);
+        setLinkSent(true);
+      } catch (error) {
+        setResponseMessage(error instanceof Error ? error.message : 'The sign-in link could not be sent.');
+      }
+      return;
+    }
     try {
       const answer = await passwordLogin(authConfig.authServer, email, formText(formData, 'password'), userLoginEndpoint);
       if (isMfaChallenge(answer)) {
@@ -77,9 +75,9 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
         setChallengeToken(answer.challenge_token);
         return;
       }
-      finishLogin(answer.token);
+      finishLogin(authConfig);
     } catch (error) {
-      setResponseMessage(refusal(error instanceof Error ? error : null, 'Login failed.'));
+      setResponseMessage(error instanceof Error ? error.message : 'Login failed.');
     }
   };
 
@@ -87,15 +85,11 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     if (challengeToken === null) {
       return 'Start over and sign in again.';
     }
-    try {
-      finishLogin((await completeMfaLogin(authConfig.authServer, challengeToken, code)).token);
-      return null;
-    } catch (error) {
-      if (error instanceof AuthApiError && error.status === UNAUTHORIZED) {
-        return `${error.detail}. Try the current code, or start over if it keeps failing.`;
-      }
-      return refusal(error instanceof Error ? error : null, 'The code could not be checked.');
+    const problem = await answerMfaChallenge(authConfig.authServer, challengeToken, code);
+    if (problem === null) {
+      finishLogin(authConfig);
     }
+    return problem;
   };
 
   if (challengeToken !== null) {
@@ -111,6 +105,16 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     );
   }
 
+  if (linkSent) {
+    return (
+      <AuthCard title='Check your email' description='We sent you a sign-in link.' showBackButton>
+        <p role='status' className='text-sm'>
+          If {rememberedEmail()} has an account, a link to sign in is on its way. It works once and expires soon.
+        </p>
+      </AuthCard>
+    );
+  }
+
   return (
     <AuthCard title='Login' description='Please login to your account.' showBackButton>
       <form
@@ -120,7 +124,7 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
         }}
         className='flex flex-col gap-4'
       >
-        <input type='hidden' id='email' name='email' value={cookieText('email')} />
+        <input type='hidden' id='email' name='email' value={rememberedEmail()} />
         {authConfig.authModes.basic && (
           <>
             <Label htmlFor='password'>Password</Label>
@@ -137,7 +141,9 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
             />
           </div>
         )}
-        <Button type='submit'>{responseMessage !== '' ? 'Continue' : 'Login'}</Button>
+        <Button type='submit'>
+          {byEmailLink ? 'Email me a sign-in link' : responseMessage !== '' ? 'Continue' : 'Login'}
+        </Button>
         {responseMessage !== '' && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
       </form>
     </AuthCard>

@@ -4,15 +4,15 @@ import { toTitleCase } from '@jgrieve/forms/DynamicForm';
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
-import axios, { type AxiosError, type AxiosResponse } from 'axios';
 import { type CookieValueTypes, deleteCookie, getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation.js';
 import { type ChangeEvent, type ReactNode, type SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
+import { authRequest } from './lib/api';
 import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
-import { loginRedirectPath, type RegisterResponseFlags } from './registerRedirect';
+import { loginRedirectPath, RegisterResponseSchema } from './registerRedirect';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
 
@@ -41,44 +41,28 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       setResponseMessage('Please complete the reCAPTCHA.');
       return;
     }
-    const formData = Object.fromEntries(new FormData(event.currentTarget));
+    // The repeated password only guards the form; the server keeps unknown fields as metadata.
+    const fields = Object.fromEntries(
+      [...new FormData(event.currentTarget)].filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[0] !== 'password-again',
+      ),
+    );
     const invitationCookie = getCookie('invitation');
-    if (typeof invitationCookie === 'string' && invitationCookie !== '') {
-      formData['invitation_code'] = invitationCookie;
-    }
-    type RegisterPayload = RegisterResponseFlags & { detail?: string };
-    let registerResponse: AxiosResponse<RegisterPayload> | null | undefined;
-    let registerResponseData: RegisterPayload | undefined;
+    const invitation =
+      typeof invitationCookie === 'string' && invitationCookie !== '' ? { invitation_code: invitationCookie } : {};
     try {
-      registerResponse = await axios
-        .post<RegisterPayload>(`${authConfig.authServer}${userRegisterEndpoint}`, {
-          user: {
-            ...formData,
-          },
-        })
-        .catch((exception: AxiosError<RegisterPayload>) => {
-          console.error(exception);
-          return exception.response;
-        });
-      if (registerResponse !== undefined && (registerResponse.status === 200 || registerResponse.status === 201)) {
-        void deleteCookie('invitation', cookieDomainOptions());
-        void deleteCookie('team', cookieDomainOptions());
-      }
-      registerResponseData = registerResponse?.data;
+      const flags = await authRequest(`${authConfig.authServer}${userRegisterEndpoint}`, RegisterResponseSchema, {
+        method: 'POST',
+        body: { user: { ...fields, ...invitation } },
+      });
+      void deleteCookie('invitation', cookieDomainOptions());
+      void deleteCookie('team', cookieDomainOptions());
+      setResponseMessage('');
+      router.push(loginRedirectPath(`${authConfig.authPath}${authConfig.login.path}`, flags));
     } catch (exception: unknown) {
-      console.error(exception);
-      registerResponse = null;
-    }
-
-    // TODO Check for status 418 which is app disabled by admin.
-    setResponseMessage(registerResponseData?.detail ?? '');
-    if (registerResponse !== null && registerResponse !== undefined && [200, 201].includes(registerResponse.status)) {
-      router.push(loginRedirectPath(registerResponseData));
+      setResponseMessage(exception instanceof Error ? exception.message : 'Registration failed.');
     }
   };
-  useEffect(() => {
-    // To-Do Assert that there are no dupes or empty strings in additionalFields (after trimming and lowercasing)
-  }, []);
   useEffect(() => {
     if (!submitted && formRef.current !== null && authConfig.authModes.magical && additionalFields.length === 0) {
       setSubmitted(true);

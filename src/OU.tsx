@@ -1,31 +1,30 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import axios from 'axios';
-import { getCookie } from 'cookies-next';
 import type { ReactNode } from 'react';
 import useSWR from 'swr';
+import { z } from 'zod';
+import { authRequest } from './lib/api';
 import { useAuthentication } from './useAuthentication';
 
 export type OrganizationalUnitProps = {
   organizationalUnitEndpoint?: string;
 };
-export interface OrganizationalUnit {
-  id: number;
-  name: string;
-  stripe_id: string;
-  enabled: boolean;
-  properties: Record<string, unknown>; // This indicates an object with dynamic keys and unknown values
-  subscriptions: unknown[]; // Assuming subscriptions is an array of unknown type
-  companies: object[];
-  quotas: Quotas;
-}
-export interface Quotas {
-  [quotaType: string]: {
-    available: number;
-    used: number;
-  };
-}
+
+const QuotaSchema = z.object({ available: z.number(), used: z.number() });
+
+export const OrganizationalUnitSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  stripe_id: z.string(),
+  enabled: z.boolean(),
+  properties: z.record(z.string(), z.unknown()),
+  subscriptions: z.array(z.unknown()),
+  companies: z.array(z.object({})),
+  quotas: z.record(z.string(), QuotaSchema),
+});
+export type OrganizationalUnit = z.infer<typeof OrganizationalUnitSchema>;
+export type Quotas = OrganizationalUnit['quotas'];
 
 function OrganizationalUnitPage({
   searchParams,
@@ -34,16 +33,11 @@ function OrganizationalUnitPage({
   const authConfig = useAuthentication();
   const ouParam = searchParams['ou'];
   const ouKey = Array.isArray(ouParam) ? ouParam.join(',') : (ouParam ?? '');
-  useSWR<OrganizationalUnit[]>(`/ou/${ouKey}`, async () => {
-    const jwtCookie = getCookie('jwt');
-    const jwt = typeof jwtCookie === 'string' ? jwtCookie : '';
-    const response = await axios.get<OrganizationalUnit[]>(`${authConfig.authServer}${organizationalUnitEndpoint}`, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
-    return response.data.sort((a, b) => a.name.localeCompare(b.name));
-  });
+  useSWR<OrganizationalUnit[]>([authConfig.authServer, organizationalUnitEndpoint, ouKey], async () =>
+    authRequest(`${authConfig.authServer}${organizationalUnitEndpoint}`, z.array(OrganizationalUnitSchema)).then((units) =>
+      [...units].sort((a, b) => a.name.localeCompare(b.name)),
+    ),
+  );
   return null;
 }
 

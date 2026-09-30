@@ -2,7 +2,7 @@
 import { deleteCookie, setCookie } from 'cookies-next/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { AuthApiError, authRequest, authSend } from './api';
+import { AuthApiError, authList, authRequest, authSend, LIST_PAGE_SIZE } from './api';
 
 const API_URL = 'https://api.example.com/v1/user';
 const HTTP_OK = 200;
@@ -19,11 +19,11 @@ const respond = (response: Response): ReturnType<typeof vi.fn> => {
 describe('authRequest', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    deleteCookie('jwt');
+    deleteCookie('zx_csrf');
   });
 
-  it('sends the session token and JSON body, and validates the answer', async () => {
-    setCookie('jwt', 'token-1');
+  it('rides the session cookie with the CSRF token on writes, and validates the answer', async () => {
+    setCookie('zx_csrf', 'csrf-1');
     const fetchMock = respond(new Response(JSON.stringify({ user: { id: 'u1' } }), { status: HTTP_OK }));
     const result = await authRequest(API_URL, z.object({ user: z.object({ id: z.string() }) }), {
       method: 'PUT',
@@ -32,25 +32,31 @@ describe('authRequest', () => {
     expect(result).toEqual({ user: { id: 'u1' } });
     expect(fetchMock).toHaveBeenCalledWith(API_URL, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer token-1' },
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'csrf-1' },
       body: '{"user":{"first_name":"Ada"}}',
     });
   });
 
-  it('sends the given authorization instead of the session, e.g. Basic credentials', async () => {
-    setCookie('jwt', 'token-1');
+  it('sends no CSRF token on reads, and never an Authorization header for the session', async () => {
+    setCookie('zx_csrf', 'csrf-1');
+    const fetchMock = respond(new Response('{}', { status: HTTP_OK }));
+    await authRequest(API_URL, z.object({}));
+    expect(fetchMock).toHaveBeenCalledWith(API_URL, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('sends an explicit authorization, e.g. Basic credentials for the password step', async () => {
     const fetchMock = respond(new Response('{}', { status: HTTP_OK }));
     await authRequest(API_URL, z.object({}), { method: 'POST', authorization: 'Basic YTpi' });
     expect(fetchMock).toHaveBeenCalledWith(API_URL, {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic YTpi' },
     });
-  });
-
-  it('sends no Authorization header when signed out', async () => {
-    const fetchMock = respond(new Response('{}', { status: HTTP_OK }));
-    await authRequest(API_URL, z.object({}));
-    expect(fetchMock).toHaveBeenCalledWith(API_URL, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
   });
 
   it('rejects an answer that does not match the schema', async () => {
@@ -79,5 +85,45 @@ describe('authSend', () => {
   it('resolves on a bodiless success', async () => {
     respond(new Response(null, { status: HTTP_NO_CONTENT }));
     await expect(authSend(API_URL, { method: 'DELETE' })).resolves.toBeUndefined();
+  });
+});
+
+describe('authList', () => {
+  const LIST_URL = 'https://api.example.com/v1/team/t1/invitation';
+  const Row = z.object({ id: z.string() });
+  const page = (ids: string[], hasMore: boolean): Response =>
+    new Response(JSON.stringify({ invitations: ids.map((id) => ({ id })), pagination: { has_more: hasMore } }), {
+      status: HTTP_OK,
+    });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('walks every page until the server has no more', async () => {
+    const fetchMock = vi
+      .fn<(url: string) => Promise<Response>>()
+      .mockResolvedValueOnce(page(['a', 'b'], true))
+      .mockResolvedValueOnce(page(['c'], false));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(authList(LIST_URL, 'invitations', Row)).resolves.toEqual([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `${LIST_URL}?offset=0&limit=${LIST_PAGE_SIZE}`,
+      `${LIST_URL}?offset=${LIST_PAGE_SIZE}&limit=${LIST_PAGE_SIZE}`,
+    ]);
+  });
+
+  it('keeps an existing query string, and takes an unpaginated answer as the whole list', async () => {
+    const fetchMock = respond(new Response('{"invitations":[{"id":"a"}]}', { status: HTTP_OK }));
+    await expect(authList(`${LIST_URL}?sort_by=created_at`, 'invitations', Row)).resolves.toEqual([{ id: 'a' }]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${LIST_URL}?sort_by=created_at&offset=0&limit=${LIST_PAGE_SIZE}`,
+      expect.anything(),
+    );
+  });
+
+  it('rejects rows that do not match the schema', async () => {
+    respond(new Response('{"invitations":[{"id":1}]}', { status: HTTP_OK }));
+    await expect(authList(LIST_URL, 'invitations', Row)).rejects.toThrow(z.ZodError);
   });
 });

@@ -1,20 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { getCookie } from 'cookies-next/client';
 import { GraphQLClient } from 'graphql-request';
-
-// Import all types from the centralized schema file
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
+import { csrfHeaders, SESSION_CREDENTIALS } from '../lib/session';
 
 /**
- * Creates a configured GraphQL client instance
- * @returns Configured GraphQLClient instance
+ * A GraphQL client for `authServer` that rides the session cookie. GraphQL is always POSTed,
+ * so each request carries the current CSRF token (read per request, as it rotates with the session).
  */
-export const createGraphQLClient = (): GraphQLClient =>
-  new GraphQLClient(`${process.env.NEXT_PUBLIC_API_URI}/graphql`, {
-    headers: { authorization: `Bearer ${getCookie('jwt')}` },
+export const createGraphQLClient = (authServer: string): GraphQLClient =>
+  new GraphQLClient(`${authServer}/graphql`, {
+    credentials: SESSION_CREDENTIALS,
+    headers: () => csrfHeaders('POST'),
   });
 
 /**

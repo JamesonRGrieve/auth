@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { getCookie, setCookie } from 'cookies-next/client';
+import { useMemo } from 'react';
 import useSWR, { type SWRResponse } from 'swr';
 import { z } from 'zod';
 import { GQLType, toGQL } from 'zod2gql';
+import { useAuthServer } from '../AuthServerContext';
 import log from '../lib/log';
 import { cookieDomainOptions } from '../utils';
 import { chainMutations, createGraphQLClient } from './lib';
@@ -15,10 +17,11 @@ export const SYSTEM_TEAM_ID = 'FFFFFFFF-FFFF-FFFF-0000-FFFFFFFFFFFF';
  * @returns SWR response containing array of teams
  */
 export function useTeams(): SWRResponse<Team[]> {
-  const client = createGraphQLClient();
+  const authServer = useAuthServer();
+  const client = useMemo(() => createGraphQLClient(authServer), [authServer]);
 
   return useSWR<Team[]>(
-    '/teams',
+    [authServer, '/teams'],
     async (): Promise<Team[]> => {
       try {
         const query = toGQL(z.array(TeamSchema), GQLType.Query);
@@ -50,12 +53,8 @@ export function useTeam(id?: string): SWRResponse<Team | null> {
   const { data: teams } = teamsHook;
   const resolvedId = id === undefined || id === '' ? getCookie('auth-team') : id;
   const swrHook = useSWR<Team | null>(
-    [`/team?id=${resolvedId}`, teams, getCookie('jwt')],
+    [`/team?id=${resolvedId}`, teams],
     (): Team | null => {
-      const jwt = getCookie('jwt');
-      if (jwt === undefined || jwt === '') {
-        return null;
-      }
       try {
         // If an ID is explicitly provided, use that
         if (resolvedId !== undefined && resolvedId !== '') {

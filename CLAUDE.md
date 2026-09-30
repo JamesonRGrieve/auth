@@ -17,24 +17,29 @@ Read **before your first edit**:
 src/
   index.ts              Barrel export (AuthRouter, hooks, components)
   Router.tsx            Multi-page auth router (identify → login → register → MFA → manage)
-  auth.middleware.ts    Next.js middleware hooks (useAuth, useOAuth2, useJWTQueryParam)
-  hooks/                useUser, useTeam, useTeamUsers, useLoggedIn, useInvitation
-  management/           Profile, Team, TeamUsers, Invitations, ConnectedServices, Account
+  AuthServerContext.tsx AuthServerProvider: the app's one API base ('' / '/api' same-origin, or absolute)
+  auth.middleware.ts    createAuthMiddleware({ authPath, apiBase, privateRoutes, landingOnly }) for Next middleware
+  lib/api.ts            authRequest / authSend / authList: every call rides the session cookie
+  lib/session.ts        Cookie names and the CSRF header for writes
+  hooks/                useUser, useTeam(s), useTeamManagement, useUserInvitations, useProducts, …
+  management/           Profile, Account, Team (switcher), TeamMembers, InviteForm, Invitations, ConnectedServices
   mfa/                  Authenticator (TOTP), Email, SMS verification
-  oauth2/               50+ OAuth2 provider configs, OAuth flow component
+  oauth2/               OAuth sign-in (oauth_consumer), account linking (auth_oauth2_client), the close page
   Stripe/               PricingTable integration
   components/           shadcn/ui primitives, data-table components
 ```
 
-### Auth Flow
+### Sessions
 
-Three modes (set by comparing `AUTH_URI` with `APP_URI`):
+The server keeps the session in HttpOnly cookies: `zx_session`, plus a readable `zx_csrf` whose value
+goes in `X-CSRF-Token` on every write. Requests send `credentials: 'same-origin'` and never an
+Authorization header, so the API must be same-origin (the app proxies `/v1` and `/graphql`). Nothing
+here reads env for URLs: pages take `authServer` from `AuthServerProvider`, and `AuthenticationConfig`
+carries `authPath`, `authModes` (`basic` / `magical` email sign-in) and `oauthProviders`.
 
-1. **MagicalAuth** — integrated auth (`AUTH_URI` = `APP_URI/user`)
-2. **GTAuth** — separate auth server
-3. **None** — no auth
-
-JWT stored in `jwt` cookie. Login via `Basic base64(email:password)` to `POST /v1/user/authorize`.
+Sign-in: password (`POST /v1/user/authorize`, then MFA when required), or an identity provider
+(`POST /v1/auth/oauth/authorize` → provider → `<authPath>/close/<provider>` → `POST /v1/auth/oauth/callback`).
+Sign-out: `POST /v1/user/logout`, which clears the cookies.
 
 ### Dependencies
 
@@ -56,7 +61,7 @@ pnpm check            # All ratchets
 
 ## Coverage
 
-53 components, 53 stories, 56 tests. Full story/test parity.
+Every component has a story and a test (`pnpm symmetry`).
 
 ## License
 

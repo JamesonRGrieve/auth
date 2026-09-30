@@ -1,231 +1,149 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Button } from '@jgrieve/forms/components/ui/button';
-import axios from 'axios';
-import { getCookie } from 'cookies-next';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { LuPlus as Plus, LuUnlink as Unlink } from 'react-icons/lu';
-import OAuth2Login from 'react-simple-oauth2-login';
+import useSWR from 'swr';
+import { useAuthServer } from '../AuthServerContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import oAuth2Providers, { getOAuth2Provider } from '../oauth2/OAuthProviders';
+import { oauth2ProviderDisplay } from '../oauth2/OAuthProviders';
+import { beginLink, type Connection, connections, linkableProviders, unlink } from '../oauth2/link';
 
-interface ConnectedService {
+const providerDescriptions: ReadonlyMap<string, string> = new Map([
+  [
+    'google',
+    'Connect your Google account to enable AI interactions with Gmail and Google Calendar. This allows agents to read and send emails, manage your calendar events, and help organize your digital life.',
+  ],
+  [
+    'microsoft',
+    'Link your Microsoft account to enable AI management of Outlook emails and calendar. Your agents can help schedule meetings, respond to emails, and keep your calendar organized.',
+  ],
+  [
+    'github',
+    'Connect to GitHub to enable AI assistance with repository management. Agents can help analyze codebases, create pull requests, review code changes, and manage issues.',
+  ],
+]);
+
+const DEFAULT_DESCRIPTION = 'Connect this service to enable AI integration.';
+
+const label = (provider: string): string => oauth2ProviderDisplay(provider).label;
+
+interface ServiceRowProps {
   provider: string;
-  connected: boolean;
+  connection: Connection | undefined;
+  onConnect: (provider: string) => void;
+  onDisconnect: (provider: string) => void;
 }
 
-const readJwt = (): string => {
-  const jwt = getCookie('jwt');
-  return typeof jwt === 'string' ? jwt : '';
-};
+function ServiceRow({ provider, connection, onConnect, onDisconnect }: ServiceRowProps): ReactElement {
+  const name = label(provider);
+  const account = connection?.account_email ?? connection?.account_name ?? '';
+  return (
+    <li className='flex flex-col space-y-4 rounded-lg border p-4'>
+      <div className='flex items-center justify-between gap-2'>
+        <div className='flex items-center space-x-4'>
+          <span aria-hidden>{oauth2ProviderDisplay(provider).icon}</span>
+          <div>
+            <p className='font-medium'>{name}</p>
+            <p className='text-sm text-muted-foreground'>
+              {connection === undefined ? 'Not connected' : account === '' ? 'Connected' : `Connected as ${account}`}
+            </p>
+          </div>
+        </div>
+        {connection === undefined ? (
+          <Button variant='outline' onClick={() => onConnect(provider)} className='space-x-1'>
+            <Plus className='mr-2 h-4 w-4' aria-hidden />
+            Connect<span className='sr-only'> {name}</span>
+          </Button>
+        ) : (
+          <Button variant='outline' size='sm' onClick={() => onDisconnect(provider)} className='space-x-1'>
+            <Unlink className='mr-2 h-4 w-4' aria-hidden />
+            Disconnect<span className='sr-only'> {name}</span>
+          </Button>
+        )}
+      </div>
+      <p className='text-sm text-muted-foreground'>{providerDescriptions.get(provider) ?? DEFAULT_DESCRIPTION}</p>
+    </li>
+  );
+}
 
-const apiUri = (): string => process.env.NEXT_PUBLIC_API_URI ?? '';
-const authUri = (): string => process.env.NEXT_PUBLIC_AUTH_URI ?? '';
+/**
+ * The external accounts the signed-in user can link (auth_oauth2_client). Connecting leaves for the
+ * provider; the auth pages' close route finishes the link when the provider sends the browser back.
+ */
+export const ConnectedServices = (): ReactElement => {
+  const authServer = useAuthServer();
+  const providers = useSWR<string[], Error>([authServer, 'oauth2-providers'], async () => linkableProviders(authServer));
+  const linked = useSWR<Connection[], Error>([authServer, 'oauth2-connections'], async () => connections(authServer));
+  const [problem, setProblem] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const loadError = providers.error ?? linked.error;
+  const shownProblem =
+    problem ?? (loadError === undefined ? null : `Connected services could not be loaded: ${loadError.message}`);
 
-const providerDescriptions: Record<string, string> = {
-  Google:
-    'Connect your Google account to enable AI interactions with Gmail and Google Calendar. This allows agents to read and send emails, manage your calendar events, and help organize your digital life.',
-  Microsoft:
-    'Link your Microsoft account to enable AI management of Outlook emails and calendar. Your agents can help schedule meetings, respond to emails, and keep your calendar organized.',
-  GitHub:
-    'Connect to GitHub to enable AI assistance with repository management. Agents can help analyze codebases, create pull requests, review code changes, and manage issues.',
-  Tesla:
-    'Link your Tesla account to enable AI control of your vehicle. Agents can help manage charging, climate control, and other vehicle settings.',
-};
-
-type OAuthErrorLike = {
-  response?: { status?: number };
-  config?: { url?: string; method?: string; headers?: Record<string, unknown>; data?: Record<string, unknown> };
-};
-
-type OAuthSuccessResponse = { code?: string };
-
-export const ConnectedServices = (): ReactNode => {
-  const [connectedServices, setConnectedServices] = useState<ConnectedService[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [_loading, setLoading] = useState(true);
-  const [disconnectDialog, setDisconnectDialog] = useState<{
-    isOpen: boolean;
-    provider: string | null;
-  }>({
-    isOpen: false,
-    provider: null,
-  });
-
-  const fetchConnections = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    const baseServices = Object.entries(oAuth2Providers)
-      .filter(([, config]) => config.client_id !== undefined && config.client_id !== '')
-      .map(([key]) => ({ provider: key, connected: false }));
-
-    setConnectedServices(baseServices);
-
-    try {
-      const response = await axios.get<string[]>(`${apiUri()}/v1/oauth2`, {
-        headers: {
-          Authorization: `Bearer ${readJwt()}`,
-        },
-      });
-
-      const connectedKeys: string[] = Array.isArray(response.data) ? response.data : [];
-
-      const allServices = baseServices.map((s) => ({
-        ...s,
-        connected: connectedKeys.includes(s.provider.toLowerCase()),
-      }));
-
-      setConnectedServices(allServices);
-      setError(null);
-    } catch (err: unknown) {
-      const e = err as OAuthErrorLike;
-      if (e.response?.status === 404) {
-        setError(null);
-      } else {
-        console.error('Error fetching connections:', err);
-        setError('Failed to fetch connected services');
+  const connect = (provider: string): void => {
+    void (async (): Promise<void> => {
+      try {
+        const authorizeUrl = await beginLink(authServer, provider, window.sessionStorage);
+        window.location.assign(authorizeUrl);
+      } catch (error) {
+        setProblem(error instanceof Error ? error.message : `${label(provider)} could not be connected.`);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchConnections();
-  }, [fetchConnections]);
-
-  const handleDisconnect = async (provider: string): Promise<void> => {
-    try {
-      await axios.delete(`${apiUri()}/v1/oauth2/${provider.toLowerCase()}`, {
-        headers: {
-          Authorization: `Bearer ${readJwt()}`,
-        },
-      });
-      await fetchConnections();
-      setDisconnectDialog({ isOpen: false, provider: null });
-    } catch (err: unknown) {
-      console.error('Error disconnecting service:', err);
-      setError('Failed to disconnect service');
-    }
+    })();
   };
 
-  const onSuccess = async (response: OAuthSuccessResponse): Promise<void> => {
-    const provider = disconnectDialog.provider?.toLowerCase() ?? '';
-    try {
-      if (response.code === undefined || response.code === '') {
-        console.error('No code received in OAuth response');
-        await fetchConnections();
-        return;
+  const disconnect = (provider: string): void => {
+    void (async (): Promise<void> => {
+      try {
+        await unlink(authServer, provider);
+        setDisconnecting(null);
+        await linked.mutate();
+      } catch (error) {
+        setProblem(error instanceof Error ? error.message : `${label(provider)} could not be disconnected.`);
       }
-
-      await axios.post(
-        `${apiUri()}/v1/oauth2/${provider}`,
-        {
-          code: response.code,
-          referrer: `${authUri()}/close/${provider}`,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${readJwt()}`,
-          },
-        },
-      );
-      await fetchConnections();
-    } catch (err: unknown) {
-      await fetchConnections();
-      console.error('OAuth error:', err);
-    }
+    })();
   };
 
   return (
     <>
-      {error !== null && (
+      {shownProblem !== null && (
         <Alert variant='destructive'>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{shownProblem}</AlertDescription>
         </Alert>
       )}
-
-      <div className='grid gap-4'>
-        {connectedServices.map((service) => {
-          const provider = getOAuth2Provider(service.provider);
-          if (provider === undefined) {
-            return null;
-          }
-          return (
-            <div key={service.provider} className='flex flex-col space-y-4 p-4 border rounded-lg'>
-              <div className='flex items-center justify-between'>
-                <div className='flex items-center space-x-4'>
-                  {provider.icon}
-                  <div>
-                    <p className='font-medium'>{service.provider}</p>
-                    <p className='text-sm text-muted-foreground'>{service.connected ? 'Connected' : 'Not connected'}</p>
-                  </div>
-                </div>
-
-                {service.connected ? (
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() =>
-                      setDisconnectDialog({
-                        isOpen: true,
-                        provider: service.provider,
-                      })
-                    }
-                    className='space-x-1'
-                  >
-                    <Unlink className='w-4 h-4 mr-2' />
-                    Disconnect
-                  </Button>
-                ) : (
-                  <OAuth2Login
-                    authorizationUrl={provider.uri}
-                    responseType='code'
-                    clientId={provider.client_id ?? ''}
-                    state={readJwt()}
-                    redirectUri={`${authUri()}/close/${service.provider.toLowerCase()}`}
-                    scope={provider.scope}
-                    onSuccess={(r) => void onSuccess(r as OAuthSuccessResponse)}
-                    onFailure={(r) => void onSuccess(r as OAuthSuccessResponse)}
-                    isCrossOrigin
-                    render={(renderProps) => (
-                      <Button variant='outline' onClick={renderProps.onClick} className='space-x-1'>
-                        <Plus className='w-4 h-4 mr-2' />
-                        Connect
-                      </Button>
-                    )}
-                  />
-                )}
-              </div>
-              <p className='text-sm text-muted-foreground'>
-                {providerDescriptions[service.provider] ?? 'Connect this service to enable AI integration.'}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      <Dialog
-        open={disconnectDialog.isOpen}
-        onOpenChange={(open) => setDisconnectDialog({ isOpen: open, provider: open ? disconnectDialog.provider : null })}
-      >
+      {providers.data?.length === 0 && (
+        <p className='text-sm text-muted-foreground'>No services are available to connect.</p>
+      )}
+      <ul aria-label='Connected services' className='grid gap-4'>
+        {(providers.data ?? []).map((provider) => (
+          <ServiceRow
+            key={provider}
+            provider={provider}
+            connection={(linked.data ?? []).find((connection) => connection.provider === provider)}
+            onConnect={connect}
+            onDisconnect={setDisconnecting}
+          />
+        ))}
+      </ul>
+      <Dialog open={disconnecting !== null} onOpenChange={(open) => setDisconnecting(open ? disconnecting : null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disconnect {disconnectDialog.provider}</DialogTitle>
+            <DialogTitle>Disconnect {label(disconnecting ?? '')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to disconnect your {disconnectDialog.provider} account? Your agents will no longer be
-              able to interact with {disconnectDialog.provider} services.
+              Are you sure you want to disconnect your {label(disconnecting ?? '')} account? Your agents will no longer be
+              able to use it.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant='outline' onClick={() => setDisconnectDialog({ isOpen: false, provider: null })}>
+            <Button variant='outline' onClick={() => setDisconnecting(null)}>
               Cancel
             </Button>
             <Button
               variant='destructive'
               onClick={() => {
-                if (disconnectDialog.provider !== null) {
-                  void handleDisconnect(disconnectDialog.provider);
+                if (disconnecting !== null) {
+                  disconnect(disconnecting);
                 }
               }}
             >

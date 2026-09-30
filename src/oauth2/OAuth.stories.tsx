@@ -1,50 +1,41 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Meta, StoryObj } from '@storybook/react';
+import { testAuthConfig } from '../../tests/fixtures/authConfig';
+import { AuthenticationContext } from '../AuthenticationContext';
 import OAuth from './OAuth';
 
-const meta: Meta<typeof OAuth> = {
+function OAuthWith({ oauthProviders }: { oauthProviders: string[] }) {
+  return (
+    <AuthenticationContext value={{ ...testAuthConfig, oauthProviders }}>
+      <OAuth />
+    </AuthenticationContext>
+  );
+}
+
+const meta: Meta<typeof OAuthWith> = {
   title: 'Auth/OAuth/OAuth',
-  component: OAuth,
+  component: OAuthWith,
   parameters: {
     nextjs: { appDirectory: true },
     docs: {
       description: {
-        component:
-          'OAuth renders a button per configured provider (provider.client_id !== undefined). Without env vars set, none of the built-in providers are active — this story exists primarily to lock the prop surface and exercise overrides.',
+        component: 'A sign-in button per identity provider the app lists in `oauthProviders`; none renders nothing.',
       },
     },
   },
 };
 export default meta;
 
-type Story = StoryObj<typeof OAuth>;
+type Story = StoryObj<typeof OAuthWith>;
 
-export const Default: Story = {
-  args: {},
+export const None: Story = {
+  args: { oauthProviders: [] },
 };
 
-export const WithGoogleOverride: Story = {
-  args: {
-    overrides: {
-      Google: { client_id: 'storybook-google-client-id' },
-    },
-  },
+export const Google: Story = {
+  args: { oauthProviders: ['google'] },
 };
 
-export const WithMultipleOverrides: Story = {
-  args: {
-    overrides: {
-      GitHub: { client_id: 'storybook-github-client-id' },
-      Microsoft: { client_id: 'storybook-microsoft-client-id' },
-      Apple: { client_id: 'storybook-apple-client-id' },
-    },
-  },
-};
-
-export const CustomScopeOverride: Story = {
-  args: {
-    overrides: {
-      Google: { client_id: 'storybook-google-client-id', scope: 'profile email openid' },
-    },
-  },
+export const Several: Story = {
+  args: { oauthProviders: ['google', 'github', 'microsoft'] },
 };

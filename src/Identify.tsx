@@ -6,7 +6,6 @@ import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
 import { Separator } from '@jgrieve/forms/components/ui/separator';
-import axios, { type AxiosError } from 'axios';
 import { setCookie } from 'cookies-next';
 import { usePathname, useRouter } from 'next/navigation.js';
 import type { ReactNode } from 'react';
@@ -15,9 +14,10 @@ import { LuUser } from 'react-icons/lu';
 import { z } from 'zod';
 import AuthCard from './AuthCard';
 import { Alert } from './components/ui/alert';
+import { AuthApiError, authSend } from './lib/api';
 import { useAssertion } from './lib/assert';
 import { validateURI } from './lib/validation';
-import OAuth, { type OAuthProps } from './oauth2/OAuth';
+import OAuth from './oauth2/OAuth';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
 
@@ -28,18 +28,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const HTTP_CONFLICT = 409;
+const HTTP_UNPROCESSABLE = 422;
+
 export type IdentifyProps = {
   identifyEndpoint?: string;
   redirectToOnExists?: string;
   redirectToOnNotExists?: string;
-  oAuthOverrides?: OAuthProps['overrides'];
 };
 
 export default function Identify({
   identifyEndpoint = '/v1/user/exists',
   redirectToOnExists = '/login',
   redirectToOnNotExists = '/register', // TODO Default this to /register if in basic mode, and /login in magical mode
-  oAuthOverrides = {},
 }: IdentifyProps): ReactNode {
   const router = useRouter();
   const authConfig = useAuthentication();
@@ -59,33 +60,35 @@ export default function Identify({
     resolver: zodResolver(schema),
   });
 
+  // Registering with the address alone answers whether it has an account: 409 means it does,
+  // 422 (no credentials yet) or success means it doesn't.
   const onSubmit: SubmitHandler<FormData> = async (formData) => {
-    try {
-      const _response = await axios.post(`${authConfig.authServer}/v1/user`, {
-        user: {
-          email: formData.email.toLowerCase().trim(),
-        },
-      });
+    const continueTo = (path: string): void => {
       void setCookie('email', formData.email, cookieDomainOptions());
-      router.push(`${pathname}${redirectToOnNotExists}`);
+      router.push(`${pathname}${path}`);
+    };
+    try {
+      await authSend(`${authConfig.authServer}/v1/user`, {
+        method: 'POST',
+        body: { user: { email: formData.email.toLowerCase().trim() } },
+      });
+      continueTo(redirectToOnNotExists);
     } catch (exception: unknown) {
-      const axiosError = exception as AxiosError;
-      if (axiosError.response?.status === 409) {
-        // User exists
-        void setCookie('email', formData.email, cookieDomainOptions());
-        router.push(`${pathname}${redirectToOnExists}`);
-      } else if (axiosError.response?.status === 422) {
-        // User doesn't exist
-        void setCookie('email', formData.email, cookieDomainOptions());
-        router.push(`${pathname}${redirectToOnNotExists}`);
+      if (exception instanceof AuthApiError && exception.status === HTTP_CONFLICT) {
+        continueTo(redirectToOnExists);
+      } else if (exception instanceof AuthApiError && exception.status === HTTP_UNPROCESSABLE) {
+        continueTo(redirectToOnNotExists);
       } else {
-        setError('email', { type: 'server', message: axiosError.message });
+        setError('email', {
+          type: 'server',
+          message: exception instanceof Error ? exception.message : 'Your address could not be checked.',
+        });
       }
     }
   };
 
   const showEmail = authConfig.authModes.basic || authConfig.authModes.magical;
-  const showOAuth = authConfig.authModes.oauth2;
+  const showOAuth = authConfig.oauthProviders.length > 0;
 
   const description =
     showEmail && !showOAuth ? 'Please enter your email address to continue.' : 'Please choose an authentication method.';
@@ -121,7 +124,7 @@ export default function Identify({
           </div>
         ) : null}
 
-        {showOAuth && <OAuth overrides={oAuthOverrides} />}
+        {showOAuth && <OAuth />}
       </form>
     </AuthCard>
   );

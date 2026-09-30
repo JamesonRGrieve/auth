@@ -2,67 +2,62 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Button } from '@jgrieve/forms/components/ui/button';
-import { useRouter } from 'next/navigation.js';
-import { type ReactNode, useCallback, useMemo } from 'react';
-import OAuth2Login from 'react-simple-oauth2-login';
-import log from '../lib/log';
-import deepMerge from '../lib/objects';
-import providers from './OAuthProviders';
+import { type ReactElement, useState } from 'react';
+import { useAuthentication } from '../useAuthentication';
+import { oauth2ProviderDisplay } from './OAuthProviders';
+import { beginSignIn } from './signIn';
 
-type ProviderConfig = (typeof providers)[keyof typeof providers];
-type OAuthProvidersOverride = Partial<Record<string, Partial<ProviderConfig>>>;
+/**
+ * A sign-in button for each configured identity provider (`oauthProviders`). Choosing one leaves
+ * for the provider; the close page finishes the sign-in when it sends the browser back.
+ */
+export default function OAuth(): ReactElement | null {
+  const authConfig = useAuthentication();
+  const [pending, setPending] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
 
-export type OAuthProps = {
-  overrides?: OAuthProvidersOverride;
-};
-export default function OAuth({ overrides }: OAuthProps): ReactNode {
-  const _router = useRouter();
-  const oAuthProviders = useMemo(() => deepMerge(providers, { ...overrides }) as typeof providers, [overrides]);
-  log(['OAuth Providers: ', oAuthProviders], { client: 3 });
-  const onOAuth2 = useCallback(() => {
-    document.location.href = `${process.env.NEXT_PUBLIC_APP_URI}/chat`; // This should be fixed properly just low priority.
+  if (authConfig.oauthProviders.length === 0) {
+    return null;
+  }
 
-    // const redirect = getCookie('href') ?? '/';
-    // deleteCookie('href');
-    // router.push(redirect);
-  }, []);
-  /*
-  // Eventually automatically launch if it's the only provider.
-  useEffect(() => {
-    if (Object.values(providers).filter((provider) => provider.client_id).length === 1) {
-      
-    }
-  }, []);
-  */
+  const signIn = (provider: string): void => {
+    setPending(true);
+    void (async (): Promise<void> => {
+      try {
+        const authorizeUrl = await beginSignIn(authConfig.authServer, provider, window.sessionStorage);
+        window.location.assign(authorizeUrl);
+      } catch (error) {
+        setProblem(error instanceof Error ? error.message : 'Sign-in could not start.');
+        setPending(false);
+      }
+    })();
+  };
+
   return (
-    <>
-      {Object.values(oAuthProviders).some((provider) => provider.client_id !== undefined && provider.client_id !== '') &&
-        process.env.NEXT_PUBLIC_ALLOW_EMAIL_SIGN_IN === 'true' && <hr />}
-      {Object.entries(oAuthProviders).map(([key, provider]) => {
+    <div className='flex flex-col gap-2'>
+      {authConfig.oauthProviders.map((provider) => {
+        const { label, icon } = oauth2ProviderDisplay(provider);
         return (
-          provider.client_id !== undefined &&
-          provider.client_id !== '' && (
-            <OAuth2Login
-              key={key}
-              authorizationUrl={provider.uri}
-              responseType='code'
-              clientId={provider.client_id}
-              scope={provider.scope}
-              redirectUri={`${process.env.NEXT_PUBLIC_AUTH_URI}/close/${key.replaceAll('.', '-').replaceAll(' ', '-').replaceAll('_', '-').toLowerCase()}`}
-              onSuccess={onOAuth2}
-              onFailure={onOAuth2}
-              extraParams={provider.params}
-              isCrossOrigin
-              render={(renderProps) => (
-                <Button variant='outline' type='button' className='space-x-1 bg-transparent' onClick={renderProps.onClick}>
-                  <span className='text-lg'>{provider.icon}</span>
-                  <span>Login with {key}</span>
-                </Button>
-              )}
-            />
-          )
+          <Button
+            key={provider}
+            variant='outline'
+            type='button'
+            disabled={pending}
+            className='space-x-1 bg-transparent'
+            onClick={() => signIn(provider)}
+          >
+            <span className='text-lg' aria-hidden>
+              {icon}
+            </span>
+            <span>Continue with {label}</span>
+          </Button>
         );
       })}
-    </>
+      {problem !== null && (
+        <p role='alert' className='text-sm text-destructive'>
+          {problem}
+        </p>
+      )}
+    </div>
   );
 }
