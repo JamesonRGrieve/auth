@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Placeholder test to satisfy tsconfig.test.json's include glob until
  * real Vitest coverage lands per workspace §7.6. Tracked in todo.json.

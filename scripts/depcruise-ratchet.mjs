@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * dependency-cruiser ratchet — count of violations (forbidden rules).
  * Baseline file: .depcruise-baseline (plain integer count).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 

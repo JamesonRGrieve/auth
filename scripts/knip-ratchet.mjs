@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Knip ratchet — count of unused exports/files/dependencies reported by `knip`.
  * Baseline file: .knip-baseline (plain integer count).

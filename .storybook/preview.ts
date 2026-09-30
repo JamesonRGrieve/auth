@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { Preview } from '@storybook/nextjs';
 import { createElement } from 'react';
 import { AuthServerProvider } from '../src/AuthServerContext';

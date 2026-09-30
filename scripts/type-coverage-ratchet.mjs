@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * type-coverage ratchet — percentage of expressions with non-`any` types.
  * Baseline file: .type-coverage-baseline (decimal percent, e.g. "92.5").

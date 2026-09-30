@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Strict-mode ratchet — counts files that produce at least one error when
  * tsc is run with `--strict --strictNullChecks --noImplicitAny --noImplicitThis`

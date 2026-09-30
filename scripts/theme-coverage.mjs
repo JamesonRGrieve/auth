@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Theme coverage: counts hard-coded color literals and non-token spacing
 // in src/**/*.{css,scss}.
 //

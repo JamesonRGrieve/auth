@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * test-typecheck ratchet — `tsc --noEmit` errors restricted to test files
  * via tsconfig.test.json. Baseline file: .test-tsc-error-baseline.

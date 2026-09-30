@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * !important ratchet — count of `!important` declarations in CSS files,
  * inline `style={{...}}` strings, and styled snippets across src/.

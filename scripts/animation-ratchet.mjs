@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Animation ratchet — count of `@keyframes` blocks and `animation*:`
  * declarations across src CSS/SCSS files plus the keyframes/animation

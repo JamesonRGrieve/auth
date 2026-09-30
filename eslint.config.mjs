@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // ESLint 10 flat config.
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import eslintCommentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';

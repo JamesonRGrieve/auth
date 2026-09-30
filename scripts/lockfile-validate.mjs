@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Lockfile validator — refuses unresolved entries, missing integrity hashes,
  * or workspace drift. Exits non-zero on problems. No baseline (binary gate).

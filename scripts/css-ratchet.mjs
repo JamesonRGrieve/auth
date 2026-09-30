@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * CSS ratchet — stylelint warning/error count across CSS files in src/.
  * Baseline file: .css-baseline (plain integer).

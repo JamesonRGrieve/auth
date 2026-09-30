@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Theme ratchet — counts of hard-coded color and non-token spacing literals
  * in CSS. Direction: neither count may rise. Baseline is JSON with

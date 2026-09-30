@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Count `@keyframes` blocks AND `animation:` / `animation-*:` declarations
  * across the repo's CSS surface — src CSS/SCSS files plus the
