@@ -20,6 +20,8 @@ export type LoginProps = {
   userLoginEndpoint?: string;
 };
 
+const RESPONSE_MESSAGE_ID = 'login-response-message';
+
 /** The address the identify step remembered, to sign in as. */
 const rememberedEmail = (): string => cookieText('email');
 
@@ -49,6 +51,8 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
   const [linkSent, setLinkSent] = useState(false);
   // One attempt at a time: a double submit would spend a rate-limited login twice.
   const [pending, setPending] = useState(false);
+  // Only a refused sign-in is the password's fault; a missing reCAPTCHA is not.
+  const [passwordRejected, setPasswordRejected] = useState(false);
 
   const signIn = async (email: string, password: string): Promise<void> => {
     if (byEmailLink) {
@@ -73,11 +77,13 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     }
     const formData = new FormData(event.currentTarget);
     setPending(true);
+    setPasswordRejected(false);
     try {
       await signIn(formText(formData, 'email').toLowerCase().trim(), formText(formData, 'password'));
     } catch (error) {
       const fallback = byEmailLink ? 'The sign-in link could not be sent.' : 'Login failed.';
       setResponseMessage(error instanceof Error ? error.message : fallback);
+      setPasswordRejected(!byEmailLink);
     } finally {
       setPending(false);
     }
@@ -130,7 +136,15 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
         {authConfig.authModes.basic && (
           <>
             <Label htmlFor='password'>Password</Label>
-            <Input id='password' placeholder='Password' name='password' type='password' autoComplete='current-password' />
+            <Input
+              id='password'
+              placeholder='Password'
+              name='password'
+              type='password'
+              autoComplete='current-password'
+              aria-invalid={passwordRejected}
+              {...(responseMessage === '' ? {} : { 'aria-describedby': RESPONSE_MESSAGE_ID })}
+            />
           </>
         )}
         {needsCaptcha && (
@@ -146,7 +160,9 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
         <Button type='submit' disabled={pending}>
           {byEmailLink ? 'Email me a sign-in link' : responseMessage !== '' ? 'Continue' : 'Login'}
         </Button>
-        {responseMessage !== '' && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}
+        {responseMessage !== '' && (
+          <AuthCard.ResponseMessage id={RESPONSE_MESSAGE_ID}>{responseMessage}</AuthCard.ResponseMessage>
+        )}
       </form>
     </AuthCard>
   );

@@ -165,7 +165,20 @@ describe('Login', () => {
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'wrong');
     await user.click(view.getByRole('button', { name: 'Login' }));
-    expect(await view.findByText('Invalid credentials')).toBeInTheDocument();
+    expect(await view.findByRole('alert')).toHaveTextContent('Invalid credentials');
+    const password = view.getByLabelText('Password');
+    expect(password).toHaveAttribute('aria-invalid', 'true');
+    expect(password).toHaveAccessibleDescription('Invalid credentials');
+  });
+
+  it('describes the password by the reCAPTCHA prompt without marking it wrong', async () => {
+    const user = userEvent.setup();
+    const view = renderLogin({ ...testAuthConfig, recaptchaSiteKey: 'site-key' });
+    await user.type(view.getByLabelText('Password'), 'pw');
+    await user.click(view.getByRole('button', { name: 'Login' }));
+    const password = view.getByLabelText('Password');
+    expect(password).toHaveAccessibleDescription('Please complete the reCAPTCHA.');
+    expect(password).toHaveAttribute('aria-invalid', 'false');
   });
 
   it('keeps the optional login endpoint override', () => {

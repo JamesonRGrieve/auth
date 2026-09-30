@@ -60,12 +60,12 @@ describe('detectTimezone', () => {
 
 describe('passwordChangeProblem', () => {
   it.each([
-    ['', 'new', 'new', 'Enter your current password.'],
-    ['old', '', '', 'Enter a new password.'],
-    ['old', 'new', 'nwe', 'The new passwords do not match.'],
-    ['same', 'same', 'same', 'The new password must differ from the current one.'],
-  ])('rejects current=%j next=%j again=%j', (currentPassword, next, again, problem) => {
-    expect(passwordChangeProblem(currentPassword, next, again)).toBe(problem);
+    ['', 'new', 'new', 'current-password', 'Enter your current password.'],
+    ['old', '', '', 'new-password', 'Enter a new password.'],
+    ['old', 'new', 'nwe', 'new-password-again', 'The new passwords do not match.'],
+    ['same', 'same', 'same', 'new-password', 'The new password must differ from the current one.'],
+  ])('rejects current=%j next=%j again=%j, blaming %s', (currentPassword, next, again, field, message) => {
+    expect(passwordChangeProblem(currentPassword, next, again)).toEqual({ field, message });
   });
 
   it('accepts a confirmed, different new password', () => {

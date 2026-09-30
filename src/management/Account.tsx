@@ -4,9 +4,12 @@ import PasswordField from '@jgrieve/forms/PasswordField';
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { type ReactElement, type SyntheticEvent, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { passwordChangeProblem } from './profileModel';
+import { type PasswordChangeField, passwordChangeProblem } from './profileModel';
 
-type ChangeStatus = { failed: boolean; message: string } | null;
+/** A failure names the field at fault when it is one; a server refusal is the form's. */
+type ChangeStatus = { failed: boolean; message: string; field?: PasswordChangeField } | null;
+
+const STATUS_ID = 'change-password-status';
 
 const formText = (data: FormData, name: string): string => {
   const value = data.get(name);
@@ -28,7 +31,7 @@ export function Account({
     const next = formText(data, 'new-password');
     const problem = passwordChangeProblem(current, next, formText(data, 'new-password-again'));
     if (problem !== null) {
-      setStatus({ failed: true, message: problem });
+      setStatus({ failed: true, ...problem });
       return;
     }
     setPending(true);
@@ -40,6 +43,12 @@ export function Account({
     } finally {
       setPending(false);
     }
+  };
+
+  // A failure describes the field at fault, or every field when it is the form's.
+  const fieldAria = (field: PasswordChangeField): { 'aria-invalid': boolean; 'aria-describedby'?: string } => {
+    const blamed = status?.failed === true && (status.field === undefined || status.field === field);
+    return blamed ? { 'aria-invalid': status.field === field, 'aria-describedby': STATUS_ID } : { 'aria-invalid': false };
   };
 
   return (
@@ -57,13 +66,19 @@ export function Account({
             void submit(event.currentTarget);
           }}
         >
-          <PasswordField id='current-password' name='current-password' label='Current password' />
+          <PasswordField
+            id='current-password'
+            name='current-password'
+            label='Current password'
+            {...fieldAria('current-password')}
+          />
           <PasswordField
             id='new-password'
             name='new-password'
             label='New password'
             autoComplete='new-password'
             placeholder='Enter a new password'
+            {...fieldAria('new-password')}
           />
           <PasswordField
             id='new-password-again'
@@ -71,12 +86,14 @@ export function Account({
             label='New password (again)'
             autoComplete='new-password'
             placeholder='Enter the new password again'
+            {...fieldAria('new-password-again')}
           />
           <Button type='submit' disabled={pending}>
             Change password
           </Button>
           {status !== null && (
             <p
+              id={STATUS_ID}
               role={status.failed ? 'alert' : 'status'}
               className={status.failed ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}
             >

@@ -17,7 +17,7 @@ export const ResponseMessage = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element => {
   return (
-    <div className={cn('mt-4 text-sm text-center text-destructive', className)} {...props}>
+    <div role='alert' className={cn('mt-4 text-sm text-center text-destructive', className)} {...props}>
       {children}
     </div>
   );

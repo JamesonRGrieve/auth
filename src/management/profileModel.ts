@@ -53,19 +53,25 @@ export function detectTimezone(): string {
   return zone === '' ? FALLBACK_TIMEZONE : zone;
 }
 
+/** The password-change form's fields, by name. */
+export type PasswordChangeField = 'current-password' | 'new-password' | 'new-password-again';
+
+/** What is wrong with a password change, and the field it is wrong in. */
+export type PasswordChangeProblem = { field: PasswordChangeField; message: string };
+
 /** Why a password change can't be sent yet, or `null` when it can. */
-export function passwordChangeProblem(current: string, next: string, confirmation: string): string | null {
+export function passwordChangeProblem(current: string, next: string, confirmation: string): PasswordChangeProblem | null {
   if (current === '') {
-    return 'Enter your current password.';
+    return { field: 'current-password', message: 'Enter your current password.' };
   }
   if (next === '') {
-    return 'Enter a new password.';
+    return { field: 'new-password', message: 'Enter a new password.' };
   }
   if (next !== confirmation) {
-    return 'The new passwords do not match.';
+    return { field: 'new-password-again', message: 'The new passwords do not match.' };
   }
   if (next === current) {
-    return 'The new password must differ from the current one.';
+    return { field: 'new-password', message: 'The new password must differ from the current one.' };
   }
   return null;
 }

@@ -36,6 +36,19 @@ describe('Account', () => {
     await fill(view, 'old-secret', 'new-secret', 'new-secert');
     expect(onChangePassword).not.toHaveBeenCalled();
     expect(view.getByRole('alert')).toHaveTextContent('The new passwords do not match.');
+    const again = view.getByLabelText('New password (again)');
+    expect(again).toHaveAttribute('aria-invalid', 'true');
+    expect(again).toHaveAccessibleDescription('The new passwords do not match.');
+    expect(view.getByLabelText('New password')).toHaveAttribute('aria-invalid', 'false');
+    expect(view.getByLabelText('New password')).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('marks a missing current password on that field', async () => {
+    const view = render(<Account onChangePassword={vi.fn(async () => Promise.resolve(''))} />);
+    await fill(view, '', 'new-secret', 'new-secret');
+    const current = view.getByLabelText('Current password');
+    expect(current).toHaveAttribute('aria-invalid', 'true');
+    expect(current).toHaveAccessibleDescription('Enter your current password.');
   });
 
   it('shows the server’s refusal', async () => {
@@ -43,5 +56,9 @@ describe('Account', () => {
     const view = render(<Account onChangePassword={onChangePassword} />);
     await fill(view, 'wrong', 'new-secret', 'new-secret');
     expect(await view.findByRole('alert')).toHaveTextContent('Current password is incorrect');
+    // The server does not say which field is wrong, so every field is described by it and none blamed.
+    const current = view.getByLabelText('Current password');
+    expect(current).toHaveAccessibleDescription('Current password is incorrect');
+    expect(current).toHaveAttribute('aria-invalid', 'false');
   });
 });
