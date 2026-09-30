@@ -5,7 +5,7 @@ import { type ReactElement, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useUserInvitations } from '../hooks/useUserInvitations';
 import { useAuthentication } from '../useAuthentication';
-import { type InvitationAnswer, invitationAnswer, type PendingInvitation } from './invitationsModel';
+import type { InvitationAnswer, PendingInvitation } from './invitationsModel';
 
 const formatExpiry = (expiresAt: string | null | undefined): string =>
   expiresAt === null || expiresAt === undefined ? 'Does not expire' : `Expires ${new Date(expiresAt).toLocaleString()}`;
@@ -19,7 +19,6 @@ function InvitationRow({
 }): ReactElement {
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const answerable = invitationAnswer(invitation, 'accept') !== null;
   const team = invitation.team?.name ?? 'A team';
 
   const answer = (action: InvitationAnswer): void => {
@@ -41,29 +40,25 @@ function InvitationRow({
         </p>
         <p className='text-sm text-muted-foreground'>{formatExpiry(invitation.expires_at)}</p>
       </div>
-      {answerable ? (
-        <div className='flex gap-2'>
-          <Button
-            size='sm'
-            disabled={pending}
-            aria-label={`Accept the invitation to ${team}`}
-            onClick={() => answer('accept')}
-          >
-            Accept
-          </Button>
-          <Button
-            size='sm'
-            variant='outline'
-            disabled={pending}
-            aria-label={`Decline the invitation to ${team}`}
-            onClick={() => answer('decline')}
-          >
-            Decline
-          </Button>
-        </div>
-      ) : (
-        <p className='text-sm text-muted-foreground'>Use the invitation link you were sent to answer this one.</p>
-      )}
+      <div className='flex gap-2'>
+        <Button
+          size='sm'
+          disabled={pending}
+          aria-label={`Accept the invitation to ${team}`}
+          onClick={() => answer('accept')}
+        >
+          Accept
+        </Button>
+        <Button
+          size='sm'
+          variant='outline'
+          disabled={pending}
+          aria-label={`Decline the invitation to ${team}`}
+          onClick={() => answer('decline')}
+        >
+          Decline
+        </Button>
+      </div>
       {problem !== null && (
         <p role='alert' className='text-sm text-destructive'>
           {problem}

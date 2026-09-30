@@ -40,8 +40,12 @@ export const Several: Story = {
         role: { name: 'Admin' },
         invitees: [{ id: 'row-1', status: 'pending' }],
       },
-      { id: 'inv-2', created_at: '2026-09-21T00:00:00Z', code: 'JOIN-BETA', team: { name: 'Beta' } },
-      { id: 'inv-3', created_at: '2026-09-22T00:00:00Z', team: { name: 'Gamma' } },
+      {
+        id: 'inv-2',
+        created_at: '2026-09-21T00:00:00Z',
+        team: { name: 'Beta' },
+        invitees: [{ id: 'row-2', status: 'pending' }],
+      },
     ]),
   ],
 };

@@ -27,11 +27,10 @@ export function useUserInvitations(authServer: string): UserInvitations {
 
   const answer = useCallback(
     async (invitation: PendingInvitation, action: InvitationAnswer): Promise<void> => {
-      const body = invitationAnswer(invitation, action);
-      if (body === null) {
-        throw new Error('This invitation can’t be answered here.');
-      }
-      await authSend(`${authServer}/v1/invitation/${encodeURIComponent(invitation.id)}`, { method: 'PATCH', body });
+      await authSend(`${authServer}/v1/invitation/${encodeURIComponent(invitation.id)}`, {
+        method: 'PATCH',
+        body: invitationAnswer(invitation, action),
+      });
       await mutate();
     },
     [authServer, mutate],

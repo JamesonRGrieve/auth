@@ -18,7 +18,12 @@ const invitations = [
     role: { name: 'Admin' },
     invitees: [{ id: 'row-1', status: 'pending' }],
   },
-  { id: 'inv-2', created_at: '2026-09-21T00:00:00Z', team: { name: 'Gamma' } },
+  {
+    id: 'inv-2',
+    created_at: '2026-09-21T00:00:00Z',
+    team: { name: 'Gamma' },
+    invitees: [{ id: 'row-2', status: 'pending' }],
+  },
 ];
 
 const serve = (patchStatus = HTTP_OK): Mock<(url: string, init: RequestInit) => Promise<Response>> => {
@@ -60,7 +65,7 @@ describe('PendingInvitations', () => {
         .getAllByRole('listitem')
         .map((item) => item.querySelector('p')?.textContent),
     ).toEqual(['Alpha as Admin', 'Gamma']);
-    expect(within(list).getByText('Use the invitation link you were sent to answer this one.')).toBeInTheDocument();
+    expect(within(list).getAllByRole('button', { name: /^Accept the invitation to / })).toHaveLength(2);
   });
 
   it('accepts with the caller’s invitee row and drops the answered invitation', async () => {
