@@ -8,15 +8,20 @@ const SERVER = 'https://api.example.com';
 const HTTP_OK = 200;
 const policy = { min_length: 8, max_bytes: 72, require_letter: true, require_digit: true };
 
+const serving = (): ReturnType<typeof vi.fn> => {
+  const fetchMock = vi.fn(async () => Promise.resolve(new Response(JSON.stringify(policy), { status: HTTP_OK })));
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+};
+
 describe('usePasswordPolicy', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   it('reads the policy from the auth server’s public endpoint', async () => {
-    const fetchMock = vi.fn(async () => Promise.resolve(new Response(JSON.stringify(policy), { status: HTTP_OK })));
-    vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => usePasswordPolicy(SERVER));
+    const fetchMock = serving();
+    const { result } = renderHook(() => usePasswordPolicy(SERVER, true));
     await waitFor(() => {
       expect(result.current.data).toEqual(policy);
     });
@@ -24,5 +29,12 @@ describe('usePasswordPolicy', () => {
       `${SERVER}${PASSWORD_POLICY_ENDPOINT}`,
       expect.objectContaining({ method: 'GET' }),
     );
+  });
+
+  it('asks for nothing when the app has no password sign-in', () => {
+    const fetchMock = serving();
+    const { result } = renderHook(() => usePasswordPolicy(`${SERVER}/no-passwords`, false));
+    expect(result.current.data).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

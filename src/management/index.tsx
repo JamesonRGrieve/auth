@@ -54,7 +54,7 @@ export default function Manage({ returnPath = '/', sections }: ManageProps): Rea
   const router = useRouter();
   const authConfig = useAuthentication();
   const { profile, error, isLoading, update, changePassword } = useProfile(authConfig.authServer);
-  const { data: passwordPolicy } = usePasswordPolicy(authConfig.authServer);
+  const { data: passwordPolicy } = usePasswordPolicy(authConfig.authServer, authConfig.authModes.basic);
 
   // A new account has no timezone; record the browser's once so times render locally.
   const timezoneRecorded = useRef(false);

@@ -43,7 +43,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
 
   const authConfig = useAuthentication();
   // Until the policy loads nothing is checked here; the server enforces it either way.
-  const { data: policy } = usePasswordPolicy(authConfig.authServer);
+  const { data: policy } = usePasswordPolicy(authConfig.authServer, authConfig.authModes.basic);
   const [refused, setRefused] = useState<PasswordRule[]>([]);
   const meetsPolicy = policy === undefined || (brokenRules(passwords.password, policy).length === 0 && refused.length === 0);
   useAssertion(validateURI(authConfig.authServer + userRegisterEndpoint), 'Invalid login endpoint.', [
