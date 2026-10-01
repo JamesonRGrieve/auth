@@ -41,7 +41,6 @@
     "limit": "5 KB"
   },
   { "name": "management/Sessions", "path": "dist/management/Sessions.js", "brotli": false, "gzip": false, "limit": "6 KB" },
-  { "name": "management/ApiKeys", "path": "dist/management/ApiKeys.js", "brotli": false, "gzip": false, "limit": "10 KB" },
   { "name": "management/Profile", "path": "dist/management/Profile.js", "brotli": false, "gzip": false, "limit": "23 KB" },
   {
     "name": "management/ConnectedServices",
