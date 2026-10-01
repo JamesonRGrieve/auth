@@ -5,6 +5,7 @@ import Link from 'next/link.js';
 import { useRouter } from 'next/navigation.js';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { usePasswordPolicy } from '../hooks/usePasswordPolicy';
 import { useProfile } from '../hooks/useProfile';
 import { useTeams } from '../hooks/useTeam';
 import log from '../lib/log';
@@ -53,6 +54,7 @@ export default function Manage({ returnPath = '/', sections }: ManageProps): Rea
   const router = useRouter();
   const authConfig = useAuthentication();
   const { profile, error, isLoading, update, changePassword } = useProfile(authConfig.authServer);
+  const { data: passwordPolicy } = usePasswordPolicy(authConfig.authServer);
 
   // A new account has no timezone; record the browser's once so times render locally.
   const timezoneRecorded = useRef(false);
@@ -93,7 +95,7 @@ export default function Manage({ returnPath = '/', sections }: ManageProps): Rea
       ) : (
         <>
           <Profile profile={profile} onSave={update} />
-          {authConfig.authModes.basic && <Account onChangePassword={changePassword} />}
+          {authConfig.authModes.basic && <Account onChangePassword={changePassword} passwordPolicy={passwordPolicy} />}
           {sections}
           <Teams />
           <PendingInvitations />

@@ -15,30 +15,38 @@ export interface AuthApiInit {
   authorization?: string;
 }
 
-/** A non-2xx answer from the auth server; `detail` is the server's message when it sent one. */
+/**
+ * A non-2xx answer from the auth server; `detail` is the server's message when it sent one, and
+ * `failed` names the rules a refused value broke (e.g. the password policy's), when it listed them.
+ */
 export class AuthApiError extends Error {
   constructor(
     readonly status: number,
     readonly detail: string,
+    readonly failed: readonly string[] = [],
   ) {
     super(detail);
     this.name = 'AuthApiError';
   }
 }
 
-const ErrorBodySchema = z.object({ detail: z.string() });
+// `detail` is a message, or a message with the rules a value broke.
+const ErrorBodySchema = z.object({
+  detail: z.union([z.string(), z.object({ message: z.string(), failed: z.array(z.string()).optional() })]),
+});
 
-const errorDetail = async (response: Response): Promise<string> => {
+const errorDetail = async (response: Response): Promise<{ detail: string; failed: string[] }> => {
   try {
     const parsed = ErrorBodySchema.safeParse(await response.clone().json());
     if (parsed.success) {
-      return parsed.data.detail;
+      const { detail } = parsed.data;
+      return typeof detail === 'string' ? { detail, failed: [] } : { detail: detail.message, failed: detail.failed ?? [] };
     }
   } catch {
     // Not JSON: fall back to the raw text below.
   }
   const text = await response.text();
-  return text === '' ? response.statusText : text;
+  return { detail: text === '' ? response.statusText : text, failed: [] };
 };
 
 const send = async (url: string, { method = 'GET', body, authorization }: AuthApiInit): Promise<Response> => {
@@ -53,7 +61,8 @@ const send = async (url: string, { method = 'GET', body, authorization }: AuthAp
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (!response.ok) {
-    throw new AuthApiError(response.status, await errorDetail(response));
+    const { detail, failed } = await errorDetail(response);
+    throw new AuthApiError(response.status, detail, failed);
   }
   return response;
 };

@@ -22,6 +22,7 @@ export { mfaApi, passwordLogin, completeMfaLogin, isMfaChallenge } from './mfa/m
 export type { MfaMethod, MfaChallenge as MfaLoginChallenge, TotpProvisioning, LoginAnswer } from './mfa/mfaApi';
 export { default as Logout } from './Logout';
 export { default as Register } from './Register';
+export { PasswordRules } from './PasswordRules';
 export { default as Subscribe } from './Subscribe';
 export { default as AuthRouter } from './Router';
 export { default as OrganizationalUnitPage } from './OU';
@@ -46,4 +47,5 @@ export type { IdentifyProps } from './Identify';
 export type { LoginProps } from './Login';
 export type { LogoutProps } from './Logout';
 export type { RegisterProps } from './Register';
+export type { PasswordRulesProps } from './PasswordRules';
 export type { SubscribeProps } from './Subscribe';

@@ -9,9 +9,12 @@ import { useRouter } from 'next/navigation.js';
 import { type ChangeEvent, type ReactNode, type SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { ReCAPTCHA } from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
-import { authRequest } from './lib/api';
+import { PasswordRules } from './PasswordRules';
+import { usePasswordPolicy } from './hooks/usePasswordPolicy';
+import { AuthApiError, authRequest } from './lib/api';
 import { useAssertion } from './lib/assert';
 import { cookieText } from './lib/cookies';
+import { brokenRules, knownRules, type PasswordRule } from './lib/passwordPolicy';
 import { validateURI } from './lib/validation';
 import { loginRedirectPath, RegisterResponseSchema } from './registerRedirect';
 import { useAuthentication } from './useAuthentication';
@@ -23,6 +26,7 @@ export type RegisterProps = {
 };
 
 const PASSWORD_MATCH_ID = 'register-password-match';
+const PASSWORD_RULES_ID = 'register-password-rules';
 
 export default function Register({ additionalFields = [], userRegisterEndpoint = '/v1/user' }: RegisterProps): ReactNode {
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -38,6 +42,10 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const invite = cookieText('invitation');
 
   const authConfig = useAuthentication();
+  // Until the policy loads nothing is checked here; the server enforces it either way.
+  const { data: policy } = usePasswordPolicy(authConfig.authServer);
+  const [refused, setRefused] = useState<PasswordRule[]>([]);
+  const meetsPolicy = policy === undefined || (brokenRules(passwords.password, policy).length === 0 && refused.length === 0);
   useAssertion(validateURI(authConfig.authServer + userRegisterEndpoint), 'Invalid login endpoint.', [
     authConfig.authServer,
     userRegisterEndpoint,
@@ -67,6 +75,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
       router.push(loginRedirectPath(`${authConfig.authPath}${authConfig.login.path}`, flags));
     } catch (exception: unknown) {
       setResponseMessage(exception instanceof Error ? exception.message : 'Registration failed.');
+      setRefused(exception instanceof AuthApiError ? knownRules(exception.failed) : []);
       setPending(false);
     }
   };
@@ -116,12 +125,19 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
                 placeholder='Password'
                 name='password'
                 type='password'
+                autoComplete='new-password'
                 required
+                aria-invalid={refused.length > 0}
+                {...(policy === undefined ? {} : { 'aria-describedby': PASSWORD_RULES_ID })}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   setPasswords((prev) => ({ ...prev, password: e.target.value }));
                   setPasswordsMatch(e.target.value === passwords.passwordAgain);
+                  setRefused([]);
                 }}
               />
+              {policy !== undefined && (
+                <PasswordRules id={PASSWORD_RULES_ID} policy={policy} password={passwords.password} refused={refused} />
+              )}
               <Label htmlFor='password-again'>Password (Again)</Label>
               <Input
                 id='password-again'
@@ -162,7 +178,7 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
               />
             </div>
           )}
-          <Button type='submit' disabled={pending || (authConfig.authModes.basic && !passwordsMatch)}>
+          <Button type='submit' disabled={pending || (authConfig.authModes.basic && !(passwordsMatch && meetsPolicy))}>
             {hasInvite ? 'Accept Invitation' : 'Register'}
           </Button>
           {responseMessage !== '' && <AuthCard.ResponseMessage>{responseMessage}</AuthCard.ResponseMessage>}

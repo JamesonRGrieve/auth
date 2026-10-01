@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { z } from 'zod';
+import { brokenRules, type PasswordPolicy } from '../lib/passwordPolicy';
 
 const optionalText = z.string().nullable().optional();
 
@@ -59,13 +60,24 @@ export type PasswordChangeField = 'current-password' | 'new-password' | 'new-pas
 /** What is wrong with a password change, and the field it is wrong in. */
 export type PasswordChangeProblem = { field: PasswordChangeField; message: string };
 
-/** Why a password change can't be sent yet, or `null` when it can. */
-export function passwordChangeProblem(current: string, next: string, confirmation: string): PasswordChangeProblem | null {
+/**
+ * Why a password change can't be sent yet, or `null` when it can. `policy` is the server's password
+ * rule, `undefined` until it has loaded, when the server is left to enforce it.
+ */
+export function passwordChangeProblem(
+  current: string,
+  next: string,
+  confirmation: string,
+  policy: PasswordPolicy | undefined,
+): PasswordChangeProblem | null {
   if (current === '') {
     return { field: 'current-password', message: 'Enter your current password.' };
   }
   if (next === '') {
     return { field: 'new-password', message: 'Enter a new password.' };
+  }
+  if (policy !== undefined && brokenRules(next, policy).length > 0) {
+    return { field: 'new-password', message: 'The new password does not meet the requirements.' };
   }
   if (next !== confirmation) {
     return { field: 'new-password-again', message: 'The new passwords do not match.' };

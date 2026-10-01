@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { PasswordPolicy } from '../lib/passwordPolicy';
 import { detectTimezone, passwordChangeProblem, profileChanges, type UserProfile } from './profileModel';
+
+const POLICY: PasswordPolicy = { min_length: 8, max_bytes: 72, require_letter: true, require_digit: true };
 
 const current: UserProfile = {
   id: 'u1',
@@ -65,10 +68,18 @@ describe('passwordChangeProblem', () => {
     ['old', 'new', 'nwe', 'new-password-again', 'The new passwords do not match.'],
     ['same', 'same', 'same', 'new-password', 'The new password must differ from the current one.'],
   ])('rejects current=%j next=%j again=%j, blaming %s', (currentPassword, next, again, field, message) => {
-    expect(passwordChangeProblem(currentPassword, next, again)).toEqual({ field, message });
+    expect(passwordChangeProblem(currentPassword, next, again, undefined)).toEqual({ field, message });
   });
 
-  it('accepts a confirmed, different new password', () => {
-    expect(passwordChangeProblem('old', 'new', 'new')).toBeNull();
+  it('accepts a confirmed, different new password while the policy is still loading', () => {
+    expect(passwordChangeProblem('old', 'new', 'new', undefined)).toBeNull();
+  });
+
+  it('holds a new password that breaks the server’s policy, before checking the confirmation', () => {
+    expect(passwordChangeProblem('old', 'abcdefgh', 'different', POLICY)).toEqual({
+      field: 'new-password',
+      message: 'The new password does not meet the requirements.',
+    });
+    expect(passwordChangeProblem('old', 'abcdefg1', 'abcdefg1', POLICY)).toBeNull();
   });
 });

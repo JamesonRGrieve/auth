@@ -8,6 +8,7 @@ const API_URL = 'https://api.example.com/v1/user';
 const HTTP_OK = 200;
 const HTTP_NO_CONTENT = 204;
 const HTTP_FORBIDDEN = 403;
+const HTTP_UNPROCESSABLE = 422;
 const HTTP_BAD_GATEWAY = 502;
 
 const respond = (response: Response): ReturnType<typeof vi.fn> => {
@@ -67,6 +68,17 @@ describe('authRequest', () => {
   it('raises the server’s detail with its status', async () => {
     respond(new Response('{"detail":"active: root only"}', { status: HTTP_FORBIDDEN }));
     await expect(authRequest(API_URL, z.object({}))).rejects.toEqual(new AuthApiError(HTTP_FORBIDDEN, 'active: root only'));
+  });
+
+  it('raises a structured detail’s message, with the rules the refused value broke', async () => {
+    respond(
+      new Response('{"detail":{"message":"Password does not meet the policy","failed":["min_length","require_digit"]}}', {
+        status: HTTP_UNPROCESSABLE,
+      }),
+    );
+    await expect(authSend(API_URL)).rejects.toEqual(
+      new AuthApiError(HTTP_UNPROCESSABLE, 'Password does not meet the policy', ['min_length', 'require_digit']),
+    );
   });
 
   it('falls back to the raw body, then the status text, when there is no detail', async () => {
