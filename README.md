@@ -41,7 +41,7 @@ const guard = createAuthMiddleware({
 For OAuth sign-in, list the providers in the router config (`oauthProviders: ['google']`) and allow
 `<app>/user/close/<provider>` as a redirect URI on the server.
 
-The root export carries the primary components, hooks and helpers. Less common modules are importable by path, e.g. `@zephyrex/auth/management/Team` or `@zephyrex/auth/auth.middleware`.
+The root export carries the primary components, hooks and helpers. Less common modules are importable by path, e.g. `@zephyrex/auth/oauth2/OAuth` or `@zephyrex/auth/auth.middleware`. The account page the router lands on after sign-in (`manage.path`) is the app's own, mounted through the router's `additionalPages`.
 
 The package is ESM, compiled for bundlers (Next.js, Vite).
 

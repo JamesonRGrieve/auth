@@ -25,22 +25,6 @@
   },
   { "name": "oauth2/OAuth", "path": "dist/oauth2/OAuth.js", "brotli": false, "gzip": false, "limit": "3 KB" },
   { "name": "oauth2/Close", "path": "dist/oauth2/Close.js", "brotli": false, "gzip": false, "limit": "3 KB" },
-  { "name": "management/Team", "path": "dist/management/Team.js", "brotli": false, "gzip": false, "limit": "10 KB" },
-  {
-    "name": "management/TeamMembers",
-    "path": "dist/management/TeamMembers.js",
-    "brotli": false,
-    "gzip": false,
-    "limit": "12 KB"
-  },
-  {
-    "name": "management/InviteForm",
-    "path": "dist/management/InviteForm.js",
-    "brotli": false,
-    "gzip": false,
-    "limit": "5 KB"
-  },
-  { "name": "management/Profile", "path": "dist/management/Profile.js", "brotli": false, "gzip": false, "limit": "23 KB" },
   {
     "name": "management/ConnectedServices",
     "path": "dist/management/ConnectedServices.js",

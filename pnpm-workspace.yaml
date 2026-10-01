@@ -1,8 +1,7 @@
-# Until zod2gql and @jgrieve/forms are published, resolve them from the sibling
-# checkouts. `file:` installs a copy whose peers (react, zod, ...) resolve from this
-# package, so there is one React and one zod; `link:` would not. Remove once published.
+# Until @jgrieve/forms is published, resolve it from the sibling checkout. `file:` installs a
+# copy whose peers (react, zod, ...) resolve from this package, so there is one React and one
+# zod; `link:` would not. Remove once published.
 overrides:
-  zod2gql: file:../zod2gql
   '@jgrieve/forms': file:../dynamic-form
 
 allowBuilds:

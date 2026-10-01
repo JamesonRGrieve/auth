@@ -13,7 +13,6 @@ import MagicLink, { type MagicLinkProps } from './MagicLink';
 import Register, { type RegisterProps } from './Register';
 import Subscribe, { type SubscribeProps } from './Subscribe';
 import deepMerge from './lib/objects';
-import Manage, { type ManageProps } from './management';
 import Close, { type CloseProps } from './oauth2/Close';
 import PairApprove, { type PairApproveProps } from './pairing/PairApprove';
 import PairRequest, { type PairRequestProps } from './pairing/PairRequest';
@@ -28,7 +27,8 @@ type RouterPageProps = {
 export type AuthenticationConfig = {
   identify: RouterPageProps & { props?: IdentifyProps };
   login: RouterPageProps & { props?: LoginProps };
-  manage: RouterPageProps & { props?: ManageProps };
+  /** Where signing in lands: the app's own account page, mounted there through `additionalPages`. */
+  manage: RouterPageProps;
   register: RouterPageProps & { props?: RegisterProps };
   close: RouterPageProps & { props?: CloseProps };
   /** Where sign-in links land; point the server's MAGIC_LINK_BASE_URL at `<app><authPath><path>`. */
@@ -140,7 +140,6 @@ export default function AuthRouter({
   const pages = new Map<string, ReactNode>()
     .set(mergedConfig.identify.path, <User {...mergedConfig.identify.props} />)
     .set(mergedConfig.login.path, <Login {...mergedConfig.login.props} />)
-    .set(mergedConfig.manage.path, <Manage {...mergedConfig.manage.props} />)
     .set(mergedConfig.register.path, <Register {...mergedConfig.register.props} />)
     .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)
     .set(mergedConfig.magic.path, <MagicLink {...mergedConfig.magic.props} />)

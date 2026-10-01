@@ -3,12 +3,11 @@
 //
 // Curated barrel of the package's primary surface. Consumers may import the
 // common components, hooks, and helpers from the package root, e.g.
-// `import { Login, useUser } from '@zephyrex/auth'`. Less-common modules
-// (management tables, mfa, oauth2, the server middleware, the NavMenu types) remain
-// available via their existing subpath exports (`@zephyrex/auth/management/Team`,
-// `@zephyrex/auth/auth.middleware`, …) and are intentionally NOT re-exported here
-// to avoid name collisions (e.g. `Team` is exported by two management modules)
-// and to keep the server middleware out of the client-facing root.
+// `import { Login, hasSession } from '@zephyrex/auth'`. Less-common modules
+// (mfa, oauth2, the server middleware, the NavMenu types) remain available via
+// their subpath exports (`@zephyrex/auth/oauth2/OAuth`, `@zephyrex/auth/auth.middleware`, …)
+// and are intentionally NOT re-exported here, to keep the server middleware out of the
+// client-facing root. The signed-in user's account and team pages are the app's.
 
 // Primary auth UI components (default exports re-bound to named exports).
 export { default as AuthCard, ResponseMessage } from './AuthCard';
@@ -29,8 +28,6 @@ export { AuthenticationContext } from './AuthenticationContext';
 export { AuthServerProvider, useAuthServer } from './AuthServerContext';
 export { CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE, SESSION_CREDENTIALS, csrfHeaders, hasSession } from './lib/session';
 export { useAuthentication } from './useAuthentication';
-export { useUser } from './hooks/useUser';
-export { useTeam } from './hooks/useTeam';
 
 // Helpers.
 export * from './utils';

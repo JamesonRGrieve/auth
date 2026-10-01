@@ -116,7 +116,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cookies-next": "^6.1.1",
-    "graphql-request": "^7.4.0",
     "lucide-react": "^1.49.0",
     "md5": "^2.3.0",
     "motion": "^13.4.6",
@@ -125,8 +124,7 @@
     "react-icons": "^5.7.0",
     "react-qr-code": "^2.2.0",
     "swr": "^2.5.1",
-    "tailwind-merge": "^3.7.0",
-    "zod2gql": "^0.1.0-alpha.1"
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
@@ -192,9 +190,6 @@
   },
   "dependenciesMeta": {
     "@jgrieve/forms": {
-      "injected": true
-    },
-    "zod2gql": {
       "injected": true
     }
   },
