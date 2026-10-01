@@ -48,7 +48,6 @@
     "gzip": false,
     "limit": "8 KB"
   },
-  { "name": "mfa/MfaSettings", "path": "dist/mfa/MfaSettings.js", "brotli": false, "gzip": false, "limit": "14 KB" },
   { "name": "mfa/MfaChallenge", "path": "dist/mfa/MfaChallenge.js", "brotli": false, "gzip": false, "limit": "4 KB" },
   { "name": "mfa/mfaApi", "path": "dist/mfa/mfaApi.js", "brotli": false, "gzip": false, "limit": "7 KB" }
 ]

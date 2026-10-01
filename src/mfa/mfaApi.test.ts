@@ -4,7 +4,6 @@ import {
   answerMfaChallenge,
   completeMfaLogin,
   isMfaChallenge,
-  mfaApi,
   passwordLogin,
   requestMagicLink,
   verifyMagicLink,
@@ -15,8 +14,6 @@ const HTTP_OK = 200;
 const HTTP_NO_CONTENT = 204;
 const HTTP_BAD_REQUEST = 400;
 const HTTP_UNAUTHORIZED = 401;
-
-const method = { id: 'm1', method_type: 'totp', is_enabled: true, is_primary: false, verification: false };
 
 const answer = (body: object | null): Mock<(url: string, init: RequestInit) => Promise<Response>> => {
   const fetchMock = vi.fn(async () =>
@@ -36,53 +33,6 @@ const sent = (
   const [url, init] = fetchMock.mock.calls[0] ?? ['', {}];
   return [url, init.method, init.body];
 };
-
-describe('mfaApi', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('lists methods from the multifactor_methods envelope', async () => {
-    answer({ multifactor_methods: [method] });
-    await expect(mfaApi.list(SERVER)).resolves.toEqual([method]);
-  });
-
-  it('creates a TOTP method wrapped as multifactor_method', async () => {
-    const fetchMock = answer({ multifactor_method: method });
-    await expect(mfaApi.createTotp(SERVER)).resolves.toEqual(method);
-    expect(sent(fetchMock)).toEqual([`${SERVER}/v1/user/mfa`, 'POST', '{"multifactor_method":{"method_type":"totp"}}']);
-  });
-
-  it('reads the provisioning URI and key for an unverified method', async () => {
-    const fetchMock = answer({ provisioning_uri: 'otpauth://totp/App:a?secret=ABC', secret: 'ABC' });
-    await expect(mfaApi.provisioning(SERVER, 'm1')).resolves.toEqual({
-      provisioning_uri: 'otpauth://totp/App:a?secret=ABC',
-      secret: 'ABC',
-    });
-    expect(sent(fetchMock)).toEqual([`${SERVER}/v1/user/mfa/m1/totp/provisioning`, 'GET', undefined]);
-  });
-
-  it('verifies a code and reports whether it matched', async () => {
-    const fetchMock = answer({ verified: false });
-    await expect(mfaApi.verify(SERVER, 'm1', '123456')).resolves.toBe(false);
-    expect(sent(fetchMock)).toEqual([`${SERVER}/v1/user/mfa/m1/verify`, 'POST', '{"code":"123456"}']);
-  });
-
-  it('returns freshly generated recovery codes', async () => {
-    const fetchMock = answer(['AAAAA-BBBBB', 'CCCCC-DDDDD']);
-    await expect(mfaApi.generateRecoveryCodes(SERVER, 'm1', 2)).resolves.toEqual(['AAAAA-BBBBB', 'CCCCC-DDDDD']);
-    expect(sent(fetchMock)).toEqual([`${SERVER}/v1/user/mfa/m1/recovery/generate`, 'POST', '{"count":2}']);
-  });
-
-  it('turns off or removes a method, with the code when one is given', async () => {
-    const disable = answer({ disabled: true });
-    await mfaApi.disable(SERVER, 'm1', '654321');
-    expect(sent(disable)).toEqual([`${SERVER}/v1/user/mfa/m1/disable`, 'POST', '{"code":"654321"}']);
-    const remove = answer(null);
-    await mfaApi.remove(SERVER, 'm1');
-    expect(sent(remove)).toEqual([`${SERVER}/v1/user/mfa/m1/delete`, 'POST', '{}']);
-  });
-});
 
 describe('two-step login', () => {
   afterEach(() => {
