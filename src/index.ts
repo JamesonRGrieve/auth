@@ -25,7 +25,6 @@ export { default as Register } from './Register';
 export { PasswordRules } from './PasswordRules';
 export { default as Subscribe } from './Subscribe';
 export { default as AuthRouter } from './Router';
-export { default as OrganizationalUnitPage } from './OU';
 
 // Context and hooks.
 export { AuthenticationContext } from './AuthenticationContext';

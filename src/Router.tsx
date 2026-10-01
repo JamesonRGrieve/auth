@@ -10,7 +10,6 @@ import User, { type IdentifyProps } from './Identify';
 import Login, { type LoginProps } from './Login';
 import Logout, { type LogoutProps } from './Logout';
 import MagicLink, { type MagicLinkProps } from './MagicLink';
-import OrganizationalUnit, { type OrganizationalUnitProps } from './OU';
 import Register, { type RegisterProps } from './Register';
 import Subscribe, { type SubscribeProps } from './Subscribe';
 import deepMerge from './lib/objects';
@@ -40,7 +39,6 @@ export type AuthenticationConfig = {
   pairRequest: RouterPageProps & { props?: PairRequestProps };
   subscribe: RouterPageProps & { props?: SubscribeProps };
   logout: RouterPageProps & { props?: LogoutProps };
-  ou: RouterPageProps & { props?: OrganizationalUnitProps };
   error: RouterPageProps & { props?: ErrorPageProps };
   authModes: {
     basic: boolean;
@@ -58,7 +56,6 @@ export type AuthenticationConfig = {
   /** Where these pages are mounted on the app's origin, e.g. `/user`. */
   authPath: string;
   recaptchaSiteKey?: string | undefined;
-  enableOU: boolean;
 };
 
 // `authServer` comes from the app's AuthServerProvider, its single configured API base.
@@ -99,10 +96,6 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
     path: '/subscribe',
     heading: 'Please Subscribe to Access The Application',
   },
-  ou: {
-    path: '/ou',
-    heading: 'Organizational Unit Management',
-  },
   logout: {
     path: '/logout',
     heading: '',
@@ -118,7 +111,6 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
     magical: false,
   },
   oauthProviders: [],
-  enableOU: false,
 };
 
 export default function AuthRouter({
@@ -157,9 +149,6 @@ export default function AuthRouter({
     .set(mergedConfig.subscribe.path, <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />)
     .set(mergedConfig.logout.path, <Logout {...mergedConfig.logout.props} />)
     .set(mergedConfig.error.path, <ErrorPage {...mergedConfig.error.props} />);
-  if (mergedConfig.enableOU) {
-    pages.set(mergedConfig.ou.path, <OrganizationalUnit searchParams={searchParamsObject} {...mergedConfig.ou.props} />);
-  }
   for (const [pagePath, page] of Object.entries(additionalPages)) {
     pages.set(pagePath, page);
   }

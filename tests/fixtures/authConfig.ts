@@ -15,12 +15,10 @@ export const testAuthConfig: AuthenticationConfig = {
   pairRequest: { path: '/pair', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Please Subscribe' },
   logout: { path: '/logout', heading: '', props: { redirectTo: '/' } },
-  ou: { path: '/ou', heading: 'OU' },
   error: { path: '/error', heading: 'Error' },
   appName: 'Test',
   authPath: '/user',
   authServer: TEST_AUTH_SERVER,
   authModes: { basic: true, magical: false },
   oauthProviders: [],
-  enableOU: false,
 };

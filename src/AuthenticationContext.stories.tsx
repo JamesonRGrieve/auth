@@ -48,14 +48,12 @@ const sampleConfig: AuthenticationConfig = {
   pairRequest: { path: '/pair', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Subscribe' },
   logout: { path: '/logout', heading: '', props: {} },
-  ou: { path: '/ou', heading: 'OU' },
   error: { path: '/error', heading: 'Error' },
   authModes: { basic: true, magical: false },
   oauthProviders: [],
   authServer: 'https://api.example.com',
   appName: 'Storybook',
   authPath: '/user',
-  enableOU: false,
 };
 
 export const WithoutProvider: Story = {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Surface test for the AuthRouter component. Router dispatches across
- * Identify / Login / Register / Logout / Manage / Subscribe / Close / OU
+ * Identify / Login / Register / Logout / Manage / Subscribe / Close
  * / ErrorPage based on the slug array. The full dispatch matrix needs a
  * Next render harness; here we pin the public AuthenticationConfig
  * shape that downstream apps construct.
@@ -27,7 +27,6 @@ describe('AuthRouter (surface)', () => {
     expectTypeOf<AuthenticationConfig['close']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['subscribe']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['logout']>().not.toBeAny();
-    expectTypeOf<AuthenticationConfig['ou']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['error']>().not.toBeAny();
   });
 
@@ -41,10 +40,6 @@ describe('AuthRouter (surface)', () => {
 
   it('AuthenticationConfig.oauthProviders names the sign-in providers', () => {
     expectTypeOf<AuthenticationConfig['oauthProviders']>().toEqualTypeOf<readonly string[]>();
-  });
-
-  it('AuthenticationConfig.enableOU is a boolean flag (gates the OU sub-page)', () => {
-    expectTypeOf<AuthenticationConfig['enableOU']>().toEqualTypeOf<boolean>();
   });
 
   it('appName / authPath / authServer are strings', () => {
