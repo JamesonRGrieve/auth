@@ -20,12 +20,11 @@ import {
 import { useTeam, useTeams } from '../hooks/useTeam';
 import { useTeamAccess, useTeamActions } from '../hooks/useTeamManagement';
 import type { Team as TeamRecord } from '../hooks/z';
+import { ACTIVE_TEAM_COOKIE } from '../lib/cookies';
 import { cookieDomainOptions } from '../utils';
 
 /** Team names are short labels; the server's own limit. */
 export const MAX_TEAM_NAME_LENGTH = 20;
-
-const ACTIVE_TEAM_COOKIE = 'auth-team';
 
 const sameName = (a: string, b: string): boolean => a.trim().toLowerCase() === b.trim().toLowerCase();
 

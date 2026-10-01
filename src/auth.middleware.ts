@@ -54,15 +54,19 @@ const rememberReturn = (req: NextRequest, response: NextResponse): NextResponse 
 };
 
 /**
- * An invite link (`?code=…&email=…`) remembers the invitation for registration or sign-in,
- * then starts at the auth pages: a new user registers with the code, and a signed-in user
- * answers it on the account page.
+ * An invite link (`?code=…&email=…`). Someone already signed in goes straight to the account
+ * page, which lists the invitation to answer (an expired session is sent through sign-in from
+ * there). Anyone else has it remembered and starts at the auth pages: a new user registers with
+ * the code, and a returning user signs in and lands on the account page.
  */
-const acceptInviteLink = (req: NextRequest, authPath: string): NextResponse | null => {
+const acceptInviteLink = (req: NextRequest, authPath: string, managePath: string): NextResponse | null => {
   const code = req.nextUrl.searchParams.get('code');
   const email = req.nextUrl.searchParams.get('email');
   if (code === null || code === '' || email === null || email === '') {
     return null;
+  }
+  if ((req.cookies.get(SESSION_COOKIE)?.value ?? '') !== '') {
+    return redirect(req, managePath);
   }
   const response = redirect(req, authPath);
   const cookie = { path: '/', maxAge: DAY_SECONDS, sameSite: 'lax' as const };
@@ -103,7 +107,7 @@ export function createAuthMiddleware({
     if (landingOnly && pathname !== '/') {
       return { activated: true, response: redirect(req, '/') };
     }
-    const invite = acceptInviteLink(req, authPath);
+    const invite = acceptInviteLink(req, authPath, managePath);
     if (invite !== null) {
       return { activated: true, response: invite };
     }

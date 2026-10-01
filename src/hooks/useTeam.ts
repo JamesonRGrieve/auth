@@ -5,6 +5,7 @@ import useSWR, { type SWRResponse } from 'swr';
 import { z } from 'zod';
 import { GQLType, toGQL } from 'zod2gql';
 import { useAuthServer } from '../AuthServerContext';
+import { ACTIVE_TEAM_COOKIE } from '../lib/cookies';
 import log from '../lib/log';
 import { hasSession } from '../lib/session';
 import { cookieDomainOptions } from '../utils';
@@ -28,9 +29,9 @@ export function useTeams(): SWRResponse<Team[]> {
         const query = toGQL(z.array(TeamSchema), GQLType.Query);
         const response = await client.request<{ teams: Team[] }>(query);
         const data = response.teams.filter((team) => team.id !== SYSTEM_TEAM_ID);
-        const authTeam = getCookie('auth-team');
+        const authTeam = getCookie(ACTIVE_TEAM_COOKIE);
         if (authTeam === undefined || authTeam === '' || !data.some((team: Team) => team.id === authTeam)) {
-          setCookie('auth-team', data[0]?.id ?? '', cookieDomainOptions());
+          setCookie(ACTIVE_TEAM_COOKIE, data[0]?.id ?? '', cookieDomainOptions());
         }
         return data;
       } catch (error: unknown) {
@@ -52,7 +53,7 @@ export function useTeams(): SWRResponse<Team[]> {
 export function useTeam(id?: string): SWRResponse<Team | null> {
   const teamsHook = useTeams();
   const { data: teams } = teamsHook;
-  const resolvedId = id === undefined || id === '' ? getCookie('auth-team') : id;
+  const resolvedId = id === undefined || id === '' ? getCookie(ACTIVE_TEAM_COOKIE) : id;
   const swrHook = useSWR<Team | null>(
     [`/team?id=${resolvedId}`, teams],
     (): Team | null => {

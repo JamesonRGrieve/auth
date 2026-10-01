@@ -130,9 +130,15 @@ describe('parseInviteEmails', () => {
 });
 
 describe('inviteLink', () => {
-  it('carries the code and address for the auth middleware, encoded', () => {
-    expect(inviteLink('https://app.example.com', 'AB12CD34', 'ada+team@example.com')).toBe(
-      'https://app.example.com/?code=AB12CD34&email=ada%2Bteam%40example.com',
+  it('carries the code, address and team name for the auth middleware, encoded', () => {
+    expect(inviteLink('https://app.example.com', 'AB12CD34', 'ada+team@example.com', 'R&D')).toBe(
+      'https://app.example.com/?code=AB12CD34&email=ada%2Bteam%40example.com&team=R%26D',
+    );
+  });
+
+  it('leaves the team out when it has no name', () => {
+    expect(inviteLink('https://app.example.com', 'AB12CD34', 'ada@example.com', '')).toBe(
+      'https://app.example.com/?code=AB12CD34&email=ada%40example.com',
     );
   });
 });

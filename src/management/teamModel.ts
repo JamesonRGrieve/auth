@@ -142,6 +142,9 @@ export function parseInviteEmails(text: string): ParsedEmails {
   return invalid.length > 0 ? { problem: `Not an email address: ${invalid.join(', ')}` } : { emails };
 }
 
-/** The link an invitee opens: the auth middleware remembers the code and email, then starts sign-in. */
-export const inviteLink = (origin: string, code: string, email: string): string =>
-  `${origin}/?${new URLSearchParams({ code, email }).toString()}`;
+/**
+ * The link an invitee opens: the auth middleware remembers the code, email and team name, then
+ * starts sign-in, where the acceptance page names the team.
+ */
+export const inviteLink = (origin: string, code: string, email: string, teamName: string): string =>
+  `${origin}/?${new URLSearchParams({ code, email, ...(teamName === '' ? {} : { team: teamName }) }).toString()}`;

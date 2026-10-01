@@ -122,6 +122,15 @@ describe('createAuthMiddleware', () => {
     expect(response.cookies.get('team')?.value).toBe('t1');
   });
 
+  it('sends someone already signed in from an invite link to the account page to answer it', async () => {
+    const fetchMock = apiAnswers(HTTP_OK);
+    const { activated, response } = await guard(request('/?code=inv-1&email=ada@example.com&team=t1', 'sess-1'));
+    expect(activated).toBe(true);
+    expect(location(response)).toBe(`${ORIGIN}/user/manage`);
+    expect(response.cookies.get('invitation')).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('ignores an incomplete invite link', async () => {
     const { activated } = await guard(request('/?code=inv-1'));
     expect(activated).toBe(false);

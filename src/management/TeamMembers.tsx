@@ -156,10 +156,13 @@ function MemberRow({
 function InvitationRow({
   entry: { invitation, invitees },
   role,
+  teamName,
   onRevoke,
 }: {
   entry: InvitationWithInvitees;
   role: Role | undefined;
+  /** Named in the copied link, so the invitee's acceptance page says which team. */
+  teamName: string;
   onRevoke: (invitationId: string) => Promise<string | null>;
 }): ReactElement {
   const [pending, setPending] = useState(false);
@@ -170,7 +173,7 @@ function InvitationRow({
   const copyLink = (email: string): void => {
     void (async (): Promise<void> => {
       try {
-        await navigator.clipboard.writeText(inviteLink(window.location.origin, code, email));
+        await navigator.clipboard.writeText(inviteLink(window.location.origin, code, email, teamName));
         setNotice({ text: `Copied the invite link for ${email}.`, alert: false });
       } catch (error) {
         setNotice({ text: error instanceof Error ? error.message : 'The link could not be copied.', alert: true });
@@ -231,10 +234,12 @@ function InvitationRow({
 
 function TeamInvitations({
   teamId,
+  teamName,
   roles,
   assignable,
 }: {
   teamId: string;
+  teamName: string;
   roles: Role[];
   /** Roles the viewer may invite with. */
   assignable: Role[];
@@ -286,6 +291,7 @@ function TeamInvitations({
                   key={entry.invitation.id}
                   entry={entry}
                   role={rolesById.get(entry.invitation.role_id ?? '')}
+                  teamName={teamName}
                   onRevoke={onRevoke}
                 />
               ))}
@@ -374,7 +380,9 @@ export function TeamMembers({ teamId }: TeamMembersProps): ReactElement {
           )}
         </CardContent>
       </Card>
-      {admin && <TeamInvitations teamId={resolvedTeamId} roles={roles} assignable={assignable} />}
+      {admin && (
+        <TeamInvitations teamId={resolvedTeamId} teamName={activeTeam?.name ?? ''} roles={roles} assignable={assignable} />
+      )}
     </div>
   );
 }

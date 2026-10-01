@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { setCookie } from 'cookies-next/client';
 import { useCallback } from 'react';
 import useSWR, { type SWRResponse } from 'swr';
 import { authRequest, authSend } from '../lib/api';
+import { ACTIVE_TEAM_COOKIE } from '../lib/cookies';
 import {
   type InvitationAnswer,
   invitationAnswer,
   type PendingInvitation,
   PendingInvitationsResponseSchema,
 } from '../management/invitationsModel';
+import { cookieDomainOptions } from '../utils';
 
 export const USER_INVITATIONS_ENDPOINT = '/v1/user/invitation';
 
@@ -31,6 +34,11 @@ export function useUserInvitations(authServer: string): UserInvitations {
         method: 'PATCH',
         body: invitationAnswer(invitation, action),
       });
+      // Joining a team puts the user in it, as choosing it in the team switcher would.
+      const teamId = invitation.team_id ?? '';
+      if (action === 'accept' && teamId !== '') {
+        setCookie(ACTIVE_TEAM_COOKIE, teamId, cookieDomainOptions());
+      }
       await mutate();
     },
     [authServer, mutate],
