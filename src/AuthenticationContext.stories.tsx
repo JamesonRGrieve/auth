@@ -44,7 +44,6 @@ const sampleConfig: AuthenticationConfig = {
   register: { path: '/register', heading: 'Register' },
   close: { path: '/close', heading: '' },
   magic: { path: '/magic', heading: '' },
-  subscribe: { path: '/subscribe', heading: 'Subscribe' },
   logout: { path: '/logout', heading: '', props: {} },
   error: { path: '/error', heading: 'Error' },
   authModes: { basic: true, magical: false },

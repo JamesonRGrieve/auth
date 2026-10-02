@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Surface test for the AuthRouter component. Router dispatches across
- * Identify / Login / Register / Logout / Manage / Subscribe / Close
- * / ErrorPage based on the slug array. The full dispatch matrix needs a
+ * Identify / Login / Register / Logout / Close / MagicLink / ErrorPage and
+ * the app's own pages based on the slug array. The full dispatch matrix needs a
  * Next render harness; here we pin the public AuthenticationConfig
  * shape that downstream apps construct.
  *
@@ -25,7 +25,6 @@ describe('AuthRouter (surface)', () => {
     expectTypeOf<AuthenticationConfig['manage']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['register']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['close']>().not.toBeAny();
-    expectTypeOf<AuthenticationConfig['subscribe']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['logout']>().not.toBeAny();
     expectTypeOf<AuthenticationConfig['error']>().not.toBeAny();
   });

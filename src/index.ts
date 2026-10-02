@@ -20,7 +20,6 @@ export type { MfaChallenge as MfaLoginChallenge, LoginAnswer } from './mfa/mfaAp
 export { default as Logout } from './Logout';
 export { default as Register } from './Register';
 export { PasswordRules } from './PasswordRules';
-export { default as Subscribe } from './Subscribe';
 export { default as AuthRouter } from './Router';
 
 // Context and hooks.
@@ -42,4 +41,3 @@ export type { LoginProps } from './Login';
 export type { LogoutProps } from './Logout';
 export type { RegisterProps } from './Register';
 export type { PasswordRulesProps } from './PasswordRules';
-export type { SubscribeProps } from './Subscribe';

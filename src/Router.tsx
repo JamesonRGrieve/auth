@@ -1,7 +1,7 @@
 'use client';
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { notFound, useSearchParams } from 'next/navigation.js';
+import { notFound } from 'next/navigation.js';
 import type { ReactNode } from 'react';
 import { useAuthServer } from './AuthServerContext';
 import { AuthenticationContext } from './AuthenticationContext';
@@ -11,7 +11,6 @@ import Login, { type LoginProps } from './Login';
 import Logout, { type LogoutProps } from './Logout';
 import MagicLink, { type MagicLinkProps } from './MagicLink';
 import Register, { type RegisterProps } from './Register';
-import Subscribe, { type SubscribeProps } from './Subscribe';
 import deepMerge from './lib/objects';
 import Close, { type CloseProps } from './oauth2/Close';
 
@@ -38,7 +37,6 @@ export type AuthenticationConfig = {
   close: RouterPageProps & { props?: CloseProps };
   /** Where sign-in links land; point the server's MAGIC_LINK_BASE_URL at `<app><authPath><path>`. */
   magic: RouterPageProps & { props?: MagicLinkProps };
-  subscribe: RouterPageProps & { props?: SubscribeProps };
   logout: RouterPageProps & { props?: LogoutProps };
   error: RouterPageProps & { props?: ErrorPageProps };
   authModes: {
@@ -88,10 +86,6 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
     path: '/magic',
     heading: '',
   },
-  subscribe: {
-    path: '/subscribe',
-    heading: 'Please Subscribe to Access The Application',
-  },
   logout: {
     path: '/logout',
     heading: '',
@@ -112,24 +106,14 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
 
 export default function AuthRouter({
   params,
-  searchParams,
   corePagesConfig = pageConfigDefaults,
   additionalPages = {},
 }: {
   params: { slug?: string[] };
-  searchParams?: Record<string, string> | URLSearchParams;
   corePagesConfig?: Partial<AuthenticationConfig>;
+  /** The app's own pages under `authPath`, by path (the account page, an extension's pages). */
   additionalPages?: { [key: string]: ReactNode };
 }): ReactNode {
-  // Use Next.js 15 hooks for search params if not provided directly
-  const routeSearchParams = useSearchParams();
-
-  const paramsToUse = searchParams instanceof URLSearchParams ? searchParams : routeSearchParams;
-  const searchParamsObject: Record<string, string> = {
-    ...Object.fromEntries(paramsToUse.entries()),
-    ...(searchParams !== undefined && !(searchParams instanceof URLSearchParams) ? searchParams : {}),
-  };
-
   // Merge configs - ensure deep merge works with partial config
   const authServer = useAuthServer();
   const mergedConfig = deepMerge({ ...pageConfigDefaults, authServer }, corePagesConfig) as AuthenticationConfig;
@@ -140,7 +124,6 @@ export default function AuthRouter({
     .set(mergedConfig.register.path, <Register {...mergedConfig.register.props} />)
     .set(mergedConfig.close.path, <Close {...mergedConfig.close.props} />)
     .set(mergedConfig.magic.path, <MagicLink {...mergedConfig.magic.props} />)
-    .set(mergedConfig.subscribe.path, <Subscribe searchParams={searchParamsObject} {...mergedConfig.subscribe.props} />)
     .set(mergedConfig.logout.path, <Logout {...mergedConfig.logout.props} />)
     .set(mergedConfig.error.path, <ErrorPage {...mergedConfig.error.props} />);
   for (const [pagePath, page] of Object.entries(additionalPages)) {

@@ -19,29 +19,28 @@ type Story = StoryObj<typeof AuthRouter>;
 // params.slug array.
 
 export const IdentifyPage: Story = {
-  args: { params: { slug: [] }, searchParams: {} },
+  args: { params: { slug: [] } },
 };
 
 export const LoginPage: Story = {
-  args: { params: { slug: ['login'] }, searchParams: {} },
+  args: { params: { slug: ['login'] } },
 };
 
 export const RegisterPage: Story = {
-  args: { params: { slug: ['register'] }, searchParams: {} },
+  args: { params: { slug: ['register'] } },
 };
 
 export const LogoutPage: Story = {
-  args: { params: { slug: ['logout'] }, searchParams: {} },
+  args: { params: { slug: ['logout'] } },
 };
 
 export const ErrorPage: Story = {
-  args: { params: { slug: ['error'] }, searchParams: { message: 'oh no' } },
+  args: { params: { slug: ['error'] } },
 };
 
 export const WithAdditionalPages: Story = {
   args: {
     params: { slug: ['custom'] },
-    searchParams: {},
     additionalPages: { '/custom': null },
   },
 };

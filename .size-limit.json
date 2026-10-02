@@ -14,7 +14,6 @@
   { "name": "Identify", "path": "dist/Identify.js", "brotli": false, "gzip": false, "limit": "6 KB" },
   { "name": "Logout", "path": "dist/Logout.js", "brotli": false, "gzip": false, "limit": "2 KB" },
   { "name": "MagicLink", "path": "dist/MagicLink.js", "brotli": false, "gzip": false, "limit": "4 KB" },
-  { "name": "Subscribe", "path": "dist/Subscribe.js", "brotli": false, "gzip": false, "limit": "4 KB" },
   { "name": "ErrorPage", "path": "dist/ErrorPage.js", "brotli": false, "gzip": false, "limit": "4 KB" },
   {
     "name": "oauth2/OAuthProviders",

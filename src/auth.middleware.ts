@@ -122,6 +122,7 @@ export function createAuthMiddleware({
       return pass();
     }
     if (status === HTTP_PAYMENT_REQUIRED) {
+      // The app mounts its subscribe page there (in Zephyrex, @zephyrex/payment's).
       return { activated: true, response: redirect(req, `${authPath}/subscribe`) };
     }
     if (status === HTTP_FORBIDDEN) {

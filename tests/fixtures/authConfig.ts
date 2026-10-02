@@ -11,7 +11,6 @@ export const testAuthConfig: AuthenticationConfig = {
   register: { path: '/register', heading: 'Welcome, Please Register' },
   close: { path: '/close', heading: '' },
   magic: { path: '/magic', heading: '' },
-  subscribe: { path: '/subscribe', heading: 'Please Subscribe' },
   logout: { path: '/logout', heading: '', props: { redirectTo: '/' } },
   error: { path: '/error', heading: 'Error' },
   appName: 'Test',
