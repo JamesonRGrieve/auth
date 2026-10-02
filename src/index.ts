@@ -34,7 +34,7 @@ export * from './utils';
 export { getGravatarUrl } from './gravatar';
 
 // Public types.
-export type { AuthenticationConfig } from './Router';
+export type { AuthenticationConfig, SignInAlternative } from './Router';
 export type { AuthCardProps } from './AuthCard';
 export type { ErrorPageProps } from './ErrorPage';
 export type { IdentifyProps } from './Identify';

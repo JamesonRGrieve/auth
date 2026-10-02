@@ -12,7 +12,7 @@
  */
 import { describe, expectTypeOf, it } from 'vitest';
 import type AuthRouter from './Router';
-import type { AuthenticationConfig } from './Router';
+import type { AuthenticationConfig, SignInAlternative } from './Router';
 
 describe('AuthRouter (surface)', () => {
   it('default export is a React component function', () => {
@@ -30,12 +30,16 @@ describe('AuthRouter (surface)', () => {
     expectTypeOf<AuthenticationConfig['error']>().not.toBeAny();
   });
 
-  it('AuthenticationConfig.authModes carries the basic/magical email modes, and optional pairing', () => {
+  it('AuthenticationConfig.authModes carries the basic/magical email modes', () => {
     expectTypeOf<AuthenticationConfig['authModes']>().toEqualTypeOf<{
       basic: boolean;
       magical: boolean;
-      pairing?: boolean | undefined;
     }>();
+  });
+
+  it('AuthenticationConfig.signInAlternatives lists the other sign-in pages, as labelled paths', () => {
+    expectTypeOf<AuthenticationConfig['signInAlternatives']>().toEqualTypeOf<readonly SignInAlternative[]>();
+    expectTypeOf<SignInAlternative>().toEqualTypeOf<{ label: string; path: string }>();
   });
 
   it('AuthenticationConfig.oauthProviders names the sign-in providers', () => {

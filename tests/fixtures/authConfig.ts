@@ -11,8 +11,6 @@ export const testAuthConfig: AuthenticationConfig = {
   register: { path: '/register', heading: 'Welcome, Please Register' },
   close: { path: '/close', heading: '' },
   magic: { path: '/magic', heading: '' },
-  pair: { path: '/pair/approve', heading: '' },
-  pairRequest: { path: '/pair', heading: '' },
   subscribe: { path: '/subscribe', heading: 'Please Subscribe' },
   logout: { path: '/logout', heading: '', props: { redirectTo: '/' } },
   error: { path: '/error', heading: 'Error' },
@@ -21,4 +19,5 @@ export const testAuthConfig: AuthenticationConfig = {
   authServer: TEST_AUTH_SERVER,
   authModes: { basic: true, magical: false },
   oauthProviders: [],
+  signInAlternatives: [],
 };

@@ -22,9 +22,8 @@ export interface AuthMiddlewareOptions {
    */
   apiBase: string;
   /**
-   * Path prefixes that need a signed-in user. The account page (`<authPath>/manage`) and device
-   * pairing approval (`<authPath>/pair/approve`) always do; asking to be paired (`<authPath>/pair`)
-   * is for a device that is not signed in yet.
+   * Path prefixes that need a signed-in user, including any auth pages the app adds that do (e.g.
+   * approving a device pairing). The account page (`<authPath>/manage`) always does.
    */
   privateRoutes: readonly string[];
   /** Serve only `/`, sending every other path there (a pre-launch landing page). */
@@ -100,8 +99,7 @@ export function createAuthMiddleware({
   landingOnly = false,
 }: AuthMiddlewareOptions): MiddlewareHook {
   const managePath = `${authPath}/manage`;
-  // Approving a device pairing signs another device in as the user, so it always needs a session.
-  const alwaysPrivate = [managePath, `${authPath}/pair/approve`];
+  const alwaysPrivate = [managePath];
   return async (req) => {
     const { pathname } = req.nextUrl;
     if (landingOnly && pathname !== '/') {

@@ -28,14 +28,23 @@ describe('Identify', () => {
     expect(email).toHaveAccessibleDescription('Please enter a valid E-Mail address.');
   });
 
-  it('offers signing in with another device only when pairing is on', () => {
-    expect(renderIdentify().queryByRole('link', { name: 'Sign in with another device' })).toBeNull();
+  it('links each other way to sign in the app mounts, under the auth path', () => {
+    expect(renderIdentify().queryAllByRole('link')).toEqual([]);
     const view = render(
-      <AuthenticationContext value={{ ...testAuthConfig, authModes: { ...testAuthConfig.authModes, pairing: true } }}>
+      <AuthenticationContext
+        value={{
+          ...testAuthConfig,
+          signInAlternatives: [
+            { label: 'Sign in with another device', path: '/pair' },
+            { label: 'Use a passkey', path: '/passkey' },
+          ],
+        }}
+      >
         <Identify />
       </AuthenticationContext>,
     );
     expect(view.getByRole('link', { name: 'Sign in with another device' })).toHaveAttribute('href', '/user/pair');
+    expect(view.getByRole('link', { name: 'Use a passkey' })).toHaveAttribute('href', '/user/passkey');
   });
 
   it('keeps its two optional config props', () => {

@@ -66,17 +66,15 @@ describe('createAuthMiddleware', () => {
     expect(fetchMock).toHaveBeenCalledWith(`${API}/v1/user`, expect.anything());
   });
 
-  it('always guards the account page and device pairing approval, remembering where to return', async () => {
-    const { activated, response } = await guard(request('/user/manage'));
+  it('always guards the account page, remembering where to return', async () => {
+    const { activated, response } = await guard(request('/user/manage?tab=teams'));
     expect(activated).toBe(true);
     expect(location(response)).toBe(`${ORIGIN}/user`);
-    const pairing = await guard(request('/user/pair/approve?token=pair-1'));
-    expect(location(pairing.response)).toBe(`${ORIGIN}/user`);
-    expect(pairing.response.cookies.get('href')?.value).toBe('/user/pair/approve?token=pair-1');
+    expect(response.cookies.get('href')?.value).toBe('/user/manage?tab=teams');
   });
 
-  it('lets a signed-out device ask to be paired', async () => {
-    const { activated } = await guard(request('/user/pair'));
+  it('leaves the other auth pages to signed-out visitors', async () => {
+    const { activated } = await guard(request('/user/login'));
     expect(activated).toBe(false);
   });
 

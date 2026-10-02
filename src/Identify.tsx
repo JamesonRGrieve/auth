@@ -130,11 +130,11 @@ export default function Identify({
 
         {showOAuth && <OAuth />}
 
-        {authConfig.authModes.pairing === true && (
-          <Link href={`${authConfig.authPath}${authConfig.pairRequest.path}`} className='text-sm text-center underline'>
-            Sign in with another device
+        {authConfig.signInAlternatives.map(({ label, path }) => (
+          <Link key={path} href={`${authConfig.authPath}${path}`} className='text-sm text-center underline'>
+            {label}
           </Link>
-        )}
+        ))}
       </form>
     </AuthCard>
   );
