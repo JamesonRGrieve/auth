@@ -24,13 +24,17 @@ const updateMode = args.includes('--update');
 let lintOutput;
 const lintOutputPath = resolve(tmpdir(), `auth-eslint-${process.pid}.json`);
 try {
-  execSync(`./node_modules/.bin/eslint ${ESLINT_TARGET} --ext ${ESLINT_EXTS} --format json > "${lintOutputPath}"`, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    maxBuffer: 64 * 1024 * 1024,
-    shell: '/bin/bash',
-    env: { ...process.env },
-  });
+  // `--concurrency auto` lints across worker threads (the type-aware rules dominate the run).
+  execSync(
+    `./node_modules/.bin/eslint --concurrency auto ${ESLINT_TARGET} --ext ${ESLINT_EXTS} --format json > "${lintOutputPath}"`,
+    {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024,
+      shell: '/bin/bash',
+      env: { ...process.env },
+    },
+  );
 } catch (err) {
   if (existsSync(lintOutputPath)) {
     lintOutput = readFileSync(lintOutputPath, 'utf8');
