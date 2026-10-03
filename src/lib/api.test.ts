@@ -2,13 +2,15 @@
 import { deleteCookie, setCookie } from 'cookies-next/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { AuthApiError, authList, authRequest, authSend, LIST_PAGE_SIZE } from './api';
+import { AuthApiError, authList, authRequest, authSend, AuthStaleWriteError, LIST_PAGE_SIZE } from './api';
 
 const API_URL = 'https://api.example.com/v1/user';
 const HTTP_OK = 200;
 const HTTP_NO_CONTENT = 204;
 const HTTP_FORBIDDEN = 403;
+const HTTP_PRECONDITION_FAILED = 412;
 const HTTP_UNPROCESSABLE = 422;
+const VERSION = '2026-10-03T09:14:02.000317';
 const HTTP_BAD_GATEWAY = 502;
 
 const respond = (response: Response): ReturnType<typeof vi.fn> => {
@@ -23,19 +25,30 @@ describe('authRequest', () => {
     deleteCookie('zx_csrf');
   });
 
-  it('rides the session cookie with the CSRF token on writes, and validates the answer', async () => {
+  it('rides the session cookie with the CSRF token on writes, guards a change by its version, and validates the answer', async () => {
     setCookie('zx_csrf', 'csrf-1');
     const fetchMock = respond(new Response(JSON.stringify({ user: { id: 'u1' } }), { status: HTTP_OK }));
     const result = await authRequest(API_URL, z.object({ user: z.object({ id: z.string() }) }), {
       method: 'PUT',
       body: { user: { first_name: 'Ada' } },
+      seen: { updated_at: VERSION },
     });
     expect(result).toEqual({ user: { id: 'u1' } });
     expect(fetchMock).toHaveBeenCalledWith(API_URL, {
       method: 'PUT',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'csrf-1' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'csrf-1', 'If-Match': `"${VERSION}"` },
       body: '{"user":{"first_name":"Ada"}}',
+    });
+  });
+
+  it('refuses a change made against an older version with AuthStaleWriteError', async () => {
+    respond(new Response('{"detail":"The record was changed since it was read"}', { status: HTTP_PRECONDITION_FAILED }));
+    const failure = authSend(API_URL, { method: 'DELETE', seen: { created_at: VERSION } });
+    await expect(failure).rejects.toBeInstanceOf(AuthStaleWriteError);
+    await expect(failure).rejects.toMatchObject({
+      status: HTTP_PRECONDITION_FAILED,
+      detail: 'The record was changed since it was read',
     });
   });
 
@@ -96,7 +109,7 @@ describe('authSend', () => {
 
   it('resolves on a bodiless success', async () => {
     respond(new Response(null, { status: HTTP_NO_CONTENT }));
-    await expect(authSend(API_URL, { method: 'DELETE' })).resolves.toBeUndefined();
+    await expect(authSend(API_URL, { method: 'DELETE', seen: { created_at: VERSION } })).resolves.toBeUndefined();
   });
 });
 

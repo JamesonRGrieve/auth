@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { z } from 'zod';
 import { csrfHeaders, SESSION_CREDENTIALS } from './session';
+import { etagOf, type Versioned } from './version';
 
 const NO_CONTENT = 204;
 
@@ -8,12 +9,19 @@ export type AuthApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export type AuthApiJson = string | number | boolean | null | AuthApiJson[] | { [key: string]: AuthApiJson | undefined };
 
-export interface AuthApiInit {
-  method?: AuthApiMethod;
+interface AuthApiInitBase {
   body?: AuthApiJson;
   /** An explicit Authorization, e.g. Basic credentials for a password login; it overrides the session cookie. */
   authorization?: string;
 }
+
+/**
+ * A read, a create or an action; or a change to an existing row, which names the row as the caller
+ * last read it (`seen`) and is sent only if the server's row is still that version (If-Match).
+ */
+export type AuthApiInit =
+  | (AuthApiInitBase & { method?: 'GET' | 'POST' })
+  | (AuthApiInitBase & { method: 'PUT' | 'PATCH' | 'DELETE'; seen: Versioned });
 
 /**
  * A non-2xx answer from the auth server; `detail` is the server's message when it sent one, and
@@ -27,6 +35,16 @@ export class AuthApiError extends Error {
   ) {
     super(detail);
     this.name = 'AuthApiError';
+  }
+}
+
+const PRECONDITION_FAILED = 412;
+
+/** The row changed on the server since the caller read it (412), so the change was refused. */
+export class AuthStaleWriteError extends AuthApiError {
+  constructor(detail: string) {
+    super(PRECONDITION_FAILED, detail);
+    this.name = 'AuthStaleWriteError';
   }
 }
 
@@ -49,7 +67,8 @@ const errorDetail = async (response: Response): Promise<{ detail: string; failed
   return { detail: text === '' ? response.statusText : text, failed: [] };
 };
 
-const send = async (url: string, { method = 'GET', body, authorization }: AuthApiInit): Promise<Response> => {
+const send = async (url: string, init: AuthApiInit): Promise<Response> => {
+  const { method = 'GET', body, authorization } = init;
   const response = await fetch(url, {
     method,
     credentials: SESSION_CREDENTIALS,
@@ -57,12 +76,15 @@ const send = async (url: string, { method = 'GET', body, authorization }: AuthAp
       'Content-Type': 'application/json',
       ...csrfHeaders(method),
       ...(authorization === undefined ? {} : { Authorization: authorization }),
+      ...('seen' in init ? { 'If-Match': etagOf(init.seen) } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   if (!response.ok) {
     const { detail, failed } = await errorDetail(response);
-    throw new AuthApiError(response.status, detail, failed);
+    throw response.status === PRECONDITION_FAILED
+      ? new AuthStaleWriteError(detail)
+      : new AuthApiError(response.status, detail, failed);
   }
   return response;
 };

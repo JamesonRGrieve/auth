@@ -14,9 +14,9 @@ export default meta;
 
 type Story = StoryObj<typeof ConnectedServices>;
 
-// ConnectedServices reads OAuth2 provider config + the user's connections
-// from the API. The story relies on the in-process providers map and
-// shows the empty state without a backing /v1/user/connections payload.
+// ConnectedServices reads the configured identity providers and the user's
+// linked identities from /v1/auth/oauth. With no server behind the story it
+// shows the load failure.
 
 export const Default: Story = {
   args: {},

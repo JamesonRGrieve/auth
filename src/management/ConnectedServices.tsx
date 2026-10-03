@@ -7,8 +7,9 @@ import useSWR from 'swr';
 import { useAuthServer } from '../AuthServerContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { AuthStaleWriteError } from '../lib/api';
 import { oauth2ProviderDisplay } from '../oauth2/OAuthProviders';
-import { beginLink, type Connection, connections, linkableProviders, unlink } from '../oauth2/link';
+import { beginLink, type Identity, identities, type LinkProvider, linkableProviders, unlink } from '../oauth2/link';
 
 const providerDescriptions: ReadonlyMap<string, string> = new Map([
   [
@@ -27,88 +28,112 @@ const providerDescriptions: ReadonlyMap<string, string> = new Map([
 
 const DEFAULT_DESCRIPTION = 'Connect this service to enable AI integration.';
 
-const label = (provider: string): string => oauth2ProviderDisplay(provider).label;
-
-interface ServiceRowProps {
-  provider: string;
-  connection: Connection | undefined;
-  onConnect: (provider: string) => void;
-  /** A link is being started; connecting again would open a second round trip. */
-  connecting: boolean;
-  onDisconnect: (provider: string) => void;
+/** A provider with the user's identity at it, when they have linked one. */
+interface Service {
+  provider: LinkProvider;
+  identity: Identity | undefined;
 }
 
-function ServiceRow({ provider, connection, onConnect, onDisconnect, connecting }: ServiceRowProps): ReactElement {
-  const name = label(provider);
-  const account = connection?.account_email ?? connection?.account_name ?? '';
+interface ServiceRowProps {
+  service: Service;
+  onConnect: (provider: LinkProvider) => void;
+  /** A link is being started; connecting again would open a second round trip. */
+  connecting: boolean;
+  onDisconnect: (service: Service) => void;
+}
+
+function ServiceRow({ service, onConnect, onDisconnect, connecting }: ServiceRowProps): ReactElement {
+  const { provider, identity } = service;
+  const name = provider.friendly_name;
+  const account = identity?.email ?? identity?.display_name ?? '';
   return (
     <li className='flex flex-col space-y-4 rounded-lg border p-4'>
       <div className='flex items-center justify-between gap-2'>
         <div className='flex items-center space-x-4'>
-          <span aria-hidden>{oauth2ProviderDisplay(provider).icon}</span>
+          <span aria-hidden>{oauth2ProviderDisplay(provider.provider).icon}</span>
           <div>
             <p className='font-medium'>{name}</p>
             <p className='text-sm text-muted-foreground'>
-              {connection === undefined ? 'Not connected' : account === '' ? 'Connected' : `Connected as ${account}`}
+              {identity === undefined ? 'Not connected' : account === '' ? 'Connected' : `Connected as ${account}`}
             </p>
           </div>
         </div>
-        {connection === undefined ? (
+        {identity === undefined ? (
           <Button variant='outline' disabled={connecting} onClick={() => onConnect(provider)} className='space-x-1'>
             <Plus className='mr-2 h-4 w-4' aria-hidden />
             Connect<span className='sr-only'> {name}</span>
           </Button>
         ) : (
-          <Button variant='outline' size='sm' onClick={() => onDisconnect(provider)} className='space-x-1'>
+          <Button variant='outline' size='sm' onClick={() => onDisconnect(service)} className='space-x-1'>
             <Unlink className='mr-2 h-4 w-4' aria-hidden />
             Disconnect<span className='sr-only'> {name}</span>
           </Button>
         )}
       </div>
-      <p className='text-sm text-muted-foreground'>{providerDescriptions.get(provider) ?? DEFAULT_DESCRIPTION}</p>
+      <p className='text-sm text-muted-foreground'>{providerDescriptions.get(provider.provider) ?? DEFAULT_DESCRIPTION}</p>
     </li>
   );
 }
 
 /**
- * The external accounts the signed-in user can link (auth_oauth2_client). Connecting leaves for the
+ * The identity providers the signed-in user can link (oauth_consumer). Connecting leaves for the
  * provider; the auth pages' close route finishes the link when the provider sends the browser back.
  */
 export const ConnectedServices = (): ReactElement => {
   const authServer = useAuthServer();
-  const providers = useSWR<string[], Error>([authServer, 'oauth2-providers'], async () => linkableProviders(authServer));
-  const linked = useSWR<Connection[], Error>([authServer, 'oauth2-connections'], async () => connections(authServer));
+  const providers = useSWR<LinkProvider[], Error>([authServer, 'oauth-providers'], async () =>
+    linkableProviders(authServer),
+  );
+  const linked = useSWR<Identity[], Error>([authServer, 'oauth-identities'], async () => identities(authServer));
   const [problem, setProblem] = useState<string | null>(null);
-  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState<Service | null>(null);
   const [connecting, setConnecting] = useState(false);
   const loadError = providers.error ?? linked.error;
   const shownProblem =
     problem ?? (loadError === undefined ? null : `Connected services could not be loaded: ${loadError.message}`);
+  const services: Service[] = (providers.data ?? []).map((provider) => ({
+    provider,
+    identity: (linked.data ?? []).find((identity) => identity.provider === provider.provider),
+  }));
 
-  const connect = (provider: string): void => {
+  const connect = (provider: LinkProvider): void => {
     setConnecting(true);
     void (async (): Promise<void> => {
       try {
-        const authorizeUrl = await beginLink(authServer, provider, window.sessionStorage);
+        const authorizeUrl = await beginLink(authServer, provider.name, window.sessionStorage);
         window.location.assign(authorizeUrl);
       } catch (error) {
-        setProblem(error instanceof Error ? error.message : `${label(provider)} could not be connected.`);
+        setProblem(error instanceof Error ? error.message : `${provider.friendly_name} could not be connected.`);
         setConnecting(false);
       }
     })();
   };
 
-  const disconnect = (provider: string): void => {
+  // An identity that changed since the page loaded (a sign-in with it) is shown as it is now, and
+  // the user disconnects it again: nothing is unlinked on a stale view.
+  const disconnect = ({ provider, identity }: Service): void => {
+    if (identity === undefined) {
+      return;
+    }
     void (async (): Promise<void> => {
       try {
-        await unlink(authServer, provider);
+        await unlink(authServer, identity);
         setDisconnecting(null);
-        await linked.mutate();
+        setProblem(null);
       } catch (error) {
-        setProblem(error instanceof Error ? error.message : `${label(provider)} could not be disconnected.`);
+        setDisconnecting(null);
+        if (error instanceof AuthStaleWriteError) {
+          setProblem(
+            `Your ${provider.friendly_name} connection changed since this page loaded. It has been refreshed: disconnect it again to confirm.`,
+          );
+        } else {
+          setProblem(error instanceof Error ? error.message : `${provider.friendly_name} could not be disconnected.`);
+        }
       }
+      await linked.mutate();
     })();
   };
+  const disconnectingName = disconnecting?.provider.friendly_name ?? '';
 
   return (
     <>
@@ -121,11 +146,10 @@ export const ConnectedServices = (): ReactElement => {
         <p className='text-sm text-muted-foreground'>No services are available to connect.</p>
       )}
       <ul aria-label='Connected services' className='grid gap-4'>
-        {(providers.data ?? []).map((provider) => (
+        {services.map((service) => (
           <ServiceRow
-            key={provider}
-            provider={provider}
-            connection={(linked.data ?? []).find((connection) => connection.provider === provider)}
+            key={service.provider.name}
+            service={service}
             onConnect={connect}
             onDisconnect={setDisconnecting}
             connecting={connecting}
@@ -135,10 +159,10 @@ export const ConnectedServices = (): ReactElement => {
       <Dialog open={disconnecting !== null} onOpenChange={(open) => setDisconnecting(open ? disconnecting : null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disconnect {label(disconnecting ?? '')}</DialogTitle>
+            <DialogTitle>Disconnect {disconnectingName}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to disconnect your {label(disconnecting ?? '')} account? Your agents will no longer be
-              able to use it.
+              Are you sure you want to disconnect your {disconnectingName} account? Your agents will no longer be able to use
+              it.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

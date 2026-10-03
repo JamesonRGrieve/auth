@@ -26,6 +26,8 @@ export { default as AuthRouter } from './Router';
 export { AuthenticationContext } from './AuthenticationContext';
 export { AuthServerProvider, useAuthServer } from './AuthServerContext';
 export { CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE, SESSION_CREDENTIALS, csrfHeaders, hasSession } from './lib/session';
+export { etagOf } from './lib/version';
+export type { Versioned } from './lib/version';
 export { useAuthentication } from './useAuthentication';
 
 // Helpers.

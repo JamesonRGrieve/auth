@@ -49,7 +49,7 @@ describe('Close', () => {
     await vi.waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/user/manage');
     });
-    expect(fetchMock).toHaveBeenCalledWith(`${SERVER}/v1/oauth2_client/callback/google`, expect.anything());
+    expect(fetchMock).toHaveBeenCalledWith(`${SERVER}/v1/auth/oauth/link/callback`, expect.anything());
     expect(close).not.toHaveBeenCalled();
   });
 
