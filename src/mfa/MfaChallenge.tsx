@@ -8,17 +8,30 @@ import { type ReactElement, useState } from 'react';
 const HINT_ID = 'mfa-code-hint';
 const PROBLEM_ID = 'mfa-code-problem';
 
-/** The second login step: a current authenticator code, or a recovery code if the phone is out of reach. */
+/**
+ * The second login step: a current authenticator code, or a recovery code if the phone is out of
+ * reach; or, when the account has one, a security key.
+ */
 export function MfaChallenge({
   onSubmit,
   onStartOver,
+  onSecurityKey,
 }: {
   /** Resolves with why the code was refused, or null once signed in. */
   onSubmit: (code: string) => Promise<string | null>;
   onStartOver: () => void;
+  /** Answers with a security key instead; resolves with why it failed, or null once signed in. Offered only when given. */
+  onSecurityKey?: () => Promise<string | null>;
 }): ReactElement {
   const [problem, setProblem] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const settle = (answering: Promise<string | null>): void => {
+    setPending(true);
+    void (async (): Promise<void> => {
+      setProblem(await answering);
+      setPending(false);
+    })();
+  };
 
   return (
     <form
@@ -27,12 +40,7 @@ export function MfaChallenge({
       onSubmit={(event) => {
         event.preventDefault();
         const value = new FormData(event.currentTarget).get('code');
-        const code = typeof value === 'string' ? value.trim() : '';
-        setPending(true);
-        void (async (): Promise<void> => {
-          setProblem(await onSubmit(code));
-          setPending(false);
-        })();
+        settle(onSubmit(typeof value === 'string' ? value.trim() : ''));
       }}
     >
       <Label htmlFor='mfa-code'>Authenticator or recovery code</Label>
@@ -50,6 +58,11 @@ export function MfaChallenge({
       <Button type='submit' disabled={pending}>
         Verify
       </Button>
+      {onSecurityKey !== undefined && (
+        <Button type='button' variant='outline' disabled={pending} onClick={() => settle(onSecurityKey())}>
+          Use a security key
+        </Button>
+      )}
       <Button type='button' variant='ghost' onClick={onStartOver}>
         Start over
       </Button>

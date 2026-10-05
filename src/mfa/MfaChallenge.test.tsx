@@ -33,6 +33,20 @@ describe('MfaChallenge', () => {
     expect(view.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('offers a security key only when given one, and shows why it failed', async () => {
+    expect(
+      render(<MfaChallenge onSubmit={vi.fn()} onStartOver={vi.fn()} />).queryByRole('button', {
+        name: 'Use a security key',
+      }),
+    ).toBeNull();
+    const onSecurityKey = vi.fn(async () => Promise.resolve('The request was cancelled, or it timed out.'));
+    const user = userEvent.setup();
+    const view = render(<MfaChallenge onSubmit={vi.fn()} onStartOver={vi.fn()} onSecurityKey={onSecurityKey} />);
+    await user.click(view.getByRole('button', { name: 'Use a security key' }));
+    expect(onSecurityKey).toHaveBeenCalled();
+    expect(await view.findByRole('alert')).toHaveTextContent('The request was cancelled');
+  });
+
   it('lets the user start over', async () => {
     const onStartOver = vi.fn();
     const user = userEvent.setup();

@@ -113,7 +113,7 @@ describe('Login', () => {
     setCookie('email', 'ada@example.com');
     const fetchMock = reply([HTTP_OK, { status: 'accepted' }]);
     const user = userEvent.setup();
-    const view = renderLogin({ ...testAuthConfig, authModes: { basic: false, magical: true } });
+    const view = renderLogin({ ...testAuthConfig, authModes: { basic: false, magical: true, passkey: false } });
     expect(view.queryByLabelText('Password')).toBeNull();
     await user.click(view.getByRole('button', { name: 'Email me a sign-in link' }));
     expect(await view.findByRole('status')).toHaveTextContent('If ada@example.com has an account');

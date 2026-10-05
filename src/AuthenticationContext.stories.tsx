@@ -46,7 +46,7 @@ const sampleConfig: AuthenticationConfig = {
   magic: { path: '/magic', heading: '' },
   logout: { path: '/logout', heading: '', props: {} },
   error: { path: '/error', heading: 'Error' },
-  authModes: { basic: true, magical: false },
+  authModes: { basic: true, magical: false, passkey: false },
   oauthProviders: [],
   signInAlternatives: [],
   authServer: 'https://api.example.com',

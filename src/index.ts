@@ -17,6 +17,11 @@ export { default as Login } from './Login';
 export { MfaChallenge } from './mfa/MfaChallenge';
 export { passwordLogin, completeMfaLogin, isMfaChallenge } from './mfa/mfaApi';
 export type { MfaChallenge as MfaLoginChallenge, LoginAnswer } from './mfa/mfaApi';
+export { SecondFactor } from './mfa/SecondFactor';
+// Passkeys and security keys: signing in here, registering them in @zephyrex/webauthn-consumer.
+export { PasskeySignIn } from './webauthn/PasskeySignIn';
+export { ceremonyProblem, CreationCeremonySchema, createPasskey, passkeysSupported } from './webauthn/webauthnApi';
+export type { CreationOptions, CredentialJson } from './webauthn/webauthnApi';
 export { default as Logout } from './Logout';
 export { default as Register } from './Register';
 export { PasswordRules } from './PasswordRules';

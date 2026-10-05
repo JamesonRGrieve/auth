@@ -42,6 +42,8 @@ export type AuthenticationConfig = {
   authModes: {
     basic: boolean;
     magical: boolean;
+    /** Passkey sign-in (the server's webauthn_consumer), offered where the browser supports it. */
+    passkey: boolean;
   };
   /**
    * Other ways to sign in that the app mounts through `additionalPages` (e.g. pairing with a
@@ -99,6 +101,7 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
   authModes: {
     basic: true,
     magical: false,
+    passkey: false,
   },
   oauthProviders: [],
   signInAlternatives: [],

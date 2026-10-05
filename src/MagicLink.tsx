@@ -4,13 +4,13 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import AuthCard from './AuthCard';
 import { signedInDestination } from './lib/afterSignIn';
-import { MfaChallenge } from './mfa/MfaChallenge';
-import { answerMfaChallenge, isMfaChallenge, verifyMagicLink } from './mfa/mfaApi';
+import { SecondFactor } from './mfa/SecondFactor';
+import { isMfaChallenge, type MfaChallenge, verifyMagicLink } from './mfa/mfaApi';
 import { useAuthentication } from './useAuthentication';
 
 export type MagicLinkProps = Record<string, never>;
 
-type Step = { kind: 'checking' } | { kind: 'challenge'; challengeToken: string } | { kind: 'failed'; problem: string };
+type Step = { kind: 'checking' } | { kind: 'challenge'; challenge: MfaChallenge } | { kind: 'failed'; problem: string };
 
 /**
  * Where a sign-in link lands (`<authPath>/magic?token=…`; the server's MAGIC_LINK_BASE_URL). The
@@ -36,7 +36,7 @@ export default function MagicLink(): ReactNode {
       try {
         const answer = await verifyMagicLink(authConfig.authServer, token);
         if (isMfaChallenge(answer)) {
-          setStep({ kind: 'challenge', challengeToken: answer.challenge_token });
+          setStep({ kind: 'challenge', challenge: answer });
           return;
         }
         window.location.replace(signedInDestination(authConfig));
@@ -49,13 +49,10 @@ export default function MagicLink(): ReactNode {
   if (step.kind === 'challenge') {
     return (
       <AuthCard title='Two-factor authentication' description='One more step to sign in.'>
-        <MfaChallenge
-          onSubmit={async (code) => {
-            const problem = await answerMfaChallenge(authConfig.authServer, step.challengeToken, code);
-            if (problem === null) {
-              window.location.replace(signedInDestination(authConfig));
-            }
-            return problem;
+        <SecondFactor
+          challenge={step.challenge}
+          onSignedIn={() => {
+            window.location.replace(signedInDestination(authConfig));
           }}
           onStartOver={() => {
             window.location.replace(authConfig.authPath);

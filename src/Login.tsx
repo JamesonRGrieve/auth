@@ -12,9 +12,10 @@ import { signedInDestination } from './lib/afterSignIn';
 import { useAssertion } from './lib/assert';
 import { cookieText } from './lib/cookies';
 import { validateURI } from './lib/validation';
-import { MfaChallenge } from './mfa/MfaChallenge';
-import { answerMfaChallenge, isMfaChallenge, passwordLogin, requestMagicLink } from './mfa/mfaApi';
+import { SecondFactor } from './mfa/SecondFactor';
+import { isMfaChallenge, type MfaChallenge, passwordLogin, requestMagicLink } from './mfa/mfaApi';
 import { useAuthentication } from './useAuthentication';
+import { PasskeySignIn } from './webauthn/PasskeySignIn';
 
 export type LoginProps = {
   userLoginEndpoint?: string;
@@ -36,7 +37,7 @@ const finishLogin = (authConfig: AuthenticationConfig): void => {
 
 export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: LoginProps): ReactNode {
   const [responseMessage, setResponseMessage] = useState('');
-  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState<MfaChallenge | null>(null);
   const authConfig = useAuthentication();
   const [captcha, setCaptcha] = useState<string | null>(null);
   const needsCaptcha = typeof authConfig.recaptchaSiteKey === 'string' && authConfig.recaptchaSiteKey !== '';
@@ -63,7 +64,7 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     const answer = await passwordLogin(authConfig.authServer, email, password, userLoginEndpoint);
     if (isMfaChallenge(answer)) {
       setResponseMessage('');
-      setChallengeToken(answer.challenge_token);
+      setChallenge(answer);
       return;
     }
     finishLogin(authConfig);
@@ -89,24 +90,16 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
     }
   };
 
-  const submitCode = async (code: string): Promise<string | null> => {
-    if (challengeToken === null) {
-      return 'Start over and sign in again.';
-    }
-    const problem = await answerMfaChallenge(authConfig.authServer, challengeToken, code);
-    if (problem === null) {
-      finishLogin(authConfig);
-    }
-    return problem;
-  };
-
-  if (challengeToken !== null) {
+  if (challenge !== null) {
     return (
       <AuthCard title='Two-factor authentication' description='One more step to sign in.' showBackButton>
-        <MfaChallenge
-          onSubmit={submitCode}
+        <SecondFactor
+          challenge={challenge}
+          onSignedIn={() => {
+            finishLogin(authConfig);
+          }}
           onStartOver={() => {
-            setChallengeToken(null);
+            setChallenge(null);
           }}
         />
       </AuthCard>
@@ -164,6 +157,14 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
           <AuthCard.ResponseMessage id={RESPONSE_MESSAGE_ID}>{responseMessage}</AuthCard.ResponseMessage>
         )}
       </form>
+      {authConfig.authModes.passkey && (
+        <PasskeySignIn
+          email={rememberedEmail() === '' ? null : rememberedEmail()}
+          onSignedIn={() => {
+            finishLogin(authConfig);
+          }}
+        />
+      )}
     </AuthCard>
   );
 }

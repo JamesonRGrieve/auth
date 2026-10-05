@@ -16,7 +16,7 @@ export const testAuthConfig: AuthenticationConfig = {
   appName: 'Test',
   authPath: '/user',
   authServer: TEST_AUTH_SERVER,
-  authModes: { basic: true, magical: false },
+  authModes: { basic: true, magical: false, passkey: false },
   oauthProviders: [],
   signInAlternatives: [],
 };

@@ -15,6 +15,14 @@ export const Accepts: Story = {
   args: { onSubmit: async () => Promise.resolve(null), onStartOver: () => undefined },
 };
 
+export const WithSecurityKey: Story = {
+  args: {
+    onSubmit: async () => Promise.resolve(null),
+    onStartOver: () => undefined,
+    onSecurityKey: async () => Promise.resolve(null),
+  },
+};
+
 export const RefusesTheCode: Story = {
   args: { onSubmit: async () => Promise.resolve('Invalid MFA code'), onStartOver: () => undefined },
 };

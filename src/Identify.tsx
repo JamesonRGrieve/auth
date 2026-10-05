@@ -15,10 +15,12 @@ import { LuUser } from 'react-icons/lu';
 import { z } from 'zod';
 import AuthCard from './AuthCard';
 import { Alert } from './components/ui/alert';
+import { signedInDestination } from './lib/afterSignIn';
 import { AuthApiError, authSend } from './lib/api';
 import OAuth from './oauth2/OAuth';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
+import { PasskeySignIn } from './webauthn/PasskeySignIn';
 
 const schema = z.object({
   email: z.email({ message: 'Please enter a valid E-Mail address.' }),
@@ -129,6 +131,15 @@ export default function Identify({
         ) : null}
 
         {showOAuth && <OAuth />}
+
+        {authConfig.authModes.passkey && (
+          <PasskeySignIn
+            email={null}
+            onSignedIn={() => {
+              window.location.href = signedInDestination(authConfig);
+            }}
+          />
+        )}
 
         {authConfig.signInAlternatives.map(({ label, path }) => (
           <Link key={path} href={`${authConfig.authPath}${path}`} className='text-sm text-center underline'>
