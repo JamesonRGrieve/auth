@@ -38,6 +38,17 @@ const guard = createAuthMiddleware({
 });
 ```
 
+The router config's `authModes` picks how users sign in:
+
+- `basic`: a password.
+- `magical`: a link emailed to them. It cannot be combined with `basic`.
+- `passkey`: a passkey, through the server's `webauthn_consumer`, offered where the browser supports
+  it.
+
+The defaults are `{ basic: true, magical: false, passkey: false }`. Whatever the modes, a
+second-factor challenge that offers a security key can be answered with one where the browser
+supports it.
+
 For OAuth sign-in, list the providers in the router config (`oauthProviders: ['google']`) and allow
 `<app>/user/close/<provider>` as a redirect URI on the server.
 
