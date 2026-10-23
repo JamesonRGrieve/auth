@@ -6,8 +6,8 @@ Authentication UI package for the Zephyrex framework, published as `@zephyrex/au
 
 Read **before your first edit**:
 
-- `/home/jameson/Source/ai-prompts/typescript.md`
-- `/home/jameson/Source/ai-prompts/react-next.md`
+- SOP _Stack Standards → TypeScript and JavaScript_
+- SOP _Stack Standards → React and Next.js_
 
 ---
 
