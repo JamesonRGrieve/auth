@@ -59,6 +59,11 @@ export type AuthenticationConfig = {
   appName: string;
   /** Where these pages are mounted on the app's origin, e.g. `/user`. */
   authPath: string;
+  /**
+   * Where a sign-in that interrupted no page lands, e.g. the app's main page; the account page
+   * when unset. Never the auth pages' welcome, which would ask a signed-in user to sign in.
+   */
+  home?: string | undefined;
   recaptchaSiteKey?: string | undefined;
 };
 

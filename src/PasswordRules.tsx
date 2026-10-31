@@ -23,7 +23,7 @@ export function PasswordRules({ id, policy, password, refused = [] }: PasswordRu
         const kept = password !== '' && keepsRule(password, rule, policy) && !refused.includes(rule);
         return (
           <li key={rule} className={`flex items-center gap-2 ${kept ? 'text-muted-foreground' : 'text-foreground'}`}>
-            {kept ? <LuCheck aria-hidden className='h-4 w-4' /> : <LuX aria-hidden className='h-4 w-4' />}
+            {kept ? <LuCheck aria-hidden className='h-4 w-4 shrink-0' /> : <LuX aria-hidden className='h-4 w-4 shrink-0' />}
             <span>
               {ruleText(rule, policy)}
               <span className='sr-only'>{kept ? ': met' : ': not met yet'}</span>

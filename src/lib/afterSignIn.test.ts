@@ -19,11 +19,17 @@ describe('signedInDestination', () => {
     expect(signedInDestination(CONFIG)).toBe('/chat');
   });
 
-  it('returns to the interrupted page on this site, else the auth pages', () => {
-    expect(signedInDestination(CONFIG)).toBe('/user');
+  it('returns to the interrupted page on this site, else the account page', () => {
+    expect(signedInDestination(CONFIG)).toBe('/user/manage');
     setCookie('href', '/team/1?tab=users');
     expect(signedInDestination(CONFIG)).toBe('/team/1?tab=users');
     setCookie('href', 'https://evil.example/');
-    expect(signedInDestination(CONFIG)).toBe('/user');
+    expect(signedInDestination(CONFIG)).toBe('/user/manage');
+  });
+
+  it("lands on the app's home when it names one", () => {
+    expect(signedInDestination({ ...CONFIG, home: '/polycule' })).toBe('/polycule');
+    setCookie('href', '/chat');
+    expect(signedInDestination({ ...CONFIG, home: '/polycule' })).toBe('/chat');
   });
 });

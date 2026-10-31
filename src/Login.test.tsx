@@ -51,7 +51,7 @@ describe('Login', () => {
     await user.type(view.getByLabelText('Password'), 'pw');
     await user.click(view.getByRole('button', { name: 'Login' }));
     await vi.waitFor(() => {
-      expect(window.location.href).toBe('/user');
+      expect(window.location.href).toBe('/user/manage');
     });
     // The server sets the HttpOnly session cookie; the page keeps nothing script-readable.
     expect(document.cookie).not.toContain('jwt-1');
@@ -72,7 +72,7 @@ describe('Login', () => {
     await user.click(view.getByRole('button', { name: 'Verify' }));
 
     await vi.waitFor(() => {
-      expect(window.location.href).toBe('/user');
+      expect(window.location.href).toBe('/user/manage');
     });
     expect(document.cookie).not.toContain('jwt-2');
     expect(fetchMock).toHaveBeenLastCalledWith(
@@ -83,7 +83,7 @@ describe('Login', () => {
 
   it.each([
     ['returns to the page the sign-in interrupted', '/chat/42?tab=files', '/chat/42?tab=files'],
-    ['never leaves the site for a crafted return path', '//evil.example', '/user'],
+    ['never leaves the site for a crafted return path', '//evil.example', '/user/manage'],
   ])('%s', async (_case, href, destination) => {
     setCookie('href', href);
     reply([HTTP_OK, { token: 'jwt-1' }]);

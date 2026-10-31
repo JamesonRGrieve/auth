@@ -47,7 +47,7 @@ describe('MagicLink', () => {
     arriveWith('?token=link-1');
     renderLanding();
     await vi.waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/user');
+      expect(replace).toHaveBeenCalledWith('/user/manage');
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -68,7 +68,7 @@ describe('MagicLink', () => {
     expect(replace).not.toHaveBeenCalled();
     await user.click(view.getByRole('button', { name: 'Verify' }));
     await vi.waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/user');
+      expect(replace).toHaveBeenCalledWith('/user/manage');
     });
     expect(fetchMock).toHaveBeenLastCalledWith(
       `${SERVER}/v1/user/authorize/mfa`,
