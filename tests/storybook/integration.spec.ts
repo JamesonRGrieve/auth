@@ -29,7 +29,7 @@ test.describe('Storybook integration', () => {
 
   test('renders the AuthCard with-back-button variant', async ({ page }) => {
     await page.goto('/iframe.html?id=components-authcard--with-back-button');
-    await expect(page.getByText('Sign Up')).toBeVisible();
+    await expect(page.getByText('Create your account')).toBeVisible();
   });
 
   test('renders the AuthCard response-message variant', async ({ page }) => {

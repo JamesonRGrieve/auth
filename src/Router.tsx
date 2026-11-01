@@ -75,15 +75,15 @@ const pageConfigDefaults: Omit<AuthenticationConfig, 'authServer'> = {
   },
   login: {
     path: '/login',
-    heading: 'Please Authenticate',
+    heading: 'Sign in',
   },
   manage: {
     path: '/manage',
-    heading: 'Account Management',
+    heading: 'Your account',
   },
   register: {
     path: '/register',
-    heading: 'Welcome, Please Register',
+    heading: 'Create your account',
   },
   close: {
     path: '/close',

@@ -79,7 +79,7 @@ function ServiceRow({ service, onConnect, onDisconnect, connecting }: ServiceRow
  * The identity providers the signed-in user can link (oauth_consumer). Connecting leaves for the
  * provider; the auth pages' close route finishes the link when the provider sends the browser back.
  */
-export const ConnectedServices = (): ReactElement => {
+export const ConnectedServices = (): ReactElement | null => {
   const authServer = useAuthServer();
   const providers = useSWR<LinkProvider[], Error>([authServer, 'oauth-providers'], async () =>
     linkableProviders(authServer),
@@ -134,6 +134,10 @@ export const ConnectedServices = (): ReactElement => {
     })();
   };
   const disconnectingName = disconnecting?.provider.friendly_name ?? '';
+  // Nothing to connect and nothing connected: the section has nothing to say.
+  if (providers.data?.length === 0 && services.length === 0 && shownProblem === null) {
+    return null;
+  }
 
   return (
     <>
@@ -141,9 +145,6 @@ export const ConnectedServices = (): ReactElement => {
         <Alert variant='destructive'>
           <AlertDescription>{shownProblem}</AlertDescription>
         </Alert>
-      )}
-      {providers.data?.length === 0 && (
-        <p className='text-sm text-muted-foreground'>No services are available to connect.</p>
       )}
       <ul aria-label='Connected services' className='grid gap-4'>
         {services.map((service) => (

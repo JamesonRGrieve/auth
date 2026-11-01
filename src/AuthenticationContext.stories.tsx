@@ -39,7 +39,7 @@ type Story = StoryObj<typeof ContextPreview>;
 
 const sampleConfig: AuthenticationConfig = {
   identify: { path: '/', heading: 'Welcome' },
-  login: { path: '/login', heading: 'Please Authenticate' },
+  login: { path: '/login', heading: 'Sign in' },
   manage: { path: '/manage', heading: 'Account Management' },
   register: { path: '/register', heading: 'Register' },
   close: { path: '/close', heading: '' },

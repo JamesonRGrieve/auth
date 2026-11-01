@@ -49,7 +49,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
     await vi.waitFor(() => {
       expect(window.location.href).toBe('/user/manage');
     });
@@ -65,7 +65,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
 
     await user.type(await view.findByLabelText('Authenticator or recovery code'), '123456');
     expect(window.location.href).toBe('');
@@ -90,7 +90,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
     await vi.waitFor(() => {
       expect(window.location.href).toBe(destination);
     });
@@ -102,7 +102,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
     await vi.waitFor(() => {
       expect(window.location.href).toBe('/user/manage');
     });
@@ -132,7 +132,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
     await user.type(await view.findByLabelText('Authenticator or recovery code'), '000000');
     await user.click(view.getByRole('button', { name: 'Verify' }));
     expect(await view.findByRole('alert')).toHaveTextContent('Invalid MFA code');
@@ -151,8 +151,8 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
-    expect(view.getByRole('button', { name: 'Login' })).toBeDisabled();
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
+    expect(view.getByRole('button', { name: 'Sign in' })).toBeDisabled();
     answer?.(new Response('{"detail":"Invalid credentials"}', { status: HTTP_UNAUTHORIZED }));
     expect(await view.findByText('Invalid credentials')).toBeInTheDocument();
     expect(view.getByRole('button', { name: 'Continue' })).toBeEnabled();
@@ -164,7 +164,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin();
     await user.type(view.getByLabelText('Password'), 'wrong');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
     expect(await view.findByRole('alert')).toHaveTextContent('Invalid credentials');
     const password = view.getByLabelText('Password');
     expect(password).toHaveAttribute('aria-invalid', 'true');
@@ -175,7 +175,7 @@ describe('Login', () => {
     const user = userEvent.setup();
     const view = renderLogin({ ...testAuthConfig, recaptchaSiteKey: 'site-key' });
     await user.type(view.getByLabelText('Password'), 'pw');
-    await user.click(view.getByRole('button', { name: 'Login' }));
+    await user.click(view.getByRole('button', { name: 'Sign in' }));
     const password = view.getByLabelText('Password');
     expect(password).toHaveAccessibleDescription('Please complete the reCAPTCHA.');
     expect(password).toHaveAttribute('aria-invalid', 'false');

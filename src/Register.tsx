@@ -89,16 +89,16 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const teamName = cookieText('team');
 
   const registerHeader = {
-    title: 'Sign Up',
-    description: 'Welcome! Please complete your registration.',
+    title: 'Create your account',
+    description: 'A few details, and you are in.',
   };
 
   const inviteHeader = {
     title: 'Accept Invitation',
     description:
       teamName !== ''
-        ? `You've been invited to join ${teamName}. Please complete your registration to join the team.`
-        : `You've been invited to join a team. Please complete your registration to join the team.`,
+        ? `You've been invited to join ${teamName}. Create your account to join the team.`
+        : `You've been invited to join a team. Create your account to join the team.`,
   };
   const hasInvite = invite !== '';
 

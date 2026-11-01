@@ -117,9 +117,9 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
   }
 
   return (
-    <AuthCard title='Login' description='Please login to your account.' showBackButton>
+    <AuthCard title='Sign in' description='Enter your password to sign in.' showBackButton>
       <form
-        aria-label='Login'
+        aria-label='Sign in'
         onSubmit={(event) => {
           void submitPassword(event);
         }}
@@ -151,7 +151,7 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
           </div>
         )}
         <Button type='submit' disabled={pending}>
-          {byEmailLink ? 'Email me a sign-in link' : responseMessage !== '' ? 'Continue' : 'Login'}
+          {byEmailLink ? 'Email me a sign-in link' : responseMessage !== '' ? 'Continue' : 'Sign in'}
         </Button>
         {responseMessage !== '' && (
           <AuthCard.ResponseMessage id={RESPONSE_MESSAGE_ID}>{responseMessage}</AuthCard.ResponseMessage>

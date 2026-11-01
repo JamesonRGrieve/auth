@@ -22,11 +22,11 @@ const renderWith = (authServer: string, page: ReactNode): ReturnType<typeof rend
 
 describe.each(SAME_ORIGIN_BASES)('with the API at %j on the app’s origin', (authServer) => {
   it('renders the identify step', () => {
-    expect(renderWith(authServer, <Identify />).getByLabelText('E-Mail Address')).toBeInTheDocument();
+    expect(renderWith(authServer, <Identify />).getByLabelText('Email')).toBeInTheDocument();
   });
 
   it('renders the login step', () => {
-    expect(renderWith(authServer, <Login />).getByRole('form', { name: 'Login' })).toBeInTheDocument();
+    expect(renderWith(authServer, <Login />).getByRole('form', { name: 'Sign in' })).toBeInTheDocument();
   });
 
   it('renders the register step', () => {

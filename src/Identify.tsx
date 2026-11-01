@@ -23,7 +23,7 @@ import { cookieDomainOptions } from './utils';
 import { PasskeySignIn } from './webauthn/PasskeySignIn';
 
 const schema = z.object({
-  email: z.email({ message: 'Please enter a valid E-Mail address.' }),
+  email: z.email({ message: 'Enter a valid email address.' }),
   redirectTo: z.string().optional(),
 });
 
@@ -88,7 +88,9 @@ export default function Identify({
   const showOAuth = authConfig.oauthProviders.length > 0;
 
   const description =
-    showEmail && !showOAuth ? 'Please enter your email address to continue.' : 'Please choose an authentication method.';
+    showEmail && !showOAuth
+      ? 'Enter your email to sign in or create an account.'
+      : 'Sign in or create an account, with your email or another account.';
 
   return (
     <AuthCard title='Welcome' description={description}>
@@ -100,7 +102,7 @@ export default function Identify({
       >
         {showEmail && (
           <>
-            <Label htmlFor='email'>E-Mail Address</Label>
+            <Label htmlFor='email'>Email</Label>
             <Input
               id='email'
               autoComplete='username'
