@@ -33,6 +33,18 @@ describe('OAuth', () => {
     Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
   });
 
+  it('names a provider as the app labels it, else by its own name', () => {
+    const view = render(
+      <AuthenticationContext
+        value={{ ...testAuthConfig, oauthProviders: ['authentik', 'google'], oauthLabels: { authentik: 'Boden Research' } }}
+      >
+        <OAuth />
+      </AuthenticationContext>,
+    );
+    expect(view.getByRole('button', { name: 'Continue with Boden Research' })).toBeInTheDocument();
+    expect(view.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
+  });
+
   it('offers nothing when no provider is configured', () => {
     const view = renderOAuth([]);
     expect(view.container).toBeEmptyDOMElement();

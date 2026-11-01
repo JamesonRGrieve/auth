@@ -55,6 +55,11 @@ export type AuthenticationConfig = {
    * None means no OAuth sign-in; with no email mode either, the welcome page offers only these.
    */
   oauthProviders: readonly string[];
+  /**
+   * What each provider's button calls it, by name, when its own name means nothing to the people
+   * signing in (an `authentik` instance shown as the organisation that runs it).
+   */
+  oauthLabels?: Readonly<Record<string, string>> | undefined;
   authServer: string;
   appName: string;
   /** Where these pages are mounted on the app's origin, e.g. `/user`. */

@@ -20,6 +20,8 @@ export default function OAuth(): ReactElement | null {
     return null;
   }
 
+  const labels = new Map(Object.entries(authConfig.oauthLabels ?? {}));
+
   const signIn = (provider: string): void => {
     setPending(true);
     void (async (): Promise<void> => {
@@ -36,7 +38,9 @@ export default function OAuth(): ReactElement | null {
   return (
     <div className='flex flex-col gap-2'>
       {authConfig.oauthProviders.map((provider) => {
-        const { label, icon } = oauth2ProviderDisplay(provider);
+        const display = oauth2ProviderDisplay(provider);
+        const label = labels.get(provider) ?? display.label;
+        const { icon } = display;
         return (
           <Button
             key={provider}
