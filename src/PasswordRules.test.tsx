@@ -16,7 +16,7 @@ describe('PasswordRules', () => {
   it('lists every rule as unmet before anything is typed', () => {
     expect(states('')).toEqual([
       'At least 8 characters: not met yet',
-      'No more than 72 bytes (accented letters and emoji take more than one): not met yet',
+      'At most 72 characters (fewer with accents or emoji): not met yet',
       'At least one letter: not met yet',
       'At least one digit: not met yet',
     ]);
@@ -25,7 +25,7 @@ describe('PasswordRules', () => {
   it('follows what is typed', () => {
     expect(states('abcdefgh')).toEqual([
       'At least 8 characters: met',
-      'No more than 72 bytes (accented letters and emoji take more than one): met',
+      'At most 72 characters (fewer with accents or emoji): met',
       'At least one letter: met',
       'At least one digit: not met yet',
     ]);

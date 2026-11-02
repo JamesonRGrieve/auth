@@ -54,7 +54,7 @@ export function ruleText(rule: PasswordRule, policy: PasswordPolicy): string {
     return `At least ${policy.min_length} characters`;
   }
   if (rule === 'max_bytes') {
-    return `No more than ${policy.max_bytes} bytes (accented letters and emoji take more than one)`;
+    return `At most ${policy.max_bytes} characters (fewer with accents or emoji)`;
   }
   if (rule === 'require_letter') {
     return 'At least one letter';

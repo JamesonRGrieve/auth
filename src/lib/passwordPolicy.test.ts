@@ -54,7 +54,7 @@ describe('brokenRules', () => {
 describe('ruleText', () => {
   it('states each rule with the policy’s numbers', () => {
     expect(ruleText('min_length', POLICY)).toBe('At least 8 characters');
-    expect(ruleText('max_bytes', POLICY)).toContain('72 bytes');
+    expect(ruleText('max_bytes', POLICY)).toBe('At most 72 characters (fewer with accents or emoji)');
     expect(ruleText('require_letter', POLICY)).toBe('At least one letter');
     expect(ruleText('require_digit', POLICY)).toBe('At least one digit');
   });
