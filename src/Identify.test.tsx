@@ -28,6 +28,24 @@ describe('Identify', () => {
     expect(email).toHaveAccessibleDescription('Enter a valid email address.');
   });
 
+  it('offers only single sign-on, without mentioning email, when email sign-in is off', () => {
+    const view = render(
+      <AuthenticationContext
+        value={{
+          ...testAuthConfig,
+          authModes: { basic: false, magical: false, passkey: false },
+          oauthProviders: ['oidc'],
+          oauthLabels: { oidc: 'Boden Research' },
+        }}
+      >
+        <Identify />
+      </AuthenticationContext>,
+    );
+    expect(view.getByText('Sign in or create an account.')).toBeInTheDocument();
+    expect(view.queryByLabelText('Email')).toBeNull();
+    expect(view.getByRole('button', { name: 'Continue with Boden Research' })).toBeInTheDocument();
+  });
+
   it('links each other way to sign in the app mounts, under the auth path', () => {
     expect(renderIdentify().queryAllByRole('link')).toEqual([]);
     const view = render(

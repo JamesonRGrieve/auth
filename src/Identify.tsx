@@ -90,7 +90,9 @@ export default function Identify({
   const description =
     showEmail && !showOAuth
       ? 'Enter your email to sign in or create an account.'
-      : 'Sign in or create an account, with your email or another account.';
+      : showEmail
+        ? 'Sign in or create an account, with your email or another account.'
+        : 'Sign in or create an account.';
 
   return (
     <AuthCard title='Welcome' description={description}>
