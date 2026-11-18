@@ -31,7 +31,7 @@ export default function AuthCard({
   responseMessage,
 }: AuthCardProps): React.JSX.Element {
   return (
-    <Card className='max-w-md mx-auto min-w-96'>
+    <Card className='mx-auto w-full max-w-md border-0 bg-transparent shadow-none sm:min-w-96 sm:border sm:bg-card sm:shadow-sm'>
       <CardHeader>
         <div className='flex items-center justify-between'>
           <div className='min-w-8'>
