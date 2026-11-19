@@ -11,7 +11,8 @@ import { beginSignIn } from './signIn';
  * A sign-in button for each configured identity provider (`oauthProviders`). Choosing one leaves
  * for the provider; the close page finishes the sign-in when it sends the browser back.
  */
-export default function OAuth(): ReactElement | null {
+/** `primary`: the providers are the only way in, so the first is the page's main action. */
+export default function OAuth({ primary = false }: { primary?: boolean }): ReactElement | null {
   const authConfig = useAuthentication();
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -37,17 +38,17 @@ export default function OAuth(): ReactElement | null {
 
   return (
     <div className='flex flex-col gap-2'>
-      {authConfig.oauthProviders.map((provider) => {
+      {authConfig.oauthProviders.map((provider, index) => {
         const display = oauth2ProviderDisplay(provider);
         const label = labels.get(provider) ?? display.label;
         const { icon } = display;
         return (
           <Button
             key={provider}
-            variant='outline'
+            variant={primary && index === 0 ? 'default' : 'outline'}
             type='button'
             disabled={pending}
-            className='space-x-1 bg-transparent'
+            className={primary && index === 0 ? 'space-x-1' : 'space-x-1 bg-transparent'}
             onClick={() => signIn(provider)}
           >
             <span className='text-lg' aria-hidden>

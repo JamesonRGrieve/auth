@@ -18,6 +18,7 @@ import { Alert } from './components/ui/alert';
 import { signedInDestination } from './lib/afterSignIn';
 import { AuthApiError, authSend } from './lib/api';
 import OAuth from './oauth2/OAuth';
+import { oauth2ProviderDisplay } from './oauth2/OAuthProviders';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
 import { PasskeySignIn } from './webauthn/PasskeySignIn';
@@ -87,12 +88,21 @@ export default function Identify({
   const showEmail = authConfig.authModes.basic || authConfig.authModes.magical;
   const showOAuth = authConfig.oauthProviders.length > 0;
 
+  // One provider and no email: name the account it signs in with.
+  const onlyProvider = authConfig.oauthProviders.at(0);
+  const onlyAccount =
+    showEmail || authConfig.oauthProviders.length !== 1 || onlyProvider === undefined
+      ? null
+      : (new Map(Object.entries(authConfig.oauthLabels ?? {})).get(onlyProvider) ??
+        oauth2ProviderDisplay(onlyProvider).label);
   const description =
     showEmail && !showOAuth
       ? 'Enter your email to sign in or create an account.'
       : showEmail
         ? 'Sign in or create an account, with your email or another account.'
-        : 'Sign in or create an account.';
+        : onlyAccount === null
+          ? 'Sign in or create an account.'
+          : `Sign in, or create an account, with your ${onlyAccount} account.`;
 
   return (
     <AuthCard title='Welcome' description={description}>
@@ -134,7 +144,7 @@ export default function Identify({
           </div>
         ) : null}
 
-        {showOAuth && <OAuth />}
+        {showOAuth && <OAuth primary={!showEmail} />}
 
         {authConfig.authModes.passkey && (
           <PasskeySignIn

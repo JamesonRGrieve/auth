@@ -2,7 +2,7 @@
 // How the identity providers the server supports are shown. The server holds each provider's
 // client credentials, scopes and endpoints; the browser only needs a label and an icon.
 import type { ReactNode } from 'react';
-import { LuLink } from 'react-icons/lu';
+import { LuKeyRound } from 'react-icons/lu';
 import { RiAmazonFill, RiGitBranchLine, RiGithubFill, RiGoogleFill, RiMicrosoftFill } from 'react-icons/ri';
 
 export interface OAuth2ProviderDisplay {
@@ -25,6 +25,6 @@ const providersByName: ReadonlyMap<string, OAuth2ProviderDisplay> = new Map(Obje
  * name capitalised and a generic icon.
  */
 export const oauth2ProviderDisplay = (name: string): OAuth2ProviderDisplay =>
-  providersByName.get(name.toLowerCase()) ?? { label: name.charAt(0).toUpperCase() + name.slice(1), icon: <LuLink /> };
+  providersByName.get(name.toLowerCase()) ?? { label: name.charAt(0).toUpperCase() + name.slice(1), icon: <LuKeyRound /> };
 
 export default providers;

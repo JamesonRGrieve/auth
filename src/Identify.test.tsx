@@ -41,9 +41,10 @@ describe('Identify', () => {
         <Identify />
       </AuthenticationContext>,
     );
-    expect(view.getByText('Sign in or create an account.')).toBeInTheDocument();
+    expect(view.getByText('Sign in, or create an account, with your Boden Research account.')).toBeInTheDocument();
     expect(view.queryByLabelText('Email')).toBeNull();
-    expect(view.getByRole('button', { name: 'Continue with Boden Research' })).toBeInTheDocument();
+    // The only way in is the page's main action, not an outline button.
+    expect(view.getByRole('button', { name: 'Continue with Boden Research' })).not.toHaveClass('bg-transparent');
   });
 
   it('links each other way to sign in the app mounts, under the auth path', () => {
