@@ -5,15 +5,19 @@
  * accepted absolute URLs threw during hydration and took the whole page down.
  */
 import { render } from '@testing-library/react';
+import { deleteCookie, setCookie } from 'cookies-next/client';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { testAuthConfig } from '../tests/fixtures/authConfig';
 import { AuthenticationContext } from './AuthenticationContext';
 import Identify from './Identify';
 import Login from './Login';
 import Register from './Register';
 
-vi.mock('next/navigation.js', () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => '/user' }));
+vi.mock('next/navigation.js', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/user',
+}));
 
 const SAME_ORIGIN_BASES = ['', '/api'];
 
@@ -21,11 +25,17 @@ const renderWith = (authServer: string, page: ReactNode): ReturnType<typeof rend
   render(<AuthenticationContext value={{ ...testAuthConfig, authServer }}>{page}</AuthenticationContext>);
 
 describe.each(SAME_ORIGIN_BASES)('with the API at %j on the app’s origin', (authServer) => {
+  afterEach(() => {
+    deleteCookie('email');
+  });
+
   it('renders the identify step', () => {
     expect(renderWith(authServer, <Identify />).getByLabelText('Email')).toBeInTheDocument();
   });
 
   it('renders the login step', () => {
+    // The identify step remembers the address before sending someone here.
+    setCookie('email', 'ada@example.com');
     expect(renderWith(authServer, <Login />).getByRole('form', { name: 'Sign in' })).toBeInTheDocument();
   });
 

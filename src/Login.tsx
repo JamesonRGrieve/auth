@@ -4,7 +4,8 @@
 import { Button } from '@jgrieve/forms/components/ui/button';
 import { Input } from '@jgrieve/forms/components/ui/input';
 import { Label } from '@jgrieve/forms/components/ui/label';
-import { type ReactNode, type SyntheticEvent, useState } from 'react';
+import { useRouter } from 'next/navigation.js';
+import { type ReactNode, type SyntheticEvent, useEffect, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import AuthCard from './AuthCard';
 import type { AuthenticationConfig } from './Router';
@@ -31,6 +32,10 @@ const formText = (data: FormData, name: string): string => {
   return typeof value === 'string' ? value : '';
 };
 
+/** Where sign-in starts. */
+export const identifyPath = (authConfig: Pick<AuthenticationConfig, 'authPath' | 'identify'>): string =>
+  authConfig.identify.path === '/' ? authConfig.authPath : `${authConfig.authPath}${authConfig.identify.path}`;
+
 const finishLogin = (authConfig: AuthenticationConfig): void => {
   window.location.href = signedInDestination(authConfig);
 };
@@ -39,6 +44,15 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
   const [responseMessage, setResponseMessage] = useState('');
   const [challenge, setChallenge] = useState<MfaChallenge | null>(null);
   const authConfig = useAuthentication();
+  const router = useRouter();
+  // No address from the identify step: only a passkey works without one, so start over there.
+  const [startOver, setStartOver] = useState(false);
+  useEffect(() => {
+    if (rememberedEmail() === '' && !authConfig.authModes.passkey) {
+      setStartOver(true);
+      router.replace(identifyPath(authConfig));
+    }
+  }, [authConfig, router]);
   const [captcha, setCaptcha] = useState<string | null>(null);
   const needsCaptcha = typeof authConfig.recaptchaSiteKey === 'string' && authConfig.recaptchaSiteKey !== '';
 
@@ -89,6 +103,16 @@ export default function Login({ userLoginEndpoint = '/v1/user/authorize' }: Logi
       setPending(false);
     }
   };
+
+  if (startOver) {
+    return (
+      <AuthCard title='Sign in' description='Start with your email address.'>
+        <p role='status' className='text-center text-sm text-muted-foreground'>
+          Taking you to the start of sign-in…
+        </p>
+      </AuthCard>
+    );
+  }
 
   if (challenge !== null) {
     return (

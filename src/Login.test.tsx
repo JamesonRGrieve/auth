@@ -5,8 +5,11 @@ import { deleteCookie, getCookie, setCookie } from 'cookies-next/client';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { TEST_AUTH_SERVER as SERVER, testAuthConfig } from '../tests/fixtures/authConfig';
 import { AuthenticationContext } from './AuthenticationContext';
-import Login, { type LoginProps } from './Login';
+import Login, { identifyPath, type LoginProps } from './Login';
 import type { AuthenticationConfig } from './Router';
+
+const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
+vi.mock('next/navigation.js', () => ({ useRouter: () => ({ replace }) }));
 
 const HTTP_OK = 200;
 const HTTP_UNAUTHORIZED = 401;
@@ -35,12 +38,16 @@ describe('Login', () => {
       configurable: true,
       value: { href: '', protocol: 'https:', hostname: 'app.example.com' },
     });
+    // The identify step remembers the address before sending someone here.
+    setCookie('email', 'ada@example.com');
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     deleteCookie('href');
     deleteCookie('invitation');
+    deleteCookie('email');
+    replace.mockClear();
     Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
   });
 
@@ -179,6 +186,20 @@ describe('Login', () => {
     const password = view.getByLabelText('Password');
     expect(password).toHaveAccessibleDescription('Please complete the reCAPTCHA.');
     expect(password).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('sends someone who came straight here back to the identify step', async () => {
+    deleteCookie('email');
+    const view = renderLogin({ ...testAuthConfig, authModes: { basic: false, magical: false, passkey: false } });
+    expect(await view.findByRole('status')).toHaveTextContent('Taking you to the start of sign-in');
+    expect(view.queryByRole('button', { name: 'Sign in' })).toBeNull();
+    expect(replace).toHaveBeenCalledWith(identifyPath(testAuthConfig));
+  });
+
+  it('stays for a passkey, which needs no address', () => {
+    deleteCookie('email');
+    renderLogin({ ...testAuthConfig, authModes: { basic: true, magical: false, passkey: true } });
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('keeps the optional login endpoint override', () => {
