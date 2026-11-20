@@ -62,6 +62,24 @@ describe('Register', () => {
     deleteCookie('team');
   });
 
+  it('in magic-link-only mode, asks for a sign-up link instead of posting an account', async () => {
+    const fetchMock = serve(() => new Response(JSON.stringify({ status: 'accepted' }), { status: HTTP_OK }));
+    const view = render(
+      <AuthenticationContext value={{ ...testAuthConfig, authModes: { basic: false, magical: true, passkey: false } }}>
+        <SWRConfig value={{ provider: () => new Map() }}>
+          <Register />
+        </SWRConfig>
+      </AuthenticationContext>,
+    );
+    // The form submits itself in this mode; the link request carries create, and no account is posted.
+    expect(await view.findByRole('heading', { level: 1, name: 'Check your email' })).toBeInTheDocument();
+    const posts = registrations(fetchMock);
+    expect(posts).toHaveLength(1);
+    expect(String(posts[0]?.[0])).toBe(`${SERVER}/v1/auth/magic-link/request`);
+    expect(JSON.parse(String(posts[0]?.[1]?.body))).toEqual({ email: 'ada@example.com', create: true });
+    expect(view.getByRole('status')).toHaveTextContent('Ada@Example.com');
+  });
+
   it('says when the passwords differ, on the repeated field', async () => {
     const user = userEvent.setup();
     const view = renderRegister();

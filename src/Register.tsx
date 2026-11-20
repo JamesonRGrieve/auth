@@ -16,6 +16,7 @@ import { useAssertion } from './lib/assert';
 import { cookieText } from './lib/cookies';
 import { brokenRules, knownRules, type PasswordRule } from './lib/passwordPolicy';
 import { validateURI } from './lib/validation';
+import { requestMagicLink } from './mfa/mfaApi';
 import { loginRedirectPath, RegisterResponseSchema } from './registerRedirect';
 import { useAuthentication } from './useAuthentication';
 import { cookieDomainOptions } from './utils';
@@ -37,6 +38,8 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
   const [passwords, setPasswords] = useState({ password: '', passwordAgain: '' });
   const [passwordsMatch, setPasswordsMatch] = useState(false);
   const [pending, setPending] = useState(false);
+  // Magic-link-only sign-up: the address gets a link, and the account is made when it's clicked.
+  const [linkSent, setLinkSent] = useState(false);
   const mismatch = passwords.passwordAgain !== '' && !passwordsMatch;
   /** Set by the auth middleware from an invite link. */
   const invite = cookieText('invitation');
@@ -64,6 +67,16 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
     );
     const invitation = invite === '' ? {} : { invitation_code: invite };
     setPending(true);
+    if (authConfig.authModes.magical && !authConfig.authModes.basic) {
+      try {
+        await requestMagicLink(authConfig.authServer, fields.email, true);
+        setLinkSent(true);
+      } catch (exception: unknown) {
+        setResponseMessage(exception instanceof Error ? exception.message : 'The sign-up link could not be sent.');
+      }
+      setPending(false);
+      return;
+    }
     try {
       const flags = await authRequest(`${authConfig.authServer}${userRegisterEndpoint}`, RegisterResponseSchema, {
         method: 'POST',
@@ -101,6 +114,21 @@ export default function Register({ additionalFields = [], userRegisterEndpoint =
         : `You've been invited to join a team. Create your account to join the team.`,
   };
   const hasInvite = invite !== '';
+
+  if (linkSent) {
+    return (
+      <AuthCard
+        title='Check your email'
+        description='We sent you a link. Open it to finish creating your account.'
+        showBackButton
+      >
+        <p role='status' className='text-sm'>
+          A link is on its way to {cookieText('email')}. It works once and expires soon; your account is made when you open
+          it.
+        </p>
+      </AuthCard>
+    );
+  }
 
   return (
     <div className={additionalFields.length === 0 && authConfig.authModes.magical ? ' invisible' : ''}>

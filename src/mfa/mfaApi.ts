@@ -65,9 +65,16 @@ export async function answerMfaChallenge(authServer: string, challengeToken: str
 
 export const MAGIC_LINK_ENDPOINT = '/v1/auth/magic-link';
 
-/** Email a sign-in link to `email`. The server answers the same whether or not it has an account. */
-export async function requestMagicLink(authServer: string, email: string): Promise<void> {
-  await authSend(`${authServer}${MAGIC_LINK_ENDPOINT}/request`, { method: 'POST', body: { email } });
+/**
+ * Email a sign-in link to `email`. The server answers the same whether or not it has an account.
+ * With `create`, an address without an account gets a sign-up link instead (where registration is
+ * open): the account is made only when its owner clicks it.
+ */
+export async function requestMagicLink(authServer: string, email: string, create = false): Promise<void> {
+  await authSend(`${authServer}${MAGIC_LINK_ENDPOINT}/request`, {
+    method: 'POST',
+    body: create ? { email, create: true } : { email },
+  });
 }
 
 /** Redeem the token from a sign-in link: a session, or a challenge for the second factor. */
