@@ -42,7 +42,9 @@ export default function AuthCard({
               </Button>
             )}
           </div>
-          <CardTitle className='text-2xl'>{title}</CardTitle>
+          <CardTitle level={1} className='text-2xl'>
+            {title}
+          </CardTitle>
           <div className='w-8' /> {/* Spacer for alignment */}
         </div>
         <CardDescription className='text-center'>{description}</CardDescription>
