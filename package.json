@@ -103,6 +103,7 @@
     "@hookform/resolvers": "^5.9.1",
     "@jgrieve/forms": "^0.0.1-alpha.1",
     "@radix-ui/react-dialog": "^1.1.23",
+    "ajv": "8.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cookies-next": "^6.1.1",
