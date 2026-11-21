@@ -22,6 +22,16 @@ describe('PasswordRules', () => {
     ]);
   });
 
+  it('shows nothing as failed before anything is typed', () => {
+    const quiet = render(<PasswordRules id='quiet' policy={policy} password='' />);
+    for (const item of quiet.getAllByRole('listitem')) {
+      expect(item).toHaveClass('text-muted-foreground');
+    }
+    quiet.unmount();
+    const typed = render(<PasswordRules id='typed' policy={policy} password='abc' />);
+    expect(typed.getByText(/At least one digit/).closest('li')).toHaveClass('text-foreground');
+  });
+
   it('follows what is typed', () => {
     expect(states('abcdefgh')).toEqual([
       'At least 8 characters: met',
