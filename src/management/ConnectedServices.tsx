@@ -59,13 +59,13 @@ function ServiceRow({ service, onConnect, onDisconnect, connecting }: ServiceRow
           </div>
         </div>
         {identity === undefined ? (
-          <Button variant='outline' disabled={connecting} onClick={() => onConnect(provider)} className='space-x-1'>
-            <Plus className='mr-2 h-4 w-4' aria-hidden />
+          <Button variant='outline' disabled={connecting} onClick={() => onConnect(provider)}>
+            <Plus className='h-4 w-4' aria-hidden />
             Connect<span className='sr-only'> {name}</span>
           </Button>
         ) : (
-          <Button variant='outline' size='sm' onClick={() => onDisconnect(service)} className='space-x-1'>
-            <Unlink className='mr-2 h-4 w-4' aria-hidden />
+          <Button variant='outline' size='sm' onClick={() => onDisconnect(service)}>
+            <Unlink className='h-4 w-4' aria-hidden />
             Disconnect<span className='sr-only'> {name}</span>
           </Button>
         )}

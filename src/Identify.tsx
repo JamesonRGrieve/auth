@@ -129,7 +129,7 @@ export default function Identify({
               </Alert>
             )}
 
-            <Button variant='default' disabled={isSubmitting} className='w-full space-x-1'>
+            <Button variant='default' disabled={isSubmitting} className='w-full'>
               <LuUser className='w-5 h-5' />
               <span>Continue with Email</span>
             </Button>

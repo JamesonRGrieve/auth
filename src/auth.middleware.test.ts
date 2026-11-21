@@ -48,6 +48,19 @@ describe('createAuthMiddleware', () => {
     expect(response.cookies.get('href')?.value).toBe('/chat/42?tab=files');
   });
 
+  // A browser's own speculative load sends `Sec-Purpose: prefetch`, which the middleware also reads;
+  // it can't be built here, since a `Sec-` header is forbidden to script and the test's Headers drop it.
+  it.each([{ 'next-router-prefetch': '1' }, { purpose: 'prefetch' }])(
+    'never remembers a prefetch (%o) as the place to return to',
+    async (headers) => {
+      const { activated, response } = await guard(new NextRequest(`${ORIGIN}/chat/settings`, { headers }));
+      // Still kept out: a prefetch of a private page is redirected like any other request.
+      expect(activated).toBe(true);
+      expect(location(response)).toBe(`${ORIGIN}/user`);
+      expect(response.cookies.get('href')).toBeUndefined();
+    },
+  );
+
   it('checks the session against the API and lets a valid one through', async () => {
     const fetchMock = apiAnswers(HTTP_OK);
     const { activated } = await guard(request('/chat', 'sess-1'));

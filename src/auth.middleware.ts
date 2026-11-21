@@ -43,7 +43,24 @@ const pass = (): MiddlewareResult => ({ activated: false, response: NextResponse
 
 const redirect = (req: NextRequest, path: string): NextResponse => NextResponse.redirect(new URL(path, req.url));
 
+/**
+ * A request the browser made ahead of a click: Next's router prefetch, or a browser's own speculative
+ * load. It isn't somewhere the person asked to go, so it must not become where they return to.
+ */
+const isPrefetch = (req: NextRequest): boolean =>
+  req.headers.has('next-router-prefetch') ||
+  req.headers.get('purpose') === 'prefetch' ||
+  (req.headers.get('sec-purpose') ?? '').includes('prefetch');
+
+/**
+ * Remembers the page a signed-out visitor asked for, to return to after signing in. A prefetch is
+ * left out: a signed-out sidebar listing private pages had its links prefetched, so the cookie held
+ * the last one prefetched (a visitor reading the privacy page signed in and landed on Settings).
+ */
 const rememberReturn = (req: NextRequest, response: NextResponse): NextResponse => {
+  if (isPrefetch(req)) {
+    return response;
+  }
   response.cookies.set(RETURN_COOKIE, `${req.nextUrl.pathname}${req.nextUrl.search}`, {
     path: '/',
     maxAge: DAY_SECONDS,
