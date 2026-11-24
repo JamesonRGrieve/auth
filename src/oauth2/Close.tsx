@@ -3,12 +3,15 @@
 
 import { type ReactNode, useEffect, useState } from 'react';
 import { signedInDestination } from '../lib/afterSignIn';
+import { AuthApiError } from '../lib/api';
 import { useAuthentication } from '../useAuthentication';
 import { finishLink } from './link';
 import { takePending } from './pending';
 import { finishSignIn } from './signIn';
 
 export type CloseProps = Record<string, never>;
+
+const HTTP_FORBIDDEN = 403;
 
 /**
  * Where a provider sends the browser back (`<authPath>/close/<provider>`; list it in the server's
@@ -35,6 +38,18 @@ export default function Close(): ReactNode {
           window.location.replace(`${authConfig.authPath}${authConfig.manage.path}`);
         }
       } catch (error) {
+        // A new person while sign-up is closed: the register page, which the app's middleware sends
+        // on to its waitlist (SIGNUP_DISABLED_PATH), or a 404 where it names none.
+        // (REGISTRATION_MODE=closed: 403 "User registration is currently closed".)
+        if (
+          pending.kind === 'signIn' &&
+          error instanceof AuthApiError &&
+          error.status === HTTP_FORBIDDEN &&
+          /registration/iu.test(error.message)
+        ) {
+          window.location.replace(`${authConfig.authPath}${authConfig.register.path}`);
+          return;
+        }
         setProblem(error instanceof Error ? error.message : 'The provider’s answer could not be used.');
       }
     })();

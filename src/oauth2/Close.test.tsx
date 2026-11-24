@@ -10,6 +10,7 @@ import { rememberPending } from './pending';
 
 const HTTP_OK = 200;
 const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
 
 const renderClose = (): ReturnType<typeof render> =>
   render(
@@ -89,6 +90,34 @@ describe('Close', () => {
     arriveWith('?code=c1&state=s1');
     const view = renderClose();
     expect(await view.findByRole('alert')).toHaveTextContent('provider exchange failed');
+  });
+
+  it('sends a new person to the register page when sign-up is closed, for the app to send on to its waitlist', async () => {
+    rememberPending(sessionStorage, { kind: 'signIn', provider: 'google', state: 's1' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Promise.resolve(new Response('{"detail":"User registration is currently closed"}', { status: HTTP_FORBIDDEN })),
+      ),
+    );
+    arriveWith('?code=c1&state=s1');
+    const view = renderClose();
+    await vi.waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/user/register');
+    });
+    expect(view.queryByRole('alert')).toBeNull();
+  });
+
+  it('still says why, for any other refusal of a sign-in', async () => {
+    rememberPending(sessionStorage, { kind: 'signIn', provider: 'google', state: 's1' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Promise.resolve(new Response('{"detail":"account suspended"}', { status: HTTP_FORBIDDEN }))),
+    );
+    arriveWith('?code=c1&state=s1');
+    const view = renderClose();
+    expect(await view.findByRole('alert')).toHaveTextContent('account suspended');
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('is a parameterless component with no public props', () => {
