@@ -31,8 +31,30 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const EMAIL_ERROR_ID = 'identify-email-error';
+const HTTP_FORBIDDEN = 403;
 const HTTP_CONFLICT = 409;
 const HTTP_UNPROCESSABLE = 422;
+export const NO_ACCOUNT = 'There’s no account with that address.';
+
+/** The welcome page's line: what the visitor can do here, with or without making an account. */
+function welcomeLine(showEmail: boolean, showOAuth: boolean, onlyAccount: string | null, signupOpen: boolean): string {
+  if (!signupOpen) {
+    return showEmail && !showOAuth
+      ? 'Enter your email to sign in.'
+      : showEmail
+        ? 'Sign in with your email or another account.'
+        : onlyAccount === null
+          ? 'Sign in.'
+          : `Sign in with your ${onlyAccount} account.`;
+  }
+  return showEmail && !showOAuth
+    ? 'Enter your email to sign in or create an account.'
+    : showEmail
+      ? 'Sign in or create an account, with your email or another account.'
+      : onlyAccount === null
+        ? 'Sign in or create an account.'
+        : `Sign in, or create an account, with your ${onlyAccount} account.`;
+}
 
 export type IdentifyProps = {
   redirectToOnExists?: string;
@@ -47,6 +69,7 @@ export default function Identify({
   const router = useRouter();
   const authConfig = useAuthentication();
   const pathname = usePathname();
+  const signupOpen = authConfig.signupOpen !== false;
 
   const {
     register,
@@ -64,17 +87,28 @@ export default function Identify({
       void setCookie('email', formData.email, cookieDomainOptions());
       router.push(`${pathname}${path}`);
     };
+    // With sign-up closed a new address has nowhere to go, so it's told so here.
+    const newAddress = (): void => {
+      if (signupOpen) {
+        continueTo(redirectToOnNotExists);
+      } else {
+        setError('email', { type: 'server', message: NO_ACCOUNT });
+      }
+    };
     try {
       await authSend(`${authConfig.authServer}/v1/user`, {
         method: 'POST',
         body: { user: { email: formData.email.toLowerCase().trim() } },
       });
-      continueTo(redirectToOnNotExists);
+      newAddress();
     } catch (exception: unknown) {
       if (exception instanceof AuthApiError && exception.status === HTTP_CONFLICT) {
         continueTo(redirectToOnExists);
-      } else if (exception instanceof AuthApiError && exception.status === HTTP_UNPROCESSABLE) {
-        continueTo(redirectToOnNotExists);
+      } else if (
+        exception instanceof AuthApiError &&
+        (exception.status === HTTP_UNPROCESSABLE || (!signupOpen && exception.status === HTTP_FORBIDDEN))
+      ) {
+        newAddress();
       } else {
         setError('email', {
           type: 'server',
@@ -95,14 +129,7 @@ export default function Identify({
       ? null
       : (new Map(Object.entries(authConfig.oauthLabels ?? {})).get(onlyProvider) ??
         oauth2ProviderDisplay(onlyProvider).label);
-  const description =
-    showEmail && !showOAuth
-      ? 'Enter your email to sign in or create an account.'
-      : showEmail
-        ? 'Sign in or create an account, with your email or another account.'
-        : onlyAccount === null
-          ? 'Sign in or create an account.'
-          : `Sign in, or create an account, with your ${onlyAccount} account.`;
+  const description = welcomeLine(showEmail, showOAuth, onlyAccount, signupOpen);
 
   return (
     <AuthCard title='Welcome' description={description}>

@@ -70,6 +70,11 @@ export type AuthenticationConfig = {
    */
   home?: string | undefined;
   recaptchaSiteKey?: string | undefined;
+  /**
+   * Whether new accounts can be made here (the server's REGISTRATION_MODE). Off, the welcome page
+   * offers sign-in only and tells a new address it has no account. On when unset.
+   */
+  signupOpen?: boolean | undefined;
 };
 
 // `authServer` comes from the app's AuthServerProvider, its single configured API base.

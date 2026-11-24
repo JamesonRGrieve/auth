@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { testAuthConfig } from '../tests/fixtures/authConfig';
 import { AuthenticationContext } from './AuthenticationContext';
-import Identify, { type IdentifyProps } from './Identify';
+import Identify, { type IdentifyProps, NO_ACCOUNT } from './Identify';
 
-vi.mock('next/navigation.js', () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => '/user' }));
+const push = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation.js', () => ({ useRouter: () => ({ push }), usePathname: () => '/user' }));
 
 const renderIdentify = (): ReturnType<typeof render> =>
   render(
@@ -64,6 +65,52 @@ describe('Identify', () => {
     );
     expect(view.getByRole('link', { name: 'Sign in with another device' })).toHaveAttribute('href', '/user/pair');
     expect(view.getByRole('link', { name: 'Use a passkey' })).toHaveAttribute('href', '/user/passkey');
+  });
+
+  describe('with sign-up closed', () => {
+    const HTTP_CONFLICT = 409;
+    const HTTP_FORBIDDEN = 403;
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      push.mockClear();
+    });
+    const closed = (status: number): ReturnType<typeof render> => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => Promise.resolve(new Response('{"detail":"x"}', { status }))),
+      );
+      return render(
+        <AuthenticationContext value={{ ...testAuthConfig, signupOpen: false }}>
+          <Identify />
+        </AuthenticationContext>,
+      );
+    };
+    const submit = async (view: ReturnType<typeof render>): Promise<void> => {
+      const user = userEvent.setup();
+      await user.type(view.getByLabelText('Email'), 'sam@example.com');
+      await user.click(view.getByRole('button', { name: 'Continue with Email' }));
+    };
+
+    it('offers sign-in only', () => {
+      const view = closed(HTTP_CONFLICT);
+      expect(view.getByText('Enter your email to sign in.')).toBeInTheDocument();
+      expect(view.queryByText(/create an account/u)).toBeNull();
+    });
+
+    it('tells a new address it has no account, rather than sending it to sign up', async () => {
+      const view = closed(HTTP_FORBIDDEN);
+      await submit(view);
+      expect(await view.findByText(NO_ACCOUNT)).toBeInTheDocument();
+      expect(push).not.toHaveBeenCalled();
+    });
+
+    it('still takes an address with an account on to sign in', async () => {
+      const view = closed(HTTP_CONFLICT);
+      await submit(view);
+      await vi.waitFor(() => {
+        expect(push).toHaveBeenCalledWith('/user/login');
+      });
+    });
   });
 
   it('keeps its two optional config props', () => {
