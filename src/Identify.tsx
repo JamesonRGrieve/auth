@@ -182,6 +182,15 @@ export default function Identify({
           />
         )}
 
+        {!signupOpen && authConfig.waitlistPath !== undefined && authConfig.waitlistPath !== '' && (
+          <p className='text-sm text-center text-muted-foreground'>
+            No account yet?{' '}
+            <Link href={authConfig.waitlistPath} className='font-medium text-primary underline-offset-4 hover:underline'>
+              Join the waitlist
+            </Link>
+          </p>
+        )}
+
         {authConfig.signInAlternatives.map(({ label, path }) => (
           <Link key={path} href={`${authConfig.authPath}${path}`} className='text-sm text-center underline'>
             {label}

@@ -95,6 +95,18 @@ describe('Identify', () => {
       const view = closed(HTTP_CONFLICT);
       expect(view.getByText('Enter your email to sign in.')).toBeInTheDocument();
       expect(view.queryByText(/create an account/u)).toBeNull();
+      // No waitlist named, so no link to one.
+      expect(view.queryByRole('link', { name: 'Join the waitlist' })).toBeNull();
+    });
+
+    it('links to the app’s waitlist when it names one', () => {
+      vi.stubGlobal('fetch', vi.fn());
+      const view = render(
+        <AuthenticationContext value={{ ...testAuthConfig, signupOpen: false, waitlistPath: '/waitlist' }}>
+          <Identify />
+        </AuthenticationContext>,
+      );
+      expect(view.getByRole('link', { name: 'Join the waitlist' })).toHaveAttribute('href', '/waitlist');
     });
 
     it('tells a new address it has no account, rather than sending it to sign up', async () => {

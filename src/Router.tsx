@@ -75,6 +75,11 @@ export type AuthenticationConfig = {
    * offers sign-in only and tells a new address it has no account. On when unset.
    */
   signupOpen?: boolean | undefined;
+  /**
+   * The app's waitlist page (an app path such as `/waitlist`, not under `authPath`). With sign-up
+   * closed, the welcome page links to it, and tells a new address to join it.
+   */
+  waitlistPath?: string | undefined;
 };
 
 // `authServer` comes from the app's AuthServerProvider, its single configured API base.
