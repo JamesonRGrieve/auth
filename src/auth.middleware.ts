@@ -44,21 +44,28 @@ const pass = (): MiddlewareResult => ({ activated: false, response: NextResponse
 const redirect = (req: NextRequest, path: string): NextResponse => NextResponse.redirect(new URL(path, req.url));
 
 /**
- * A request the browser made ahead of a click: Next's router prefetch, or a browser's own speculative
- * load. It isn't somewhere the person asked to go, so it must not become where they return to.
+ * Whether the person asked for this page themselves: a document navigation (a link opened, an address
+ * typed, a redirect followed). A browser marks it `Sec-Fetch-Mode: navigate`; its prefetches and the
+ * app's own client-side fetches carry `cors`, `no-cors` or `same-origin` instead. A client that sends
+ * no Sec-Fetch headers at all (an older browser, a script) counts as navigating. Next's flight headers
+ * (`rsc`, `next-router-prefetch`, …) can't tell this: Next deletes them before middleware runs
+ * (`next/dist/server/web/adapter.js`), which is why reading them didn't work (Zephyreader, 2026-11-21).
  */
-const isPrefetch = (req: NextRequest): boolean =>
-  req.headers.has('next-router-prefetch') ||
-  req.headers.get('purpose') === 'prefetch' ||
-  (req.headers.get('sec-purpose') ?? '').includes('prefetch');
+const isDocumentNavigation = (req: NextRequest): boolean => {
+  const mode = req.headers.get('sec-fetch-mode');
+  const purpose = `${req.headers.get('purpose') ?? ''} ${req.headers.get('sec-purpose') ?? ''}`;
+  return (mode === null || mode === 'navigate') && !purpose.includes('prefetch');
+};
 
 /**
- * Remembers the page a signed-out visitor asked for, to return to after signing in. A prefetch is
- * left out: a signed-out sidebar listing private pages had its links prefetched, so the cookie held
- * the last one prefetched (a visitor reading the privacy page signed in and landed on Settings).
+ * Remembers the page a signed-out visitor asked for, to return to after signing in, and only when
+ * they asked for it: a signed-out sidebar listing private pages had its links prefetched, so the
+ * cookie held the last one prefetched (a visitor reading the privacy page signed in and landed on
+ * Settings). A signed-out client-side click on a private link isn't remembered either; sign-in then
+ * goes to the app's home, which is the lesser surprise.
  */
 const rememberReturn = (req: NextRequest, response: NextResponse): NextResponse => {
-  if (isPrefetch(req)) {
+  if (!isDocumentNavigation(req)) {
     return response;
   }
   response.cookies.set(RETURN_COOKIE, `${req.nextUrl.pathname}${req.nextUrl.search}`, {
@@ -108,6 +115,12 @@ const sessionStatus = async (apiBase: string, session: string): Promise<number> 
   }
 };
 
+/**
+ * The pages that ask a person to sign in: the welcome page, sign-in and register (the router's
+ * default paths). Someone already signed in is sent on to their account rather than shown a form.
+ */
+const SIGN_IN_PAGES = ['', '/', '/login', '/register'];
+
 /** The Next middleware hook that guards private pages and the account page on the session cookie. */
 export function createAuthMiddleware({
   authPath,
@@ -117,6 +130,8 @@ export function createAuthMiddleware({
 }: AuthMiddlewareOptions): MiddlewareHook {
   const managePath = `${authPath}/manage`;
   const alwaysPrivate = [managePath];
+  const api = apiBase.replace(/\/$/, '');
+  const signInPages = new Set(SIGN_IN_PAGES.map((page) => `${authPath}${page}`));
   return async (req) => {
     const { pathname } = req.nextUrl;
     if (landingOnly && pathname !== '/') {
@@ -126,15 +141,23 @@ export function createAuthMiddleware({
     if (invite !== null) {
       return { activated: true, response: invite };
     }
+    const session = req.cookies.get(SESSION_COOKIE)?.value;
+    const hasSession = session !== undefined && session !== '';
+    // Only a session the API still accepts moves on: with an expired one the form stays, so the
+    // account page and the sign-in page never send a person back and forth.
+    if (signInPages.has(pathname)) {
+      return hasSession && (await sessionStatus(api, session)) === HTTP_OK
+        ? { activated: true, response: redirect(req, managePath) }
+        : pass();
+    }
     const needsSession = [...alwaysPrivate, ...privateRoutes].some((route) => pathname.startsWith(route));
     if (!needsSession) {
       return pass();
     }
-    const session = req.cookies.get(SESSION_COOKIE)?.value;
-    if (session === undefined || session === '') {
+    if (!hasSession) {
       return { activated: true, response: rememberReturn(req, redirect(req, authPath)) };
     }
-    const status = await sessionStatus(apiBase.replace(/\/$/, ''), session);
+    const status = await sessionStatus(api, session);
     if (status === HTTP_OK) {
       return pass();
     }

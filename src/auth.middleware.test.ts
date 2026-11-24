@@ -48,18 +48,19 @@ describe('createAuthMiddleware', () => {
     expect(response.cookies.get('href')?.value).toBe('/chat/42?tab=files');
   });
 
-  // A browser's own speculative load sends `Sec-Purpose: prefetch`, which the middleware also reads;
-  // it can't be built here, since a `Sec-` header is forbidden to script and the test's Headers drop it.
-  it.each([{ 'next-router-prefetch': '1' }, { purpose: 'prefetch' }])(
-    'never remembers a prefetch (%o) as the place to return to',
-    async (headers) => {
-      const { activated, response } = await guard(new NextRequest(`${ORIGIN}/chat/settings`, { headers }));
-      // Still kept out: a prefetch of a private page is redirected like any other request.
-      expect(activated).toBe(true);
-      expect(location(response)).toBe(`${ORIGIN}/user`);
-      expect(response.cookies.get('href')).toBeUndefined();
-    },
-  );
+  // The middleware remembers the return page only for a document navigation (`Sec-Fetch-Mode:
+  // navigate`, or no Sec-Fetch headers at all). A `Sec-` header can't be built here (script may not
+  // set one, and the test's Headers drop it), so the browser cases are proven against a real Next
+  // server in an e2e instead; here, the two that can be built.
+  it('never remembers a prefetch as the place to return to', async () => {
+    const { activated, response } = await guard(
+      new NextRequest(`${ORIGIN}/chat/settings`, { headers: { purpose: 'prefetch' } }),
+    );
+    // Still kept out: a prefetch of a private page is redirected like any other request.
+    expect(activated).toBe(true);
+    expect(location(response)).toBe(`${ORIGIN}/user`);
+    expect(response.cookies.get('href')).toBeUndefined();
+  });
 
   it('checks the session against the API and lets a valid one through', async () => {
     const fetchMock = apiAnswers(HTTP_OK);
@@ -87,8 +88,34 @@ describe('createAuthMiddleware', () => {
   });
 
   it('leaves the other auth pages to signed-out visitors', async () => {
+    const fetchMock = apiAnswers(HTTP_OK);
     const { activated } = await guard(request('/user/login'));
     expect(activated).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sends someone signed in on from the sign-in pages to their account', async () => {
+    apiAnswers(HTTP_OK);
+    const results = await Promise.all(
+      ['/user', '/user/login', '/user/register'].map(async (page) => guard(request(page, 'sess-1'))),
+    );
+    for (const { activated, response } of results) {
+      expect(activated).toBe(true);
+      expect(location(response)).toBe(`${ORIGIN}/user/manage`);
+    }
+  });
+
+  it('shows the sign-in page to someone whose session has expired', async () => {
+    apiAnswers(HTTP_UNAUTHORIZED);
+    const { activated } = await guard(request('/user', 'stale'));
+    expect(activated).toBe(false);
+  });
+
+  it('leaves signing out and sign-in links alone for someone signed in', async () => {
+    const fetchMock = apiAnswers(HTTP_OK);
+    const results = await Promise.all(['/user/logout', '/user/magic'].map(async (page) => guard(request(page, 'sess-1'))));
+    expect(results.map(({ activated }) => activated)).toEqual([false, false]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('sends an unpaid account to subscribe', async () => {
@@ -122,6 +149,20 @@ describe('createAuthMiddleware', () => {
     const unreachable = await guard(request('/chat', 'sess-1'));
     expect(location(unreachable.response)).toBe(`${ORIGIN}/down`);
     expect(unreachable.response.cookies.get('href')?.value).toBe('/chat');
+  });
+
+  // Zephyrex RPG's case: while the API is down, the page the person opened stays the place to
+  // return to, and a prefetch that follows it (a sidebar link) never replaces it.
+  it('keeps the opened page as the return while down, whatever is prefetched after it', async () => {
+    apiAnswers(HTTP_UNAVAILABLE);
+    const opened = await guard(request('/chat/42', 'sess-1'));
+    expect(location(opened.response)).toBe(`${ORIGIN}/down`);
+    expect(opened.response.cookies.get('href')?.value).toBe('/chat/42');
+    const prefetch = new NextRequest(`${ORIGIN}/chat/settings`, { headers: { purpose: 'prefetch' } });
+    prefetch.cookies.set('zx_session', 'sess-1');
+    const prefetched = await guard(prefetch);
+    expect(location(prefetched.response)).toBe(`${ORIGIN}/down`);
+    expect(prefetched.response.cookies.get('href')).toBeUndefined();
   });
 
   it('remembers an invite link and starts at the auth pages', async () => {
