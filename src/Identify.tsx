@@ -53,7 +53,7 @@ function welcomeLine(showEmail: boolean, showOAuth: boolean, onlyAccount: string
       ? 'Sign in or create an account, with your email or another account.'
       : onlyAccount === null
         ? 'Sign in or create an account.'
-        : `Sign in, or create an account, with your ${onlyAccount} account.`;
+        : `Sign in with your ${onlyAccount} account. First time here? That sets you up.`;
 }
 
 export type IdentifyProps = {

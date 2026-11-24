@@ -42,7 +42,9 @@ describe('Identify', () => {
         <Identify />
       </AuthenticationContext>,
     );
-    expect(view.getByText('Sign in, or create an account, with your Boden Research account.')).toBeInTheDocument();
+    expect(
+      view.getByText('Sign in with your Boden Research account. First time here? That sets you up.'),
+    ).toBeInTheDocument();
     expect(view.queryByLabelText('Email')).toBeNull();
     // The only way in is the page's main action, not an outline button.
     expect(view.getByRole('button', { name: 'Continue with Boden Research' })).not.toHaveClass('bg-transparent');
