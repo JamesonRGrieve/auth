@@ -9,7 +9,9 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       LOG_VERBOSITY_SERVER?: string;
+      NEXT_PUBLIC_APP_URI?: string;
       NEXT_PUBLIC_COOKIE_DOMAIN?: string;
+      NEXT_PUBLIC_ENV?: string;
       NEXT_PUBLIC_LOG_VERBOSITY_CLIENT?: string;
       NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID?: string;
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?: string;
